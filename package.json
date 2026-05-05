@@ -1,0 +1,20 @@
+{
+  "name": "cmsc335-final",
+  "version": "1.0.0",
+  "description": "Submitted By: Afif Haque (ahaque12) Group Members: Afif Haque (ahaque12) App Description:  YouTube Video Link: APIs: Contact Email:  ahaque12@terpmail.umd.edu Deployed App Link:",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github-school:ahaque12-code/cmsc335-final.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
