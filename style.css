@@ -1,3 +1,8 @@
 body{
-    background-color: blue;
+    background-color: rgb(106, 188, 188);
+    font-family: Inter, sans-serif;
+}
+
+#introduction{
+    text-align: center;
 }
