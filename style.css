@@ -6,3 +6,12 @@ body{
 #introduction{
     text-align: center;
 }
+
+#clickBtn{
+    border-radius: 5px;
+    background-color: rgb(224, 185, 70);
+}
+
+#clickBtn:hover{
+     filter: brightness(0.5);
+}
