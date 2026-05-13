@@ -39,8 +39,12 @@ body{
 }
 
 #movieForm input{
-    background-color: rgb(223, 211, 39);
+    background-color:rgb(39 144 223 / 94%);
     border-radius: 10px;;
+}
+
+#movieForm input::placeholder{
+    color: rgba(255, 255, 255, 0.7);
 }
 
 #movieForm #movieName{
