@@ -41,6 +41,7 @@ body{
 #movieForm input{
     background-color:rgb(39 144 223 / 94%);
     border-radius: 10px;;
+    padding: 10px;
 }
 
 #movieForm input::placeholder{

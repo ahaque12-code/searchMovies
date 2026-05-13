@@ -7,6 +7,7 @@ const app = express();
 
 app.use(express.static(__dirname));
 
+
 app.get('/', (req,res) => {
     res.send(`<!DOCTYPE html>
         <html>
@@ -62,7 +63,7 @@ app.get("/results", async (req,res) => {
                 "X-RapidAPI-Host" : api_host
             }
         });
-
+        
         if (!apiRes.ok) {
             const textError = await apiRes.text();
             console.log(`RapidAPI Error Status Code: ${apiRes.status}`);
@@ -71,8 +72,6 @@ app.get("/results", async (req,res) => {
     
         const apiData = await apiRes.json();
         console.log("Response: ", apiData);
-
-
     }catch(err){
         console.log("API ERROR: " + err);
         res.status(500).send("Error reading data.");
