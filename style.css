@@ -1,17 +1,62 @@
 body{
-    background-color: rgb(106, 188, 188);
+    background: #7a65ba;
+    background: radial-gradient(circle,rgba(122, 101, 186, 1) 0%, rgba(166, 25, 48, 1) 92%, rgba(252, 70, 107, 1) 100%);
     font-family: Inter, sans-serif;
 }
+.navbar {
+  display: flex;
+  justify-content: space-between; 
+  align-items: center;            
+  background-color: rgba(0, 0, 0, 0.2); 
+  padding: 15px 30px;             
+  margin-bottom: 40px;
+}
 
-#introduction{
+.nav-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+}
+
+.nav-item {
+  color: #ffffff;
+  text-decoration: none;          
+  font-weight: 400;
+  font-size: 16px;
+  padding: 8px 16px;
+  transition: all 0.2s ease-in-out;
+}
+
+.nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.15); 
+  border-radius: 5px;
+  color: rgb(223, 211, 39);
+}
+
+#movieBody{
     text-align: center;
 }
 
-#clickBtn{
-    border-radius: 5px;
-    background-color: rgb(224, 185, 70);
+#movieForm input{
+    background-color: rgb(223, 211, 39);
+    border-radius: 10px;;
 }
 
-#clickBtn:hover{
-     filter: brightness(0.5);
+#movieForm #movieName{
+    width: 150px;
+}
+
+#movieForm #movieGenre:hover{
+     filter: brightness(0.25);
+}
+
+#movieForm #movieRating{
+    align-items: center;
+    justify-content: center;
+    width: 100px;
+}
+
+#movieForm #yearRelease{
+    width: 45px;
 }
