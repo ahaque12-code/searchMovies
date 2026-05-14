@@ -276,11 +276,7 @@ app.get("/discover", async(req, res) => {
         html += `
         </div>
         <div style="text-align:center; margin: 30px;">
-            <a href="/discover?genres=${encodeURIComponent(req.query.genres || "")}
-                &rating=${encodeURIComponent(ratingSearch || "")}
-                &year=${encodeURIComponent(yearSearch || "")}
-                &rows=${rows + 25}">
-                <button id="showMore">Show More Results</button>
+            <a href="/discover?genres=${encodeURIComponent(req.query.genres || "")}&rating=${encodeURIComponent(ratingSearch || "")}&year=${encodeURIComponent(yearSearch || "")}&rows=${rows + 25}">
             </a>
         </div>
         <script>
