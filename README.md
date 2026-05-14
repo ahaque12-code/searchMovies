@@ -6,6 +6,6 @@ The app displays movie posters, ratings, genres, and release information in a cl
 
 SearchMovie is designed to make finding movies faster, easier, and more personalized<br>
 YouTube Video Link:<br>
-APIs:RapidAPI (IMDB)<br>
-Contact Email:  ahaque12@terpmail.umd.edu<br>
+API's: RapidAPI (IMDB)<br>
+Contact Email: ahaque12@terpmail.umd.edu<br>
 Deployed App Link:<br>
