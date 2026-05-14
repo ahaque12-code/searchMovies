@@ -10,3 +10,5 @@ YouTube Video Link:<br>
 ### API's: RapidAPI (IMDB)<br>
 ### Contact Email: ahaque12@terpmail.umd.edu<br>
 ### Deployed App Link: <br>
+
+### NOTE : STORED THE RESULTLS IN MONGODB, in the CMSC335DB database, in the favorites collection.
