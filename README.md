@@ -9,6 +9,6 @@ SearchMovie is designed to make finding movies faster, easier, and more personal
 YouTube Video Link:<br>
 ### API's: RapidAPI (IMDB)<br>
 ### Contact Email: ahaque12@terpmail.umd.edu<br>
-### Deployed App Link: <br>
+### Deployed App Link: https://searchmovies-p0zq.onrender.com<br>
 
 ### NOTE : STORED THE RESULTLS IN MONGODB, in the CMSC335DB database, in the favorites collection.
