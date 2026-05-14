@@ -10,6 +10,7 @@ router.get("/", async (req, res) => {
     <html>
       <head>
         <link rel="stylesheet" href="/style.css">
+        <link rel="icon" type="image/x-icon" href="images/icon.png">
         <title>Favorite List</title>
       </head>
       <body>

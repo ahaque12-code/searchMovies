@@ -21,8 +21,9 @@ app.get('/', (req,res) => {
                 <meta charset = "utf-8">
                 <link rel = "stylesheet" href= "style.css">
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-                <title>Final Project</title>
-                <script src = "func.js" defer></script>
+                <link rel="icon" type="image/x-icon" href="images/icon.png">
+                <title>SearchMovies</title>
+                <script src = "genreFunc.js" defer></script>
             </head>
             <body>
                 <nav class = "navbar">
@@ -101,6 +102,7 @@ app.get("/results", async (req,res) => {
         <html>
             <head>
                 <link rel="stylesheet" href="/style.css">
+                <link rel="icon" type="image/x-icon" href="images/icon.png">
                 <title>Results</title>
             </head>
             <body>
@@ -221,6 +223,7 @@ app.get("/discover", async(req, res) => {
         <html>
         <head>
             <link rel="stylesheet" href="/style.css">
+            <link rel="icon" type="image/x-icon" href="images/icon.png">
             <title>Discover Movies</title>
         </head>
 
