@@ -187,3 +187,12 @@ body{
     margin-bottom: 10px;
 }
 
+#deleteAllBtn{
+  background-color: rgb(255, 0, 0);
+   color:white;
+   border-radius: 10px;
+}
+
+#deleteAllBtn:hover{
+  filter: brightness(0.25);
+}

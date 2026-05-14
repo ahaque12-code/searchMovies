@@ -20,6 +20,12 @@ router.get("/", async (req, res) => {
             <a href="/">Back Home</a>
           </div>
         </nav>
+
+        <div style="text-align:center; margin:20px;">
+            <button id="deleteAllBtn" onclick="deleteAllFavorites()">
+                🗑️ Remove All Favorites
+            </button>
+        </div>
         <div class="movie-grid">
     `;
 
@@ -40,6 +46,17 @@ router.get("/", async (req, res) => {
 
     html += `
     </div>
+    <script>
+      async function deleteAllFavorites() {
+          const confirmDelete =
+              confirm("Are you sure you want to remove all favorites?");
+          if (!confirmDelete) return;
+          await fetch("/favorites/deleteAll", {
+              method: "POST"
+          });
+          location.reload();
+      }
+    </script>
   </body>
   </html>`;
 
@@ -69,5 +86,10 @@ router.post("/delete/:id", async (req, res) => {
     console.log(err);
     res.send("Error deleting movie");
   }
+});
+
+router.post("/deleteAll", async (req, res) => {
+    await Favorite.deleteMany({});
+    res.sendStatus(200);
 });
 module.exports = router;
