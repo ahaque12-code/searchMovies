@@ -52,14 +52,43 @@ body{
     width: 150px;
 }
 
-#movieForm #movieGenre:hover{
-     filter: brightness(0.25);
+#movieForm #movieRating{
+    text-align: center;
+    width: 110px;
+    
 }
 
-#movieForm #movieRating{
-    align-items: center;
-    justify-content: center;
-    width: 100px;
+.genre-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.genre-box {
+  position: absolute;
+  background: white;
+  border: 1px solid #ccc;
+  padding: 10px;
+  width: 180px;
+  z-index: 10;
+}
+
+.genre-box label {
+  display: block;
+  margin: 6px 0;
+}
+
+.hidden {
+  display: none;
+}
+
+#genreBtn{
+    background-color:rgb(39 144 223 / 94%);
+    border-radius: 10px;;
+    padding: 10px;
+}
+
+#genreBtn:hover{
+  filter: brightness(0.5);
 }
 
 #movieForm #yearRelease{
@@ -139,3 +168,4 @@ body{
 #backHome{
     margin-bottom: 10px;
 }
+

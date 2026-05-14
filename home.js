@@ -37,8 +37,23 @@ app.get('/', (req,res) => {
                     <form id = "movieForm" action = "/results" method = "get">
                      <input type = "text" name = "q" id = "movieName" placeholder = "Search movies, shows..." ><br><br>
                      <h3>Not sure what to search? Just fill up these and get recommendations!</h3>
-                     <input type = "number" id = "movieRating" max = 10 min = 0 placeholder = "Ratings (0-10)" >
-                     <input type = "button" id = "movieGenre" value = "Genre">
+                     <input type = "number" id = "movieRating" max = 10 min = 0 step = 0.1 placeholder = "Minimum Rating" >
+                     <div class="genre-wrapper">
+                        <button type="button" id="genreBtn">Select Genre</button>
+                        <div id="genreBox" class="genre-box hidden">
+                            <label><input type="checkbox" value="Action"> Action</label>
+                            <label><input type="checkbox" value="Comedy"> Comedy</label>
+                            <label><input type="checkbox" value="Drama"> Drama</label>
+                            <label><input type="checkbox" value="Horror"> Horror</label>
+                            <label><input type="checkbox" value="Romance"> Romance</label>
+                            <label><input type="checkbox" value="Sci-Fi"> Sci-Fi</label>
+                            <label><input type="checkbox" value="Thriller"> Thriller</label>
+                            <label><input type="checkbox" value="Animation"> Animation</label>
+                            <label><input type="checkbox" value="Crime"> Crime</label>
+                            <label><input type="checkbox" value="Adventure"> Adventure</label>
+                        </div>
+                        <input type="hidden" name="genres" id="selectedGenres">
+                    </div>
                      <input type = "text" id = "yearRelease" placeholder = "Year"><br><br>
                      <input type = "submit"  value = "Search">
                     </form>

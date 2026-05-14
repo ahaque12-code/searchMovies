@@ -1,18 +1,18 @@
-let genreBtn = document.getElementById("movieGenre");
-const geners = [
-  'Drama',      'Documentary', 'Comedy',
-  'Action',     'Romance',     'Thriller',
-  'Crime',      'Horror',      'Music',
-  'Adventure',  'Family',      'Animation',
-  'Reality-TV', 'Mystery',     'History',
-  'Talk-Show',  'Biography',   'Sport',
-  'Fantasy',    'Sci-Fi',      'Musical',
-  'News',       'War',         'Adult',
-  'Game-Show',  'Western',     'Short',
-  'Film-Noir'
-];
+const genreBtn = document.querySelector("#genreBtn");
+const genreBox = document.querySelector("#genreBox");
+const selectedGenresInput = document.querySelector("#selectedGenres");
 
+genreBtn.addEventListener("click", () => {
+  genreBox.classList.toggle("hidden");
+});
 
-genreBtn.onclick = () => {
+genreBox.addEventListener("change", () => {
+  const selected = Array.from(
+    genreBox.querySelectorAll("input[type='checkbox']:checked")
+  ).map(box => box.value);
 
-}
+  selectedGenresInput.value = selected.join(",");
+
+  genreBtn.textContent =
+    selected.length > 0 ? selected.join(", ") : "Select Genre";
+});
