@@ -56,7 +56,7 @@ app.get('/', (req,res) => {
                         <input type="hidden" name="genres" id="selectedGenres">
                     </div>
                      <input type = "text" name = "year" id = "yearRelease" placeholder = "Year"><br><br>
-                     <input type = "submit"  value = "Search">
+                     <input type = "submit" id = "submit" value = "Search">
                     </form>
                 </div>
             </body>
@@ -96,7 +96,7 @@ app.get("/results", async (req,res) => {
         const apiData = await apiRes.json();
         const movies = apiData.results || apiData;
 
-        console.log(movies);
+        // console.log(movies);
         html = `
         <!DOCTYPE> 
         <html>
@@ -113,6 +113,7 @@ app.get("/results", async (req,res) => {
                         <a href="/favorites">Favorites</a>
                     </div>
                 </nav>
+                <h2 id = "msg" >Double click on the card to add to your favorite list!</h2>
 
                 <div class="movie-grid">
         `;
@@ -195,7 +196,7 @@ app.get("/discover", async(req, res) => {
         const apiData = await apiRes.json();
         const movies = Array.isArray(apiData.results) ? apiData.results  : 
         Array.isArray(apiData) ? apiData : Array.isArray(apiData.titles) ? apiData.titles : [];
-        console.log(apiData);
+        // console.log(apiData);
 
 
 
@@ -228,7 +229,6 @@ app.get("/discover", async(req, res) => {
         </head>
 
         <body>
-
         <nav class="navbar2">
             <span class="nav-title2">Discover Movies</span>
 
@@ -237,6 +237,8 @@ app.get("/discover", async(req, res) => {
                 <a href="/favorites">Favorites</a>
             </div>
         </nav>
+
+         <h2 id = "msg">Double click on the card to add to your favorite list!</h2>
 
         <div class="movie-grid">
         `;
@@ -298,9 +300,9 @@ app.get("/discover", async(req, res) => {
         </html>
         `;
 
-        console.log("MOVIES LENGTH:", movies.length);
-        console.log("FILTERED LENGTH:", filteredMovies.length);
-        console.log("FILTERS:", { ratingSearch, yearSearch, genreSearch });
+        // console.log("MOVIES LENGTH:", movies.length);
+        // console.log("FILTERED LENGTH:", filteredMovies.length);
+        // console.log("FILTERS:", { ratingSearch, yearSearch, genreSearch });
 
         res.send(html);
 

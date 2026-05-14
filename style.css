@@ -34,6 +34,10 @@ body{
   color: rgb(223, 211, 39);
 }
 
+#msg{
+  text-align: center;
+}
+
 #movieBody{
     text-align: center;
 }
@@ -54,7 +58,7 @@ body{
 
 #movieForm #movieRating{
     text-align: center;
-    width: 110px;
+    width: 111px;
     
 }
 
@@ -65,7 +69,8 @@ body{
 
 .genre-box {
   position: absolute;
-  background: white;
+  background: rgb(35, 31, 31);
+  color:white;
   border: 1px solid #ccc;
   padding: 10px;
   width: 180px;
@@ -142,6 +147,14 @@ body{
 
 #showMore:hover{
     filter: brightness(0.25);
+}
+
+button{
+  color: white;
+}
+
+#submit:hover{
+  filter:brightness(0.5);
 }
 
 .navbar2 {
