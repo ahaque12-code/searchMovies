@@ -13,9 +13,12 @@ router.get("/", async (req, res) => {
         <title>Favorite List</title>
       </head>
       <body>
-        <h1>Favorite List</h1>
-        <a href="/">Back Home</a>
-
+        <nav class="navbar2">
+          <span class="nav-title2">Favorite List</span>
+          <div class="nav-links2">
+            <a href="/">Back Home</a>
+          </div>
+        </nav>
         <div class="movie-grid">
     `;
 
@@ -28,7 +31,7 @@ router.get("/", async (req, res) => {
       <p><strong>Genre:</strong> ${movie.genres || "Unknown"}</p>
       <p><strong>Rating:</strong> ${movie.rating || "N/A"}</p>
       <form action="/favorites/delete/${movie._id}" method="POST">
-        <button type="submit">Delete</button>
+        <button type="submit" id = "deleteBtn">Delete</button>
       </form>
     </div>
     `;

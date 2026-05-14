@@ -125,3 +125,17 @@ body{
 #elemNav{
     padding-right: 10px;
 }
+
+#deleteBtn{
+   background-color: rgb(255, 0, 0);
+   color:white;
+   border-radius: 10px;
+}
+
+#deleteBtn:hover{
+    filter: brightness(0.25);
+}
+
+#backHome{
+    margin-bottom: 10px;
+}
