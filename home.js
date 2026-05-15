@@ -9,6 +9,7 @@ mongoose.connect(process.env.MONGO_CONNECTION_STRING,{dbName: "CMSC335DB"}).then
 console.log("MongoDB error: ", err);
 })
 
+
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(express.static(__dirname));
