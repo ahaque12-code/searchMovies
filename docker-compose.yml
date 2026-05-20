@@ -1,0 +1,8 @@
+services: 
+  web:
+    build: .
+    container_name: running-movies
+    ports: 
+      - "3001:3001"
+    env_file:
+      - .env
