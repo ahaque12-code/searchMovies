@@ -38,7 +38,7 @@ app.get('/', (req,res) => {
                 <div id = "movieBody">
                     <h2>Making searching movies easier</h2> 
                     <form id = "movieForm" action = "/results" method = "get">
-                     <input type = "text" name = "q" id = "movieName" placeholder = "Search movies, shows..." ><br><br>
+                     <input type = "text" name = "q" id = "movieName" placeholder = "" ><br><br>
                      <h3>Not sure what to search? Just fill up these and get recommendations!</h3>
                      <input type = "number" name="rating" id = "movieRating" max = 10 min = 0 step = 0.1 placeholder = "Minimum Rating" >
                      <div class="genre-wrapper">
