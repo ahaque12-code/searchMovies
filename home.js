@@ -31,6 +31,7 @@ app.get('/', (req,res) => {
                     <span class="nav-title">SearchMovie</span>
                     </a>
                     <div class="nav-links">
+                     <a href = "/users/login" class="nav-item">Login</a>
                      <a href="/favorites" class="nav-item">Favorite List</a>
                     </div>
                 </nav>
@@ -329,11 +330,13 @@ app.get("/discover", async(req, res) => {
 const favoritesRouter = require("./routes/favorites");
 app.use("/favorites", favoritesRouter);
 
+const usersRouter = require("./routes/users");
+app.use("/users", usersRouter);
 
 app.listen(port, (err) => {
     if(err) {
         console.log("Server failed: " + err);
-    } else {
+    } else {``
         console.log(`http://localhost:${port}`);
     }
 });

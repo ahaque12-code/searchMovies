@@ -1,5 +1,4 @@
 body{
-  background: #7a65ba;
   background: radial-gradient(circle,rgba(122, 101, 186, 1) 0%, rgba(166, 25, 48, 1) 92%, rgba(252, 70, 107, 1) 100%);
   font-family: Inter, sans-serif;
 }
