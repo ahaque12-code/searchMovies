@@ -57,7 +57,9 @@ body{
 }
 
 #movieForm #movieName{
-  width: 150px;
+  width: 220px;
+  font-size: medium;
+  color:white;
 }
 
 #movieForm #movieRating{
