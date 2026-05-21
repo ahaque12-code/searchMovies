@@ -27,7 +27,9 @@ app.get('/', (req,res) => {
             </head>
             <body>
                 <nav class = "navbar">
+                    <a href = "/" id = "titleLink">
                     <span class="nav-title">SearchMovie</span>
+                    </a>
                     <div class="nav-links">
                      <a href="/favorites" class="nav-item">Favorite List</a>
                     </div>
@@ -55,7 +57,11 @@ app.get('/', (req,res) => {
                         </div>
                         <input type="hidden" name="genres" id="selectedGenres">
                     </div>
-                     <input type = "text" name = "year" id = "yearRelease" placeholder = "Year"><br><br>
+                     <input type = "text" name = "year" id = "yearRelease" placeholder = "Year">
+                     <div id="typeSelector">
+                        <label><input type="radio" name="type" value="movie" checked> Movie</label>
+                        <label><input type="radio" name="type" value="tvSeries"> TV Show</label>
+                    </div><br><br>
                      <input type = "submit" id = "submit" value = "Search">
                     </form>
                 </div>
@@ -177,8 +183,9 @@ app.get("/discover", async(req, res) => {
     const ratingSearch = req.query.rating?.trim();
     const yearSearch = req.query.year?.trim();
     const genreSearch = req.query.genres ? req.query.genres.split(",").map(g => g.trim()) : [];
+    const typeSearch = req.query.type || "movie";
 
-    let apiUrl = `https://${api_host}/api/imdb/search?type=movie&rows=${rows}&sortOrder=ASC&sortField=id`;
+    let apiUrl = `https://${api_host}/api/imdb/search?type=${typeSearch}&rows=${rows}&sortOrder=ASC&sortField=id`;
     if (genreSearch.length > 0) {
         apiUrl += `&genre=${encodeURIComponent(genreSearch[0])}`;
     }
@@ -260,6 +267,13 @@ app.get("/discover", async(req, res) => {
             const genres = JSON.stringify(genreText);
             const movieRating = JSON.stringify(rating);
             const image = JSON.stringify(movie.primaryImage || "");
+            let type = movie.type || "N/A";
+
+            if(type === "movie"){
+                type = "Movie";
+            } else if(type === "tvSeries"){
+                type = "Tv-Series"
+            }
 
             html += `
             <div class="movie-card"
@@ -269,6 +283,7 @@ app.get("/discover", async(req, res) => {
                 <p>Year: ${movie.startYear || "N/A"}</p>
                 <p>Genre: ${genreText}</p>
                 <p>Rating: ${rating}</p>
+                <p>Type: ${type}</p>
             </div>
             `;
         });
@@ -276,7 +291,7 @@ app.get("/discover", async(req, res) => {
         html += `
         </div>
         <div style="text-align:center; margin: 30px;">
-            <a href="/discover?genres=${encodeURIComponent(req.query.genres || "")}&rating=${encodeURIComponent(ratingSearch || "")}&year=${encodeURIComponent(yearSearch || "")}&rows=${rows + 25}">
+            <a href="/discover?type=${typeSearch}&genres=${encodeURIComponent(req.query.genres || "")}&rating=${encodeURIComponent(ratingSearch || "")}&year=${encodeURIComponent(yearSearch || "")}&rows=${rows + 25}">
                 <button id="showMore">Show More Results</button>
             </a>
         </div>

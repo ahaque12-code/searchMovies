@@ -12,6 +12,10 @@ body{
   margin-bottom: 40px;
 }
 
+#titleLink{
+  text-decoration: none;
+}
+
 .nav-title {
   font-size: 24px;
   font-weight: 700;
@@ -96,9 +100,19 @@ body{
   filter: brightness(0.5);
 }
 
+#typeSelector{
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  background-color:rgb(39 144 223 / 94%);
+  border-radius: 10px;;
+  padding: 10px;
+}
+
 #movieForm #yearRelease{
   width: 55px;
 }
+
 
 * {
   box-sizing: border-box;
