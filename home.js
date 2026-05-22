@@ -19,6 +19,7 @@ app.get('/', (req,res) => {
         <html>
             <head>
                 <meta charset = "utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <link rel = "stylesheet" href= "style.css">
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
                 <link rel="icon" type="image/x-icon" href="images/icon.png">
@@ -108,6 +109,8 @@ app.get("/results", async (req,res) => {
         <!DOCTYPE> 
         <html>
             <head>
+                <meta charset = "utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <link rel="stylesheet" href="/style.css">
                 <link rel="icon" type="image/x-icon" href="images/icon.png">
                 <title>Results</title>
@@ -231,6 +234,8 @@ app.get("/discover", async(req, res) => {
         let html = `
         <html>
         <head>
+             <meta charset = "utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <link rel="stylesheet" href="/style.css">
             <link rel="icon" type="image/x-icon" href="images/icon.png">
             <title>Discover Movies</title>
