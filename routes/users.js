@@ -16,7 +16,7 @@ router.get("/login", (req,res) => {
             <body class="loginBody">
                 <nav class = "navbar">
                     <img src="/images/icon-removebg.png" alt="Log" class="logoImg2">  
-                    <a href = "/login" id = "titleLink">
+                    <a href = "/users/login" id = "titleLink">
                     <span class="nav-title">SearchMovie</span>
                     </a>
                 </nav>
