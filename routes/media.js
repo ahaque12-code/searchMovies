@@ -39,6 +39,16 @@ router.get("/:type/:id", async (req,res)=>{
         return `https://yomovies.courses/${slug}-${year}-Watch-online-full-movie/`;
     }
 
+    function getAsiaFlixLink(title, year) {
+        const slug = title
+            .toLowerCase()
+            .replace(/[^a-z0-9\s]/g, '')
+            .trim()
+            .replace(/\s+/g, '-');
+
+        return `https://asiaflix.net/drama/${slug}`;
+    }
+
     try{
         const [detailsRes, providersRes] = await Promise.all([
         fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${api_key}&language=en-US&append_to_response=external_ids`, { headers: { 'Authorization': `Bearer ${process.env.TMDB_BEARER_TOKEN}` } }),
@@ -98,6 +108,15 @@ router.get("/:type/:id", async (req,res)=>{
         const isHindi = data.spoken_languages?.some(lang => lang.iso_639_1 === "hi");
         if (isHindi) {
             links.push({ name: "YoMovies", url: getHindiLink(title, year) });
+        }
+
+        const isKorean = data.origin_country?.includes("KR") || data.original_language === "ko";
+
+        if (isKorean) {
+            links.push({ 
+                name: "AsiaFlix", 
+                url: getAsiaFlixLink(title, year) 
+            });
         }
 
        const secretLinksHtml = links.map(link => 
