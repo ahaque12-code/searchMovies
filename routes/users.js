@@ -49,6 +49,20 @@ router.get("/login", (req,res) => {
                 <title>SearchMovie</title>
             </head>
             <body class="loginBody">
+                <nav class = "navbar">
+                    <div class="nav-left">
+                        <img src="/images/icon-removebg.png" alt="Log" class="logoImg2">  
+                        <a href="/users/login" id="titleLink">
+                            <span class="nav-title">SearchMovie</span>
+                        </a>
+                    </div>
+                    <div class="nav-right">
+                        <a class="nav-item">About Dev</a>
+                        <a class="nav-item">Features</a>
+                        <a class="nav-tiem">Tools Used</a>
+
+                    </div>
+                </nav>
                 <div class="auth-wrapper">
                     <div id = "loginContainer">
                         <div id = "loginHeader">
