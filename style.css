@@ -55,6 +55,47 @@ body{
   color: rgb(223, 70, 39);
 }
 
+@media (max-width: 600px) {
+  .navbar {
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px;
+    text-align: center;
+  }
+
+  .navbar .nav-links {
+    display: flex;
+    flex-direction: column; 
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .navbar .nav-greeting {
+    margin-right: 0;
+    margin-bottom: 5px;
+    font-size: 0.95rem;
+    opacity: 0.9;
+  }
+
+  .navbar .nav-item, 
+  .navbar #logout-link-btn {
+    width: 100%;
+    max-width: 200px; 
+    text-align: center;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .navbar .nav-links form {
+    display: block !important;
+    width: 100%;
+    text-align: center;
+  }
+}
+
 #msg{
   text-align: center;
 }
@@ -281,13 +322,11 @@ button{
   top: 10px;
   right: 10px;
   background-color: rgba(0, 0, 0, 0.85);
-  color: white;
   padding: 4px 8px;
   font-size: 0.75rem;
   font-weight: bold;
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.4);
-  z-index: 2;
   letter-spacing: 0.5px;
 }
 
