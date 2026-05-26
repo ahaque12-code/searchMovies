@@ -57,11 +57,22 @@ const mediaRouter = require("./routes/media");
 app.use("/media", mediaRouter);
 
 const globalGenreMap = {
+    // Movies
     28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy",
     80: "Crime", 99: "Documentary", 18: "Drama", 10751: "Family",
     14: "Fantasy", 36: "History", 27: "Horror", 10402: "Music",
     96: "Mystery", 10749: "Romance", 878: "Sci-Fi", 53: "Thriller",
-    10752: "War", 37: "Western", 10759: "Action & Adventure", 10765: "Sci-Fi & Fantasy"
+    10752: "War", 37: "Western",
+    
+    // TV Specific
+    10759: "Action & Adventure", 
+    10765: "Sci-Fi & Fantasy",
+    10762: "Kids",
+    10763: "News",
+    10764: "Reality",
+    10766: "Soap",
+    10767: "Talk",
+    10768: "War & Politics"
 };
 
 app.get('/', (req,res) => {
@@ -259,31 +270,48 @@ app.get("/results", async (req,res) => {
 });
 
 app.get("/discover", async(req, res) => {
-    const api_key = process.env.TMDB_API_KEY;
-    const ratingSearch = req.query.rating || "";
-    const yearSearch = req.query.year || "";
+const api_key = process.env.TMDB_API_KEY;
+    const ratingSearch = req.query.rating ? req.query.rating.trim() : "";
+    const yearSearch = req.query.year ? req.query.year.trim() : "";
     const typeSearch = req.query.type || "movie";
-    const normalizedType = (typeSearch === "tv") ? "tv" : "movie";
+    const normalizedType = (typeSearch === "tvSeries" || typeSearch === "tv") ? "tv" : "movie";
     const page = Number(req.query.page) || 1;
+    const genreSearch = req.query.genres ? req.query.genres.split(",").map(g => g.trim()) : [];
 
+    const textToGenreId = normalizedType === "tv" ? {
+        "Action": 10759, "Adventure": 10759, "Animation": 16, "Comedy": 35,
+        "Crime": 80, "Documentary": 99, "Drama": 18, "Family": 10751,
+        "Fantasy": 10765, "Horror": 27, "Music": 10402, "Mystery": 96,
+        "Romance": 10749, "Sci-Fi": 10765, "Thriller": 53, "War": 10768, "Western": 37
+    } : {
+        "Action": 28, "Adventure": 12, "Animation": 16, "Comedy": 35,
+        "Crime": 80, "Documentary": 99, "Drama": 18, "Family": 10751,
+        "Fantasy": 14, "History": 36, "Horror": 27, "Music": 10402,
+        "Mystery": 96, "Romance": 10749, "Sci-Fi": 878, "Thriller": 53,
+        "War": 10752, "Western": 37
+    };
 
-    try{
-        let apiUrl = `https://api.themoviedb.org/3/discover/${normalizedType}?page=${page}&sort_by=popularity.desc`;
+    try {
+        let apiUrl = `https://api.themoviedb.org/3/discover/${normalizedType}?api_key=${api_key}&page=${page}&include_adult=false&sort_by=popularity.desc&language=en-US`;
+
         if (ratingSearch) apiUrl += `&vote_average.gte=${parseFloat(ratingSearch)}`;
-        if (yearSearch) apiUrl += normalizedType === "movie" ? `&primary_release_year=${yearSearch}` : `&first_air_date_year=${yearSearch}`;
+        if (yearSearch) apiUrl += normalizedType === "movie" ? `&primary_release_date.gte=${yearSearch}-01-01&primary_release_date.lte=${yearSearch}-12-31` : `&first_air_date_year=${yearSearch}`;
+        if (genreSearch.length > 0 && genreSearch[0] !== "") {
+            const structuralIds = genreSearch.map(name => textToGenreId[name]).filter(Boolean);
+            if (structuralIds.length > 0) apiUrl += `&with_genres=${structuralIds.join(",")}`;
+        }
 
-        const apiRes = await fetch(apiUrl, {
-            method: 'GET',
-            headers: { 'Authorization': `Bearer ${process.env.TMDB_BEARER_TOKEN}` }
-        });
+        const [apiRes, favorites] = await Promise.all([
+            fetch(apiUrl, { method: 'GET', headers: { accept: 'application/json', Authorization: `Bearer ${process.env.TMDB_BEARER_TOKEN}` } }),
+            fetchFavoritesFromDB(req.session.userId)
+        ]);
 
         const apiData = await apiRes.json();
         const movies = apiData.results || [];
-        const favorites = await fetchFavoritesFromDB(req.session.userId);
-        const favoriteIds = favorites.map(f => String(f.imdbId).trim());
         const totalPages = Math.min(apiData.total_pages || 1, 500);
+        const favoriteIds = favorites.map(f => String(f.imdbId).trim());
 
-       let html = `
+        let html = `
         <!DOCTYPE html>
         <html>
             <head>
@@ -291,91 +319,72 @@ app.get("/discover", async(req, res) => {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <link rel="stylesheet" href="/style.css">
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-                <link rel="icon" type="image/x-icon" href="images/icon.png">
                 <title>Discover Results</title>
             </head>
             <body>
                 <nav class="navbar2">
                     <span class="nav-title2">Discovery Results</span>
                     <div class="nav-links2">
-                        <a id="elemNav" href="/" class="nav-item">Home</a>
+                        <a href="/" class="nav-item">Home</a>
                         <a href="/favorites" class="nav-item">Favorites</a>
                     </div>
                 </nav>
                 <div class="movie-grid">`;
 
         for (const movie of movies) {
-            const movieTitle = movie.name || movie.title || "Unknown";
-            const releaseYear = (movie.first_air_date || movie.release_date || "").substring(0, 4) || "N/A";
+            const movieTitle = movie.title || movie.name || "Unknown";
+            const releaseYear = (movie.release_date || movie.first_air_date || "").substring(0, 4) || "N/A";
             const posterPath = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'images/icon.png';
-            
             const rating = (movie.vote_average && !isNaN(movie.vote_average)) ? Number(movie.vote_average).toFixed(1) : "N/A";
-            const type = normalizedType === "tv" ? "TV" : "Movie";
-            
-            let genreText = "Unknown";
-            if (movie.genre_ids && movie.genre_ids.length > 0) {
-                const names = movie.genre_ids.map(id => globalGenreMap[id]).filter(Boolean);
-                if (names.length > 0) genreText = names.join(", ");
-            }
-
-            let ageCertificate = "PG";
-            if (movie.adult) ageCertificate = "R / 18+";
-            else if (movie.genre_ids && movie.genre_ids.includes(27)) ageCertificate = "PG-13";
-            else if (movie.genre_ids && (movie.genre_ids.includes(16) || movie.genre_ids.includes(10751))) ageCertificate = "G";
+            const genreText = movie.genre_ids ? movie.genre_ids.map(id => globalGenreMap[id]).filter(Boolean).join(", ") : "Unknown";
+            let ageCertificate = movie.adult ? "R / 18+" : (movie.genre_ids && movie.genre_ids.includes(27)) ? "PG-13" : "PG";
 
             const escapedTitle = movieTitle.replace(/'/g, "\\'");
             const escapedGenres = genreText.replace(/'/g, "\\'");
             const isFav = favoriteIds.includes(movie.id.toString()) ? 'active' : '';
 
+            const certClass = ageCertificate.replace(/[^a-zA-Z0-9]/g, '-');
+
             html += `
             <div class="movie-card" onclick="window.location.href='/media/${normalizedType}/${movie.id}'">
                 <div class="poster-container"> 
-                    <span class="cert-badge ${ageCertificate.replace(/[^a-zA-Z0-9]/g, '-')}">${ageCertificate}</span>
-                    <img src="${posterPath}" alt="movie poster">
+                    <span class="cert-badge ${certClass}">${ageCertificate}</span>
+                    <img src="${posterPath}" alt="poster">
                     <button class="heart-btn ${isFav}" onclick="event.stopPropagation(); addFavorite(this, '${escapedTitle}', '${releaseYear}', '${movie.id}', '${escapedGenres}', '${rating}', '${posterPath}', '${ageCertificate}')">
                         <span class="heart-icon"></span>
                     </button>
                 </div>
                 <h3>${movieTitle}</h3>
-                <p>Year: ${releaseYear || "N/A"}</p>
+                <p>Year: ${releaseYear}</p>
                 <p><strong>Genre:</strong> ${genreText}</p>
                 <p><strong>Rating:</strong> ${rating}</p>
-                <p><strong>Type:</strong> ${type}</p>
-            </div>
-            `;
+            </div>`;
         }
-        html += `</div>
-                <div id="cntrl-btn">
-                    ${page > 1 ? `<a href="/discover?${new URLSearchParams({...req.query, page: page - 1}).toString()}" id="showLess">Previous</a>` : ''}
-                    <span id="txtPage">Page ${page} of ${totalPages}</span>
-                    ${page < totalPages ? `<a href="/discover?${new URLSearchParams({...req.query, page: page + 1}).toString()}" id="showMore">Next</a>` : ''}
-                </div>
-                <script>
-                        async function addFavorite(btn, title, year, imdbId, genres, rating, image, certification) {
-                            const isActive = btn.classList.toggle('active');
-                            
-                            // Send ALL data that your schema expects
-                            await fetch("/favorites/add", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ 
-                                    title, year, imdbId, genres, rating, image, certification 
-                                })
-                            });
 
-                            if (isActive) {
-                                console.log(title + " toggled (added/removed) in favorites!");
-                            }
-                        }
-                    </script>
-                </body>
-                </html>`;
-        return res.send(html);
-    } catch(err){
-        return res.status(500).send("Error.");
+        html += `</div>
+        <div id="cntrl-btn">
+            ${page > 1 ? `<button id="showLess" onclick="window.location.href='/discover?type=${typeSearch}&genres=${encodeURIComponent(req.query.genres || "")}&rating=${encodeURIComponent(ratingSearch)}&year=${encodeURIComponent(yearSearch)}&page=${page - 1}'">Prev Page</button>` : ''}
+            <span id="txtPage">Page ${page} of ${totalPages}</span>
+            ${page < totalPages ? `<button id="showMore" onclick="window.location.href='/discover?type=${typeSearch}&genres=${encodeURIComponent(req.query.genres || "")}&rating=${encodeURIComponent(ratingSearch)}&year=${encodeURIComponent(yearSearch)}&page=${page + 1}'">Next Page</button>` : ''}
+        </div>
+        <script>
+            async function addFavorite(btn, title, year, imdbId, genres, rating, image, certification) {
+                const isActive = btn.classList.toggle('active');
+                await fetch("/favorites/add", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ title, year, imdbId, genres, rating, image, certification })
+                });
+            }
+        </script>
+        </body></html>`;
+
+        res.send(html);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error reading data.");
     }
 });
-
 
 app.listen(port, (err) => {
     if(err) {
