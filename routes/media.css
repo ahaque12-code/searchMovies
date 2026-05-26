@@ -262,6 +262,22 @@ body{
     margin-top: 10px;
 }
 
+.secret-link-list li:nth-child(1) a:hover {
+    background-color: green
+}
+
+.secret-link-list li:nth-child(2) a:hover {
+    background-color: purple;
+}
+
+.secret-link-list li:nth-child(3) a:hover {
+    background-color: purple; 
+}
+
+.secret-link-list li:nth-child(4) a:hover {
+    background-color: #ffa502; 
+}
+
 
 @media (max-width: 850px) {
     .details-container {

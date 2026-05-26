@@ -183,7 +183,12 @@ app.get("/results", async (req,res) => {
             const releaseYear = dateString ? dateString.substring(0, 4) : "N/A";
             const rating = (movie.vote_average && !isNaN(movie.vote_average)) ? Number(movie.vote_average).toFixed(1) : "N/A";
             const posterPath = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'images/icon.png';
-            
+            let type = movie.media_type;
+            if(type === "movie"){
+                type = "Movie";
+            } else if (type === "tv"){
+                type = "TV"
+            }
             let genreText = "Unknown";
             if (movie.genre_ids && movie.genre_ids.length > 0) {
                 const names = movie.genre_ids.map(id => globalGenreMap[id]).filter(Boolean);
@@ -212,6 +217,7 @@ app.get("/results", async (req,res) => {
                 <p>Year: ${releaseYear || "N/A"}</p>
                 <p><strong>Genre:</strong> ${genreText}</p>
                 <p><strong>Rating:</strong> ${rating}</p>
+                <p><strong>Type:</strong> ${type}</p>
             </div>
             `;
         }

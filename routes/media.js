@@ -9,15 +9,40 @@ const detailGenreMap = {
     10752: "War", 37: "Western", 10759: "Action & Adventure", 10765: "Sci-Fi & Fantasy"
 };
 
+
 router.get("/:type/:id", async (req,res)=>{
     const { type, id } = req.params;
     const api_key = process.env.TMDB_API_KEY;
     
+    function getXPrimeUrl(imdbId) {
+        if (!imdbId) return null;
+        
+        const cleanId = imdbId.startsWith('tt') ? imdbId : `tt${imdbId}`;
+        
+        const patternWithT = `https://xprime.su/title/t${imdbId.replace('tt', '')}`;
+        
+        const patternStandard = `https://xprime.su/title/${id}`;
+
+        return [
+            { name: "X Prime (Type A)", url: patternWithT },
+            { name: "X Prime (Type B)", url: patternStandard }
+        ];
+    }
+
+    function getHindiLink(title, year) {
+        const slug = title
+            .toLowerCase()
+            .replace(/[^a-z0-9\s]/g, '')
+            .trim()
+            .replace(/\s+/g, '-');
+        
+        return `https://yomovies.courses/${slug}-${year}-Watch-online-full-movie/`;
+    }
 
     try{
         const [detailsRes, providersRes] = await Promise.all([
-        fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${api_key}&language=en-US`, { headers: { 'Authorization': `Bearer ${process.env.TMDB_BEARER_TOKEN}` } }),
-        fetch(`https://api.themoviedb.org/3/${type}/${id}/watch/providers?api_key=${api_key}`, { headers: { 'Authorization': `Bearer ${process.env.TMDB_BEARER_TOKEN}` } })
+        fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${api_key}&language=en-US&append_to_response=external_ids`, { headers: { 'Authorization': `Bearer ${process.env.TMDB_BEARER_TOKEN}` } }),
+        fetch(`https://api.themoviedb.org/3/${type}/${id}/watch/providers?api_key=${api_key}&append_to_response=external_ids`, { headers: { 'Authorization': `Bearer ${process.env.TMDB_BEARER_TOKEN}` } })
         ]);
 
         const data = await detailsRes.json();
@@ -25,10 +50,11 @@ router.get("/:type/:id", async (req,res)=>{
 
         const title = data.title || data.name || "Unknown";
         const dateString = data.release_date || data.first_air_date || "";
-        const year = dateString ? dateString.substring(0, 4) : "N/A";
+        const year = (data.release_date || data.first_air_date || "").substring(0, 4) || "0000";        
         const rating = data.vote_average ? Number(data.vote_average).toFixed(1) : "N/A";
         const overview = data.overview || "No overview available.";
         const tagline = data.tagline ? `"${data.tagline}"` : "";
+        const lang = data.original_language;
 
         const posterPath = data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : '/images/icon.png';
         const backdropPath = data.backdrop_path ? `https://image.tmdb.org/t/p/original${data.backdrop_path}` : '';
@@ -61,6 +87,22 @@ router.get("/:type/:id", async (req,res)=>{
 
         const searchSlug = title.toLowerCase().replace(/\s+/g, '-').replace(/(^-|-$)/g, '');
         const mediaType = type === 'tv' ? 'tvshows' : 'movies';
+
+        const imdbId = data.external_ids?.imdb_id;
+        const xPrimeLinks = getXPrimeUrl(imdbId);
+        const links = [
+            { name: "123 Chill", url: `https://123chill.in/${mediaType}/${searchSlug}/` },
+            ...xPrimeLinks
+        ];
+
+        const isHindi = data.spoken_languages?.some(lang => lang.iso_639_1 === "hi");
+        if (isHindi) {
+            links.push({ name: "YoMovies", url: getHindiLink(title, year) });
+        }
+
+       const secretLinksHtml = links.map(link => 
+            `<li><a href="${link.url}" target="_blank" rel="noopener noreferrer" class="secret-link">${link.name}</a></li>`
+        ).join('');
 
         res.send(`
             <!DOCTYPE hmtl>
@@ -144,8 +186,7 @@ router.get("/:type/:id", async (req,res)=>{
                                     <h3 class="overview-heading2">🤫 Revealed! You found the secret.</h3>
                                     <p>Here's some secret links</p>
                                     <ul class="secret-link-list">
-                                        <li><a href="https://123chill.in/${mediaType}/${searchSlug}/" class="secret-link">123 Chill Net</a></li>
-                                        <li><a href="https://123chill.in/${mediaType}/${searchSlug}/" class="secret-link">Another Link</a></li>
+                                        ${secretLinksHtml}</li>
                                     </ul>
                                 </div>                            
                             </div>
