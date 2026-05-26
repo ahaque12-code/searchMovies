@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const { fetchFavoritesFromDB } = require("../db.js");
 
 const detailGenreMap = {
     28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy",
@@ -9,7 +10,7 @@ const detailGenreMap = {
     10752: "War", 37: "Western", 10759: "Action & Adventure", 10765: "Sci-Fi & Fantasy"
 };
 
-
+                    
 router.get("/:type/:id", async (req,res)=>{
     const { type, id } = req.params;
     const api_key = process.env.TMDB_API_KEY;
@@ -63,7 +64,11 @@ router.get("/:type/:id", async (req,res)=>{
         const data = await detailsRes.json();
         const providerData = await providersRes.json();
 
+        const favorites = await fetchFavoritesFromDB(req.session.userId);
+        const isFav = favorites.some(f => String(f.imdbId).trim() === String(id).trim()) ? 'active' : '';
+
         const title = data.title || data.name || "Unknown";
+        const escapedTitle = title.replace(/'/g, "\\'");
         const dateString = data.release_date || data.first_air_date || "";
         const year = (data.release_date || data.first_air_date || "").substring(0, 4) || "0000";        
         const rating = data.vote_average ? Number(data.vote_average).toFixed(1) : "N/A";
@@ -133,6 +138,23 @@ router.get("/:type/:id", async (req,res)=>{
             `<li><a href="${link.url}" target="_blank" rel="noopener noreferrer" class="secret-link">${link.name}</a></li>`
         ).join('');
 
+        let ageCertificate = "PG-13"; // Default
+        const rRatedGenres = [27, 80, 53]; 
+        const familyGenres = [16, 10751];
+
+        const isMatureGenre = data.genres && data.genres.some(g => rRatedGenres.includes(g.id));
+        const isFamilyGenre = data.genres && data.genres.some(g => familyGenres.includes(g.id));
+
+        if (isMatureGenre) {
+            ageCertificate = "R";
+        } else if (isFamilyGenre) {
+            ageCertificate = "PG";
+        } else if (data.genres && data.genres.some(g => g.name === "Romance")) {
+            ageCertificate = "PG-13";
+        }
+
+        const certClass = ageCertificate.replace(/[^a-zA-Z0-9]/g, '-');
+
         res.send(`
             <!DOCTYPE hmtl>
             <html>
@@ -181,9 +203,15 @@ router.get("/:type/:id", async (req,res)=>{
                             </div>
                             
                             <div class="details-right">
-                                <h1 class="details-title">${title} <span class="details-year">(${year})</span></h1>
+                               <div style="display: flex; align-items: center; gap: 15px;">
+                                    <h1 class="details-title">${title} <span class="details-year">(${year})</span></h1>
+                                    <button class="heart-btn ${isFav}" onclick="addFavorite(this, '${escapedTitle}', '${year}', '${id}', '${genresText.replace(/'/g, "\\'")}', '${rating}', '${posterPath}', 'PG')">
+                                        <span class="heart-icon"></span>
+                                    </button>
+                                </div>
                                 
                                 <div class="details-meta">
+                                    <span class="cert-badge ${certClass}">${ageCertificate}</span>
                                     <span class="meta-badge">${type === 'movie' ? 'Movie' : 'TV Show'}</span>
                                     <span>• ${dateString || "N/A"}</span>
                                     <span>• ${genresText}</span>
@@ -223,16 +251,25 @@ router.get("/:type/:id", async (req,res)=>{
                     </div>
                 </body>
                 <script>
-                    const toggle = document.getElementById('secretToggle');
-                    const secretDiv = document.getElementById('secretDiv');
+                   const toggle = document.getElementById('secretToggle');
+                   const secretDiv = document.getElementById('secretDiv');
 
                     toggle.addEventListener('change', function() {
-                        if (this.checked) {
-                            secretDiv.style.display = 'block';
-                        } else {
-                            secretDiv.style.display = 'none';
-                        }
+                        secretDiv.style.display = this.checked ? 'block' : 'none';
                     });
+
+                    async function addFavorite(btn, title, year, imdbId, genres, rating, image, certification) {
+                        const isActive = btn.classList.toggle('active');
+                        
+                        await fetch("/favorites/add", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ title, year, imdbId, genres, rating, image, certification })
+                        });
+                        
+                        console.log("Favorite status updated: " + isActive);
+                    }
+
                 </script>
             </html>`);
 

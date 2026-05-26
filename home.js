@@ -208,12 +208,21 @@ app.get("/results", async (req,res) => {
                     const names = movie.genre_ids.map(id => globalGenreMap[id]).filter(Boolean);
                     if (names.length > 0) genreText = names.join(", ");
                 }
+                let ageCertificate = "PG-13"; // Default
 
-                let ageCertificate = "PG";
-                if (movie.adult) ageCertificate = "R / 18+";
-                else if (movie.genre_ids && movie.genre_ids.includes(27)) ageCertificate = "PG-13";
-                else if (movie.genre_ids && (movie.genre_ids.includes(16) || movie.genre_ids.includes(10751))) ageCertificate = "G";
+                const rRatedGenres = [27, 80, 53]; // Horror, Crime, Thriller
+                const isMatureGenre = movie.genre_ids && movie.genre_ids.some(id => rRatedGenres.includes(id));
 
+                const familyGenres = [16, 10751]; // Animation, Family
+                const isFamilyGenre = movie.genre_ids && movie.genre_ids.some(id => familyGenres.includes(id));
+
+                if (isMatureGenre) {
+                    ageCertificate = "R";
+                } else if (isFamilyGenre) {
+                    ageCertificate = "PG"; // Animation/Family movies are usually G or PG
+                } else if (movie.genre_ids && movie.genre_ids.includes(10749)) { // Romance
+                    ageCertificate = "PG-13";
+                }
                 const certClass = ageCertificate.replace(/[^a-zA-Z0-9]/g, '-');
                 const escapedTitle = movieTitle.replace(/'/g, "\\'");
                 const escapedGenres = genreText.replace(/'/g, "\\'");
@@ -353,8 +362,21 @@ const api_key = process.env.TMDB_API_KEY;
                     const posterPath = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'images/icon.png';
                     const rating = (movie.vote_average && !isNaN(movie.vote_average)) ? Number(movie.vote_average).toFixed(1) : "N/A";
                     const genreText = movie.genre_ids ? movie.genre_ids.map(id => globalGenreMap[id]).filter(Boolean).join(", ") : "Unknown";
-                    let ageCertificate = movie.adult ? "R / 18+" : (movie.genre_ids && movie.genre_ids.includes(27)) ? "PG-13" : "PG";
+                    let ageCertificate = "PG-13"; // Default
 
+                    const rRatedGenres = [27, 80, 53]; // Horror, Crime, Thriller
+                    const isMatureGenre = movie.genre_ids && movie.genre_ids.some(id => rRatedGenres.includes(id));
+
+                    const familyGenres = [16, 10751]; // Animation, Family
+                    const isFamilyGenre = movie.genre_ids && movie.genre_ids.some(id => familyGenres.includes(id));
+
+                    if (isMatureGenre) {
+                        ageCertificate = "R";
+                    } else if (isFamilyGenre) {
+                        ageCertificate = "PG"; // Animation/Family movies are usually G or PG
+                    } else if (movie.genre_ids && movie.genre_ids.includes(10749)) { // Romance
+                        ageCertificate = "PG-13";
+                    }
                     const escapedTitle = movieTitle.replace(/'/g, "\\'");
                     const escapedGenres = genreText.replace(/'/g, "\\'");
                     const isFav = favoriteIds.includes(movie.id.toString()) ? 'active' : '';
