@@ -1,7 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const router = express.Router();
-const Favorite = require("../models/favorite"); 
+const Favorite = require("../models/Favorite"); 
 
 
 router.get("/", async (req, res) => {

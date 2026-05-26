@@ -11,7 +11,7 @@ mongoose.connect(process.env.MONGO_CONNECTION_STRING,{dbName: "CMSC335DB"}).then
     console.log("MongoDB error: ", err);
 });
 
-const Favorite = require("./models/favorite"); 
+const Favorite = require("./models/Favorite"); 
 
 async function fetchFavoritesFromDB(userId) {
     try {
