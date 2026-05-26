@@ -110,7 +110,8 @@ router.get("/:type/:id", async (req,res)=>{
             links.push({ name: "YoMovies", url: getHindiLink(title, year) });
         }
 
-        const isKorean = (data.origin_country?.includes("KR") || data.original_language === "ko") || (data.origin_country?.includes("CN") || data.original_language === "zh-Hant") ||  (data.origin_country?.includes("CN") || data.original_language === "zh") ;
+        const isKorean = ((data.origin_country?.includes("KR") || data.original_language === "ko") || (data.origin_country?.includes("CN") || data.original_language === "zh-Hant") ||  
+        (data.origin_country?.includes("CN") || data.original_language === "zh"));
 
         if (isKorean) {
             links.push({ 
