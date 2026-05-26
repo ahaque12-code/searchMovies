@@ -17,7 +17,7 @@ router.get("/login", (req,res) => {
             <body>
                 <nav class="navbar2">
                     <span class="nav-title2">Account Control</span>
-                    <div class="nav-links2">
+                    <div class="nav-item2">
                         <a id="elemNav" href="/">Home</a>
                         <a href="/favorites">Favorites</a>
                     </div>

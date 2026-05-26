@@ -34,8 +34,8 @@ app.use(session({
 
 const usersRouter = require("./routes/users");
 app.use("/users", usersRouter);
-app.use(redirectLogin);
 app.use(express.static(__dirname));
+app.use(redirectLogin);
 
 const globalGenreMap = {
     28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy",
