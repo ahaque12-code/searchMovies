@@ -44,15 +44,17 @@ app.use(session({
 }));
 
 const usersRouter = require("./routes/users");
-app.use("/users", usersRouter);
+app.use("/users", usersRouter); // Must be above redirectLogin!
 
 app.use(express.static(__dirname));
 
+app.use(redirectLogin);
+
 const favoritesRouter = require("./routes/favorites");
-app.use("/favorites", redirectLogin, favoritesRouter);
+app.use("/favorites", favoritesRouter);
 
 const mediaRouter = require("./routes/media");
-app.use("/media", redirectLogin, mediaRouter);
+app.use("/media", mediaRouter);
 
 const globalGenreMap = {
     28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy",
