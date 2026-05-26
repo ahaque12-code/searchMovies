@@ -252,13 +252,17 @@ app.get("/discover", async(req, res) => {
     const page = Number(req.query.page) || 1;
 
     const genreSearch = req.query.genres ? req.query.genres.split(",").map(g => g.trim()) : [];
-    const textToGenreId = {
-        "Action": 28, "Adventure": 12, "Animation": 16, "Comedy": 35,
-        "Crime": 80, "Documentary": 99, "Drama": 18, "Family": 10751,
-        "Fantasy": 14, "History": 36, "Horror": 27, "Music": 10402,
-        "Mystery": 96, "Romance": 10749, "Sci-Fi": 878, "Thriller": 53,
-        "War": 10752, "Western": 37
-    };
+    const textToGenreId = normalizedType === "tv" ? {
+    "Action": 10759, "Adventure": 10759, "Animation": 16, "Comedy": 35,
+    "Crime": 80, "Documentary": 99, "Drama": 18, "Family": 10751,
+    "Fantasy": 10765, "History": 36, "Horror": 27, "Music": 10402,
+    "Mystery": 96, "Romance": 10749, "Sci-Fi": 10765, "Thriller": 53,
+    "War": 10768, "Western": 37 } : {
+    "Action": 28, "Adventure": 12, "Animation": 16, "Comedy": 35,
+    "Crime": 80, "Documentary": 99, "Drama": 18, "Family": 10751,
+    "Fantasy": 14, "History": 36, "Horror": 27, "Music": 10402,
+    "Mystery": 96, "Romance": 10749, "Sci-Fi": 878, "Thriller": 53,
+    "War": 10752, "Western": 37 };
 
     try{
         let apiUrl = `https://api.themoviedb.org/3/discover/${normalizedType}?api_key=${api_key}&page=${page}&include_adult=false&sort_by=popularity.desc&language=en-US`;
