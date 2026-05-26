@@ -1,12 +1,15 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const router = express.Router();
-const Favorite = require("../models/Favorite");
+const Favorite = require("../models/favorite"); 
+
 
 router.get("/", async (req, res) => {
   if (!req.session.userId) return res.redirect("/users/login");
 
   const favorites = await Favorite.find({ user: req.session.userId });
-
+  console.log("Fetching favorites for user:", req.session.userId);
+  console.log("Favorites found:", favorites.length); 
   let html = `
     <!DOCTYPE html>
     <html>
@@ -72,23 +75,32 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/add", async (req, res) => {
-  if (!req.session.userId) {
-    return res.send("Please login to add favorites.");
-  }
-  
-  const { title, year, imdbId, genres, rating, image, certification} = req.body;
-
-  await Favorite.create({
-    user: req.session.userId, 
-    title, year, imdbId, genres, rating, image, certification
-  });
-
-  res.sendStatus(200);
+  if (!req.session.userId) return res.sendStatus(401);
+    
+    const { title, year, imdbId, genres, rating, image, certification } = req.body;
+    
+    const existing = await Favorite.findOne({ user: req.session.userId, imdbId: imdbId });
+    
+    if (existing) {
+        await Favorite.findByIdAndDelete(existing._id);
+        res.sendStatus(200);
+    } else {
+        await Favorite.create({
+            user: req.session.userId,
+            title, year, imdbId, genres, rating, image, certification
+        });
+        res.sendStatus(200);
+    }
 });
 
 router.post("/delete/:id", async (req, res) => {
   try {
-    await Favorite.findByIdAndDelete(req.params.id);
+    const deleted = await Favorite.findOneAndDelete({ 
+        _id: req.params.id, 
+        user: req.session.userId 
+    });
+    
+    if (!deleted) return res.send("Favorite not found or access denied.");
     res.redirect("/favorites");
   } catch (err) {
     console.log(err);
@@ -97,7 +109,10 @@ router.post("/delete/:id", async (req, res) => {
 });
 
 router.post("/deleteAll", async (req, res) => {
-    await Favorite.deleteMany({});
+    if (!req.session.userId) return res.sendStatus(401);
+
+    await Favorite.deleteMany({ user: req.session.userId });
+    
     res.sendStatus(200);
 });
 module.exports = router;

@@ -10,6 +10,7 @@ body{
   background-color: rgba(0, 0, 0, 0.2); 
   padding: 15px 30px;             
   margin-bottom: 40px;
+  font-family: Inter, sans-serif;
 }
 
 #titleLink{
@@ -287,14 +288,13 @@ button{
 .cert-badge {
   position: absolute;
   top: 10px;
-  right: 10px;
+  left: 10px;
   background-color: rgba(0, 0, 0, 0.85);
   padding: 4px 8px;
   font-size: 0.75rem;
   font-weight: bold;
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.4);
-  letter-spacing: 0.5px;
 }
 
 .cert-badge.G {
@@ -316,6 +316,46 @@ button{
   background-color: #b71c1c;
   border-color: #ff1744;
   color: white;
+}
+
+.heart-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s;
+  z-index: 10;
+  opacity: 0;
+}
+
+.movie-card:hover .heart-btn {
+  opacity: 1;
+}
+
+.heart-icon {
+  --c: #fff; /* Default color (white) */
+  width: 20px;
+  aspect-ratio: 1;
+  background:
+      radial-gradient(at 70% 31%, var(--c) 29%, #0000 30%),
+      radial-gradient(at 30% 31%, var(--c) 29%, #0000 30%),
+      conic-gradient(from -45deg at 50% 84%, var(--c) 90deg, #0000 0) 
+      bottom/100% 50% no-repeat;
+  transition: --c 0.3s; /* Smooth color transition */
+}
+
+
+.heart-btn.active .heart-icon {
+    --c: #e50914;
+    opacity: 1;
 }
 
 /* For Smaller devices, more work will come around */

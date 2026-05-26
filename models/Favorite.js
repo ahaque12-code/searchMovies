@@ -1,11 +1,6 @@
 const mongoose = require("mongoose");
-
 const favoriteSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   title: String,
   year: String,
   imdbId: String,
@@ -15,4 +10,4 @@ const favoriteSchema = new mongoose.Schema({
   certification: { type: String, default: "PG" },
 });
 
-module.exports = mongoose.model("Favorite", favoriteSchema);
+module.exports = mongoose.models.Favorite || mongoose.model("Favorite", favoriteSchema);
