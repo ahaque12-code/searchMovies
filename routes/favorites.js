@@ -3,7 +3,9 @@ const router = express.Router();
 const Favorite = require("../models/Favorite");
 
 router.get("/", async (req, res) => {
-  const favorites = await Favorite.find();
+  if (!req.session.userId) return res.redirect("/users/login");
+
+  const favorites = await Favorite.find({ user: req.session.userId });
 
   let html = `
     <!DOCTYPE html>
@@ -18,7 +20,7 @@ router.get("/", async (req, res) => {
       <body>
         <nav class="navbar2">
           <span class="nav-title2">Favorite List</span>
-          <div class="nav-links2">
+          <div class="nav-item2">
             <a href="/">Back Home</a>
           </div>
         </nav>
@@ -66,15 +68,15 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/add", async (req, res) => {
+  if (!req.session.userId) {
+    return res.send("Please login to add favorites.");
+  }
+  
   const { title, year, imdbId, genres, rating, image } = req.body;
 
   await Favorite.create({
-    title,
-    year,
-    imdbId,
-    genres,
-    rating,
-    image
+    user: req.session.userId, 
+    title, year, imdbId, genres, rating, image
   });
 
   res.redirect("/favorites");

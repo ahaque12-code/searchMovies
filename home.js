@@ -1,20 +1,70 @@
-// This is the sumbitted code
+const session = require('express-session');
+const MongoStore = require('connect-mongo').default;
 const express = require("express");
 const path = require("path");
 require('dotenv').config();
 const port = process.env.PORT || 3001;
 const app = express();
-
 const mongoose = require("mongoose");
+
 mongoose.connect(process.env.MONGO_CONNECTION_STRING,{dbName: "CMSC335DB"}).then(console.log("Connected To MongoDB")).catch((err) => {
-console.log("MongoDB error: ", err);
-})
+    console.log("MongoDB error: ", err);
+});
+
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(express.static(__dirname));
 
+const redirectLogin = (req, res, next) => {
+    if (!req.session || !req.session.userId) {
+        return res.redirect("/users/login");
+    }
+    next();
+};
+
+app.use(session({
+    secret: 'hehehaha',
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({ 
+        mongoUrl: process.env.MONGO_CONNECTION_STRING,
+        dbName: "CMSC335DB" 
+    }),
+    cookie: { maxAge: 1000 * 60 * 60 * 24 }
+}));
+
+const usersRouter = require("./routes/users");
+app.use("/users", usersRouter);
+app.use(redirectLogin);
+
+const globalGenreMap = {
+    28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy",
+    80: "Crime", 99: "Documentary", 18: "Drama", 10751: "Family",
+    14: "Fantasy", 36: "History", 27: "Horror", 10402: "Music",
+    96: "Mystery", 10749: "Romance", 878: "Sci-Fi", 53: "Thriller",
+    10752: "War", 37: "Western", 10759: "Action & Adventure", 10765: "Sci-Fi & Fantasy"
+};
 
 app.get('/', (req,res) => {
+    const isLoggedIn = req.session && req.session.userId;
+    const username = req.session ? req.session.username : "";
+    let navLinksHtml = "";
+
+    if (isLoggedIn) {
+        navLinksHtml = `
+            <span class="nav-greeting">Hello, ${username}!</span>
+            <a href="/favorites" class="nav-item">Favorite List</a>
+            <form action="/users/logout" method="post" style="display: inline;">
+                <button type="submit" id="logout-link-btn">Sign Out</button>
+            </form>
+        `;
+    } else {
+        navLinksHtml = `
+            <a href="/users/login" class="nav-item">Login</a>
+            <a href="/favorites" class="nav-item">Favorite List</a>
+        `;
+    }
+
     res.send(`<!DOCTYPE html>
         <html>
             <head>
@@ -32,8 +82,7 @@ app.get('/', (req,res) => {
                     <span class="nav-title">SearchMovie</span>
                     </a>
                     <div class="nav-links">
-                     <a href = "/users/login" class="nav-item">Login</a>
-                     <a href="/favorites" class="nav-item">Favorite List</a>
+                        ${navLinksHtml}
                     </div>
                 </nav>
 
@@ -58,53 +107,53 @@ app.get('/', (req,res) => {
                             <label><input type="checkbox" value="Adventure"> Adventure</label>
                         </div>
                         <input type="hidden" name="genres" id="selectedGenres">
-                    </div>
+                     </div>
                      <input type = "text" name = "year" id = "yearRelease" placeholder = "Year">
                      <div id="typeSelector">
                         <label><input type="radio" name="type" value="movie" checked> Movie</label>
                         <label><input type="radio" name="type" value="tvSeries"> TV Show</label>
-                    </div><br><br>
+                     </div>
+                     <br><br>
                      <input type = "submit" id = "submit" value = "Search">
                     </form>
                 </div>
             </body>
         </html>
-        `)
-    }
-)
+        `);
+});
 
 app.get("/results", async (req,res) => {
     const searchMovie = req.query.q ? req.query.q.trim(): "";
-    const api_key = process.env.RAPID_API_KEY;
-    const api_host = process.env.RAPID_API_HOST;
+    const api_key = process.env.TMDB_API_KEY;
     const rows = Number(req.query.rows) || 8;
+    const page = Number(req.query.page) || 1;
     let html;
+
     if (!searchMovie) {
         const params = new URLSearchParams(req.query).toString();
         return res.redirect(`/discover?${params}`);
     }
 
     try{
-        const apiUrl = `https://${api_host}/api/imdb/search?originalTitle=${encodeURIComponent(searchMovie)}&rows=${rows}&sortOrder=ASC&sortField=id`;
+        const apiUrl = `https://api.themoviedb.org/3/search/multi?api_key=${api_key}&query=${encodeURIComponent(searchMovie)}&include_adult=false&language=en-US&page=${page}`;
         const apiRes = await fetch(apiUrl, {
-            method: "GET", 
+            method: 'GET',
             headers: {
-                "Content-Type": "application/json",
-                "X-RapidAPI-Key" : api_key,
-                "X-RapidAPI-Host" : api_host
+                accept: 'application/json',
+                Authorization: `Bearer ${process.env.TMDB_BEARER_TOKEN}`
             }
         });
-        
+
         if (!apiRes.ok) {
-            const textError = await apiRes.text();
-            console.log(`RapidAPI Error Status Code: ${apiRes.status}`);
+            console.log(`TMDB Error Status Code: ${apiRes.status}`);
             return res.status(apiRes.status).send(`<h2>API Error: Server returned status code ${apiRes.status}. Check your keys.</h2>`);
         }
     
         const apiData = await apiRes.json();
-        const movies = apiData.results || apiData;
+        const allMovies = apiData.results || [];
+        const movies = allMovies.filter(item => item.media_type === "movie" || item.media_type === "tv");
+        const totalPages = apiData.total_pages || 1;
 
-        // console.log(movies);
         html = `
         <!DOCTYPE> 
         <html>
@@ -118,8 +167,8 @@ app.get("/results", async (req,res) => {
             <body>
                 <nav class="navbar2">
                     <span class="nav-title2">Search Results</span>
-                    <div class="nav-links2">
-                        <a id="elemNav" href="/">Back</a>
+                    <div class="nav-item2">
+                        <a id="elemNav" href="/">Home</a>
                         <a href="/favorites">Favorites</a>
                     </div>
                 </nav>
@@ -129,40 +178,56 @@ app.get("/results", async (req,res) => {
         `;
 
         movies.forEach(movie =>{
-            const genreText = movie.genres ? movie.genres.join(", ") : "Unknown";
-            const rating = movie.averageRating || movie.rating || "N/A";
+            const movieTitle = movie.title || movie.name || "Unknown"
+            const dateString = movie.release_date || movie.first_air_date || "";
+            const releaseYear = dateString ? dateString.substring(0, 4) : "N/A";
+            const rating = (movie.vote_average && !isNaN(movie.vote_average)) ? Number(movie.vote_average).toFixed(1) : "N/A";
+            const posterPath = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'images/icon.png';
+            let genreText = "Unknown";
+            if (movie.genre_ids && movie.genre_ids.length > 0) {
+                const names = movie.genre_ids.map(id => globalGenreMap[id]).filter(Boolean);
+                if (names.length > 0) {
+                    genreText = names.join(", ");
+                }
+            }
+            
             html += `
             <div class="movie-card"
-                ondblclick="addFavorite('${movie.originalTitle}', '${movie.startYear}', '${movie.id}', '${genreText}', '${rating}', '${movie.primaryImage || ""}')">
-                <img src="${movie.primaryImage || ''}" alt="movie poster">
-                <h3>${movie.originalTitle}</h3>
-                <p>Year: ${movie.startYear || "N/A"}</p>
+                ondblclick="addFavorite('${movieTitle}', '${releaseYear}', '${movie.id}', '${genreText}', '${rating}', '${posterPath}')">
+                <img src="${posterPath}" alt="movie poster">
+                <h3>${movieTitle}</h3>
+                <p>Year: ${releaseYear || "N/A"}</p>
                 <p><strong>Genre:</strong> ${genreText}</p>
                 <p><strong>Rating:</strong> ${rating}</p>
             </div>
-            `
+            `;
         });
         
         html += `
             </div>
 
              <div style="text-align:center; margin: 30px;">
-                <a href="/results?q=${encodeURIComponent(searchMovie)}&rows=${rows + 8}">
-                    <button id= "showMore">Show More Results</button>
-                </a>
+                ${page > 1 ? `
+                    <button id="showLess" onclick="window.location.href='/results?q=${encodeURIComponent(searchMovie)}&page=${page - 1}'">Prev Page</button>
+                ` : ''
+                }
+                <span style="color: white; margin: 0 15px; font-weight: bold;">Page ${page} of ${totalPages}</span>
+                ${page < totalPages ? `
+                    <button id="showMore" onclick="window.location.href='/results?q=${encodeURIComponent(searchMovie)}&page=${page + 1}'">Next Page</button>
+                ` : ''
+                }
             </div>
 
             <script>
                 async function addFavorite(title, year, imdbId, genres, rating, image) {
-                await fetch("/favorites/add", {
-                    method: "POST",
-                    headers: {
-                    "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ title, year, imdbId, genres, rating, image })
-                });
-
-                alert(title + " added to favorites!");
+                    await fetch("/favorites/add", {
+                        method: "POST",
+                        headers: {
+                        "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ title, year, imdbId, genres, rating, image })
+                    });
+                    alert(title + " added to favorites!");
                 }
             </script>
             </body>
@@ -173,176 +238,153 @@ app.get("/results", async (req,res) => {
         res.status(500).send("Error reading data.");
     }
 
-    
-
-
     res.send(html);
-}
-)
+});
 
 app.get("/discover", async(req, res) => {
-    const api_key = process.env.RAPID_API_KEY;
-    const api_host = process.env.RAPID_API_HOST;
-    const rows = Number(req.query.rows) || 25;
-    const ratingSearch = req.query.rating?.trim();
-    const yearSearch = req.query.year?.trim();
-    const genreSearch = req.query.genres ? req.query.genres.split(",").map(g => g.trim()) : [];
+    const api_key = process.env.TMDB_API_KEY;
+    const ratingSearch = req.query.rating ? req.query.rating.trim() : "";
+    const yearSearch = req.query.year ? req.query.year.trim() : "";
     const typeSearch = req.query.type || "movie";
+    const normalizedType = (typeSearch === "tvSeries" || typeSearch === "tv") ? "tv" : "movie";
+    const page = Number(req.query.page) || 1;
 
-    let apiUrl = `https://${api_host}/api/imdb/search?type=${typeSearch}&rows=${rows}&sortOrder=ASC&sortField=id`;
-    if (genreSearch.length > 0) {
-        apiUrl += `&genre=${encodeURIComponent(genreSearch[0])}`;
-    }
+    const genreSearch = req.query.genres ? req.query.genres.split(",").map(g => g.trim()) : [];
+    const textToGenreId = {
+        "Action": 28, "Adventure": 12, "Animation": 16, "Comedy": 35,
+        "Crime": 80, "Documentary": 99, "Drama": 18, "Family": 10751,
+        "Fantasy": 14, "History": 36, "Horror": 27, "Music": 10402,
+        "Mystery": 96, "Romance": 10749, "Sci-Fi": 878, "Thriller": 53,
+        "War": 10752, "Western": 37
+    };
 
     try{
-        const apiRes = await fetch(apiUrl, {
-            method: "GET", 
-            headers: {
-                "Content-Type": "application/json",
-                "X-RapidAPI-Key": api_key,
-                "X-RapidAPI-Host": api_host
+        let apiUrl = `https://api.themoviedb.org/3/discover/${normalizedType}?api_key=${api_key}&page=${page}&include_adult=false&sort_by=popularity.desc&language=en-US`;
+
+        if(ratingSearch){
+            apiUrl += `&vote_average.gte=${parseFloat(ratingSearch)}`;
+        }
+        if (yearSearch) {
+            apiUrl += normalizedType === "movie" ? `&primary_release_year=${yearSearch}` : `&first_air_date_year=${yearSearch}`;
+        }
+        if (genreSearch.length > 0 && genreSearch[0] !== "") {
+            const structuralIds = genreSearch.map(name => textToGenreId[name]).filter(Boolean);
+            if (structuralIds.length > 0) {
+                apiUrl += `&with_genres=${structuralIds.join(",")}`;
             }
-        });
-
-        const apiData = await apiRes.json();
-        const movies = Array.isArray(apiData.results) ? apiData.results  : 
-        Array.isArray(apiData) ? apiData : Array.isArray(apiData.titles) ? apiData.titles : [];
-        // console.log(apiData);
-
-
-
-        let filteredMovies = movies.filter(movie => {
-            const movieRating = parseFloat(movie.averageRating || movie.rating);
-            const movieYear = movie.startYear;
-
-            let matches = true;
-
-            if (ratingSearch) {
-                if (isNaN(movieRating)) return false;
-
-                matches =
-                    matches && movieRating >= parseFloat(ratingSearch);
-            }
-
-            if (yearSearch) {
-                matches = matches && movieYear >= Number(yearSearch);
-            }
-
-            return matches;
-        });
-
-        let html = `
-        <html>
-        <head>
-             <meta charset = "utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <link rel="stylesheet" href="/style.css">
-            <link rel="icon" type="image/x-icon" href="images/icon.png">
-            <title>Discover Movies</title>
-        </head>
-
-        <body>
-        <nav class="navbar2">
-            <span class="nav-title2">Discover Movies</span>
-
-            <div class="nav-links2">
-                <a href="/">Back</a>
-                <a href="/favorites">Favorites</a>
-            </div>
-        </nav>
-
-         <h2 id = "msg">Double click on the card to add to your favorite list!</h2>
-
-        <div class="movie-grid">
-        `;
-
-        if (filteredMovies.length === 0) {
-            html += `
-                <h2 style="color:white;">
-                    No movies matched your filters.
-                </h2>
-            `;
         }
 
-       filteredMovies.forEach(movie => {
-            const genreText = movie.genres ? movie.genres.join(", ") : "Unknown";
-            const rating = movie.averageRating || movie.rating || "N/A";
-            const title = JSON.stringify(movie.originalTitle || movie.primaryTitle || "Unknown");
-            const year = JSON.stringify(movie.startYear || "N/A");
-            const id = JSON.stringify(movie.id || "");
-            const genres = JSON.stringify(genreText);
-            const movieRating = JSON.stringify(rating);
-            const image = JSON.stringify(movie.primaryImage || "");
-            let type = movie.type || "N/A";
+        const apiRes = await fetch(apiUrl, {
+            method: 'GET',
+            headers: {
+                accept: 'application/json',
+                Authorization: `Bearer ${process.env.TMDB_BEARER_TOKEN}`
+            }
+        });
 
-            if(type === "movie"){
-                type = "Movie";
-            } else if(type === "tvSeries"){
-                type = "Tv-Series"
+        if (!apiRes.ok) {
+            console.log(`TMDB Discover Error Status: ${apiRes.status}`);
+            return res.status(apiRes.status).send(`<h2>API Error: Discover endpoint returned status code ${apiRes.status}.</h2>`);
+        }
+
+        const apiData = await apiRes.json();
+        const movies = apiData.results || [];
+        const totalPages = apiData.total_pages || 1;
+
+        let html =`
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <meta charset = "utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link rel = "stylesheet" href= "style.css">
+                <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+                <link rel="icon" type="image/x-icon" href="images/icon.png">
+                <title>SearchMovie</title>
+            </head>
+            <body>
+                <nav class="navbar2">
+                    <span class="nav-title2">Discover Recommendations</span>
+                    <div class="nav-item2">
+                        <a href="/">Home</a>
+                        <a href="/favorites">Favorites</a>
+                    </div>
+                </nav>
+                <h2 id="msg">Double click on the card to add to your favorite list!</h2>
+                <div class="movie-grid">
+        `;
+
+        if (movies.length === 0) {
+            html += `<h2 style="color:white; text-align: center; margin-top: 50px;">No matches found for your filter criteria.</h2>`;
+        }
+
+        movies.forEach(movie =>{
+            const movieTitle = movie.title || movie.name || "Unknown";
+            const dateString = movie.release_date || movie.first_air_date || "";
+            const releaseYear = dateString ? dateString.substring(0, 4) : "N/A";
+            const rating = (movie.vote_average && !isNaN(movie.vote_average)) ? Number(movie.vote_average).toFixed(1) : "N/A";
+            const posterPath = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'images/icon.png';
+
+            let genreText = "Unknown";
+            if (movie.genre_ids && movie.genre_ids.length > 0) {
+                const names = movie.genre_ids.map(id => globalGenreMap[id]).filter(Boolean);
+                if (names.length > 0) genreText = names.join(", ");
             }
 
             html += `
-            <div class="movie-card"
-                ondblclick='addFavorite(${title}, ${year}, ${id}, ${genres}, ${movieRating}, ${image})'>
-                <img src="${movie.primaryImage || ""}">
-                <h3>${movie.originalTitle || movie.primaryTitle}</h3>
-                <p>Year: ${movie.startYear || "N/A"}</p>
-                <p>Genre: ${genreText}</p>
-                <p>Rating: ${rating}</p>
-                <p>Type: ${type}</p>
+            <div class="movie-card" ondblclick="addFavorite('${movieTitle}', '${releaseYear}', '${movie.id}', '${genreText}', '${rating}', '${posterPath}')">
+                <img src="${posterPath}" alt="movie poster">
+                <h3>${movieTitle}</h3>
+                <p>Year: ${releaseYear}</p>
+                <p><strong>Genre:</strong> ${genreText}</p>
+                <p><strong>Rating:</strong> ${rating}</p>
+                <p><strong>Type:</strong> ${normalizedType === 'movie' ? 'Movie' : 'TV Show'}</p>
             </div>
             `;
-        });
+        })
 
         html += `
         </div>
         <div style="text-align:center; margin: 30px;">
-            <a href="/discover?type=${typeSearch}&genres=${encodeURIComponent(req.query.genres || "")}&rating=${encodeURIComponent(ratingSearch || "")}&year=${encodeURIComponent(yearSearch || "")}&rows=${rows + 25}">
-                <button id="showMore">Show More Results</button>
-            </a>
+             ${page > 1 ? `
+                <button id="showLess" onclick="window.location.href='/discover?type=${typeSearch}&genres=${encodeURIComponent(req.query.genres || "")}&rating=${encodeURIComponent(ratingSearch)}&year=${encodeURIComponent(yearSearch)}&page=${page - 1}'">Prev Page</button>
+             ` : ''
+             }
+             <span style="color: white; margin: 0 15px; font-weight: bold;">Page ${page} of ${totalPages}</span>
+             ${page < totalPages ? `
+                <button id="showMore" onclick="window.location.href='/discover?type=${typeSearch}&genres=${encodeURIComponent(req.query.genres || "")}&rating=${encodeURIComponent(ratingSearch)}&year=${encodeURIComponent(yearSearch)}&page=${page + 1}'">Next Page</button>
+             ` : ''
+             }
         </div>
         <script>
             async function addFavorite(title, year, imdbId, genres, rating, image) {
                 await fetch("/favorites/add", {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ title, year, imdbId, genres, rating, image })
                 });
-
                 alert(title + " added to favorites!");
             }
         </script>
         </body>
         </html>
         `;
-
-        // console.log("MOVIES LENGTH:", movies.length);
-        // console.log("FILTERED LENGTH:", filteredMovies.length);
-        // console.log("FILTERS:", { ratingSearch, yearSearch, genreSearch });
-
+        
         res.send(html);
 
     } catch(err){
-        console.log("Error in API: ", err);
-        res.send("Error loading discover page");
-    } 
-
-})
-
+        console.log("API ERROR: " + err);
+        res.status(500).send("Error reading data.");
+    }
+});
 
 const favoritesRouter = require("./routes/favorites");
 app.use("/favorites", favoritesRouter);
 
-const usersRouter = require("./routes/users");
-app.use("/users", usersRouter);
-
 app.listen(port, (err) => {
     if(err) {
         console.log("Server failed: " + err);
-    } else {``
+    } else {
         console.log(`http://localhost:${port}`);
     }
 });
-

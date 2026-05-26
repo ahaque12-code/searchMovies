@@ -1,6 +1,7 @@
 body{
-  background: radial-gradient(circle,rgba(122, 101, 186, 1) 0%, rgba(166, 25, 48, 1) 92%, rgba(252, 70, 107, 1) 100%);
+  background-color: rgb(35, 35, 35);
   font-family: Inter, sans-serif;
+  color:white
 }
 .navbar {
   display: flex;
@@ -37,6 +38,23 @@ body{
   color: rgb(223, 211, 39);
 }
 
+#logout-link-btn{
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 5px;
+  color: #ffffff;
+  text-decoration: none;          
+  font-weight: 400;
+  font-size: 16px;
+  padding: 8px 16px;
+  transition: all 0.2s ease-in-out;
+}
+
+#logout-link-btn:hover {
+  background-color: rgba(255, 255, 255, 0.15); 
+  border-radius: 5px;
+  color: rgb(223, 70, 39);
+}
+
 #msg{
   text-align: center;
 }
@@ -46,7 +64,7 @@ body{
 }
 
 #movieForm input{
-  background-color:rgb(39 144 223 / 94%);
+  background-color:rgba(49, 232, 162, 0.94);
   border-radius: 10px;;
   padding: 10px;
 }
@@ -56,9 +74,14 @@ body{
 }
 
 #movieForm #movieName{
-  width: 220px;
+  width: 400px;
   font-size: medium;
+  border-width: 4px;
   color:white;
+}
+
+#movieForm #movieName:hover{
+  border-color: rgb(249, 129, 1);
 }
 
 #movieForm #movieRating{
@@ -92,7 +115,7 @@ body{
 }
 
 #genreBtn{
-  background-color:rgb(39 144 223 / 94%);
+  background-color:rgba(49, 232, 162, 0.94);
   border-radius: 10px;;
   padding: 10px;
 }
@@ -101,19 +124,23 @@ body{
   filter: brightness(0.5);
 }
 
-#typeSelector{
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  background-color:rgb(39 144 223 / 94%);
-  border-radius: 10px;;
-  padding: 10px;
-}
-
 #movieForm #yearRelease{
   width: 55px;
 }
 
+#typeSelector{
+  background-color:rgba(49, 232, 162, 0.94);
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 10px;;
+  padding: 10px;
+  margin-left:5px;
+}
+
+#movieForm #submit:hover{
+  filter:brightness(0.5);
+}
 
 * {
   box-sizing: border-box;
@@ -157,10 +184,22 @@ body{
   margin: 4px 0;
 }
 
+#showLess{
+  background-color: blue;
+  color:white;
+  border-radius: 10px;
+  text-decoration: none;
+}
+
+#showLess:hover{
+  filter: brightness(0.25);
+}
+
 #showMore{
   background-color: blue;
   color:white;
   border-radius: 10px;
+  text-decoration: none;
 }
 
 #showMore:hover{
@@ -169,10 +208,6 @@ body{
 
 button{
   color: white;
-}
-
-#submit:hover{
-  filter:brightness(0.5);
 }
 
 .navbar2 {
@@ -191,13 +226,19 @@ button{
   letter-spacing: -0.5px;
 }
 
-.nav-item2 {
+.nav-item2 a{
   color: #ffffff;
   text-decoration: none;          
   font-weight: 400;
   font-size: 16px;
   padding: 8px 16px;
   transition: all 0.2s ease-in-out;
+}
+
+.nav-item2 a:hover{
+  background-color: rgba(255, 255, 255, 0.15); 
+  border-radius: 5px;
+  color: rgb(223, 211, 39);
 }
 
 #elemNav{

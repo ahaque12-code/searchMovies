@@ -1,8 +1,8 @@
 .loginBody{
-  background: radial-gradient(circle,rgba(122, 101, 186, 1) 0%, rgba(166, 25, 48, 1) 92%, rgba(252, 70, 107, 1) 100%);
+  background-color: rgb(35, 35, 35);
   font-family: Inter, sans-serif;
-  align-items: center;
   color:white;
+  align-items: center;
 }
 
 .navbar {
@@ -39,7 +39,7 @@
   margin: auto; 
   display: flex;
   flex-direction: column;
-  background-color: #7a65ba;
+  background-color:rgba(15, 93, 63, 0.94);
   border-radius: 10px;
   padding: 30px;
   align-items: center; 
@@ -111,3 +111,21 @@
 #submit:hover{
     filter:brightness(0.5);
 }
+
+/* For Error Page */
+.errorBody{
+    background-color: rgb(35, 35, 35);
+    font-family: Inter, sans-serif;
+    color:white;
+}
+
+.sadDoggo{
+    width: auto;
+    height: 400px;
+}
+
+#message{
+    align-items: center;
+    text-align: center;
+}
+/* End of Error Page */
