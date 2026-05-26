@@ -55,47 +55,6 @@ body{
   color: rgb(223, 70, 39);
 }
 
-@media (max-width: 600px) {
-  .navbar {
-    flex-direction: column;
-    gap: 15px;
-    padding: 15px;
-    text-align: center;
-  }
-
-  .navbar .nav-links {
-    display: flex;
-    flex-direction: column; 
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-  }
-
-  .navbar .nav-greeting {
-    margin-right: 0;
-    margin-bottom: 5px;
-    font-size: 0.95rem;
-    opacity: 0.9;
-  }
-
-  .navbar .nav-item, 
-  .navbar #logout-link-btn {
-    width: 100%;
-    max-width: 200px; 
-    text-align: center;
-    padding: 10px;
-    background-color: rgba(255, 255, 255, 0.08);
-    border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .navbar .nav-links form {
-    display: block !important;
-    width: 100%;
-    text-align: center;
-  }
-}
-
 #msg{
   text-align: center;
 }
@@ -225,6 +184,14 @@ body{
   margin: 4px 0;
 }
 
+#cntrl-btn{
+  text-align:center; margin: 30px;
+}
+
+#txtPage{
+  color: white; margin: 0 15px; font-weight: bold;
+}
+
 #showLess{
   background-color: blue;
   color:white;
@@ -349,4 +316,70 @@ button{
   background-color: #b71c1c;
   border-color: #ff1744;
   color: white;
+}
+
+/* For Smaller devices, more work will come around */
+@media (max-width: 600px) {
+  .navbar {
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px;
+    text-align: center;
+  }
+
+  .navbar .nav-links {
+    display: flex;
+    flex-direction: column; 
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .navbar .nav-greeting {
+    margin-right: 0;
+    margin-bottom: 5px;
+    font-size: 0.95rem;
+    opacity: 0.9;
+  }
+
+  .navbar .nav-item, 
+  .navbar #logout-link-btn {
+    width: 100%;
+    max-width: 200px; 
+    text-align: center;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .navbar .nav-links form {
+    display: block !important;
+    width: 100%;
+    text-align: center;
+  }
+
+  #showLess{
+    font-size: medium;
+    border-style: hidden;
+    padding:5px;
+  }
+
+  #showMore{
+    font-size: medium;
+    border-style: hidden;
+    padding:5px;
+  }
+
+  #cntrl-btn{
+    text-align:center; 
+    margin-left: 10px;
+  }
+
+  #txtPage{
+    color: white; 
+    margin: 0 15px; 
+    font-weight: bold;
+  }
+  
 }

@@ -208,14 +208,14 @@ app.get("/results", async (req,res) => {
         html += `
             </div>
 
-             <div style="text-align:center; margin: 30px;">
+             <div id = "cntrl-btn">
                 ${page > 1 ? `
-                    <button id="showLess" onclick="window.location.href='/results?q=${encodeURIComponent(searchMovie)}&page=${page - 1}'">Prev Page</button>
+                    <button id="showLess" onclick="window.location.href='/discover?type=${typeSearch}&genres=${encodeURIComponent(req.query.genres || "")}&rating=${encodeURIComponent(ratingSearch)}&year=${encodeURIComponent(yearSearch)}&page=${page - 1}'">Prev Page</button>
                 ` : ''
                 }
-                <span style="color: white; margin: 0 15px; font-weight: bold;">Page ${page} of ${totalPages}</span>
+                <span id="txtPage">Page ${page} of ${totalPages}</span>
                 ${page < totalPages ? `
-                    <button id="showMore" onclick="window.location.href='/results?q=${encodeURIComponent(searchMovie)}&page=${page + 1}'">Next Page</button>
+                    <button id="showMore" onclick="window.location.href='/discover?type=${typeSearch}&genres=${encodeURIComponent(req.query.genres || "")}&rating=${encodeURIComponent(ratingSearch)}&year=${encodeURIComponent(yearSearch)}&page=${page + 1}'">Next Page</button>
                 ` : ''
                 }
             </div>
@@ -361,12 +361,12 @@ app.get("/discover", async(req, res) => {
 
         html += `
         </div>
-        <div style="text-align:center; margin: 30px;">
+        <div id = "cntrl-btn">
              ${page > 1 ? `
                 <button id="showLess" onclick="window.location.href='/discover?type=${typeSearch}&genres=${encodeURIComponent(req.query.genres || "")}&rating=${encodeURIComponent(ratingSearch)}&year=${encodeURIComponent(yearSearch)}&page=${page - 1}'">Prev Page</button>
              ` : ''
              }
-             <span style="color: white; margin: 0 15px; font-weight: bold;">Page ${page} of ${totalPages}</span>
+             <span id="txtPage">Page ${page} of ${totalPages}</span>
              ${page < totalPages ? `
                 <button id="showMore" onclick="window.location.href='/discover?type=${typeSearch}&genres=${encodeURIComponent(req.query.genres || "")}&rating=${encodeURIComponent(ratingSearch)}&year=${encodeURIComponent(yearSearch)}&page=${page + 1}'">Next Page</button>
              ` : ''
