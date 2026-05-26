@@ -188,49 +188,59 @@ app.get("/results", async (req,res) => {
                 <div class="movie-grid">
         `;
 
-        for (const movie of movies) {
-            const movieTitle = movie.media_type === "movie" ? (movie.title || "Unknown Movie") : (movie.name || "Unknown Show");
-            const dateString = movie.media_type === "movie" ? (movie.release_date || "") : (movie.first_air_date || "");
-            const releaseYear = dateString ? dateString.substring(0, 4) : "N/A";
-            const rating = (movie.vote_average && !isNaN(movie.vote_average)) ? Number(movie.vote_average).toFixed(1) : "N/A";
-            const posterPath = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'images/icon.png';
-            let type = movie.media_type;
-            if(type === "movie"){
-                type = "Movie";
-            } else if (type === "tv"){
-                type = "TV"
-            }
-            let genreText = "Unknown";
-            if (movie.genre_ids && movie.genre_ids.length > 0) {
-                const names = movie.genre_ids.map(id => globalGenreMap[id]).filter(Boolean);
-                if (names.length > 0) genreText = names.join(", ");
-            }
+        if (movies.length === 0) {
+            html += `<h2 style="color:white; text-align: center; width: 100%;">No results found for "${searchMovie}".</h2>`;
+        } else {
+            for (const movie of movies) {
+                const movieTitle = movie.media_type === "movie" ? (movie.title || "Unknown Movie") : (movie.name || "Unknown Show");
+                const dateString = movie.media_type === "movie" ? (movie.release_date || "") : (movie.first_air_date || "");
+                const releaseYear = dateString ? dateString.substring(0, 4) : "N/A";
+                const rating = (movie.vote_average && !isNaN(movie.vote_average)) ? Number(movie.vote_average).toFixed(1) : "N/A";
+                const posterPath = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'images/icon.png';
+                let type = movie.media_type;
+                if(type === "movie"){
+                    type = "Movie";
+                } else if (type === "tv"){
+                    type = "TV"
+                }
+                let genreText = "Unknown";
+                if (movie.genre_ids && movie.genre_ids.length > 0) {
+                    const names = movie.genre_ids.map(id => globalGenreMap[id]).filter(Boolean);
+                    if (names.length > 0) genreText = names.join(", ");
+                }
 
-            let ageCertificate = "PG";
-            if (movie.adult) ageCertificate = "R / 18+";
-            else if (movie.genre_ids && movie.genre_ids.includes(27)) ageCertificate = "PG-13";
-            else if (movie.genre_ids && (movie.genre_ids.includes(16) || movie.genre_ids.includes(10751))) ageCertificate = "G";
+                let ageCertificate = "PG";
+                if (movie.adult) ageCertificate = "R / 18+";
+                else if (movie.genre_ids && movie.genre_ids.includes(27)) ageCertificate = "PG-13";
+                else if (movie.genre_ids && (movie.genre_ids.includes(16) || movie.genre_ids.includes(10751))) ageCertificate = "G";
 
-            const escapedTitle = movieTitle.replace(/'/g, "\\'");
-            const escapedGenres = genreText.replace(/'/g, "\\'");
-            const isFav = favoriteIds.includes(String(movie.id).trim()) ? 'active' : '';
-            
-            html += `
-            <div class="movie-card" onclick="window.location.href='/media/${movie.media_type || 'movie'}/${movie.id}'">
-                <div class="poster-container"> 
-                    <span class="cert-badge ${ageCertificate.replace(/[^a-zA-Z0-9]/g, '-')}">${ageCertificate}</span>
-                    <img src="${posterPath}" alt="movie poster">
-                    <button class="heart-btn ${isFav}" onclick="event.stopPropagation(); addFavorite(this, '${escapedTitle}', '${releaseYear}', '${movie.id}', '${escapedGenres}', '${rating}', '${posterPath}', '${ageCertificate}')">
-                        <span class="heart-icon"></span>
-                    </button>
+                const certClass = ageCertificate.replace(/[^a-zA-Z0-9]/g, '-');
+                const escapedTitle = movieTitle.replace(/'/g, "\\'");
+                const escapedGenres = genreText.replace(/'/g, "\\'");
+                const isFav = favoriteIds.includes(String(movie.id).trim()) ? 'active' : '';
+                const displayType = (movie.media_type === "tv") ? "TV Series" : "Movie";
+
+                html += `
+                <div class="movie-card" onclick="window.location.href='/media/${movie.media_type || normalizedType}/${movie.id}'">
+                    <div class="poster-container"> 
+                        <span class="cert-badge ${certClass}">${ageCertificate}</span>
+                        <img src="${posterPath}" alt="movie poster">
+                        </div>
+                    
+                    <h3>${movieTitle}</h3>
+                    <p>Year: ${releaseYear || "N/A"}</p>
+                    <p><strong>Genre:</strong> ${genreText}</p>
+                    <p><strong>Rating:</strong> ${rating}</p>
+                    
+                    <div class="movie-card-bottom-bar">
+                        <p><strong>Type:</strong> ${displayType}</p>
+                        <button class="heart-btn ${isFav}" onclick="event.stopPropagation(); addFavorite(this, '${escapedTitle}', '${releaseYear}', '${movie.id}', '${escapedGenres}', '${rating}', '${posterPath}', '${ageCertificate}')">
+                            <span class="heart-icon"></span>
+                        </button>
+                    </div>
                 </div>
-                <h3>${movieTitle}</h3>
-                <p>Year: ${releaseYear || "N/A"}</p>
-                <p><strong>Genre:</strong> ${genreText}</p>
-                <p><strong>Rating:</strong> ${rating}</p>
-                <p><strong>Type:</strong> ${type}</p>
-            </div>
-            `;
+                `;
+            }
         }
 
         
@@ -279,11 +289,14 @@ const api_key = process.env.TMDB_API_KEY;
     const genreSearch = req.query.genres ? req.query.genres.split(",").map(g => g.trim()) : [];
 
     const textToGenreId = normalizedType === "tv" ? {
-        "Action": 10759, "Adventure": 10759, "Animation": 16, "Comedy": 35,
-        "Crime": 80, "Documentary": 99, "Drama": 18, "Family": 10751,
-        "Fantasy": 10765, "Horror": 27, "Music": 10402, "Mystery": 96,
-        "Romance": 10749, "Sci-Fi": 10765, "Thriller": 53, "War": 10768, "Western": 37
-    } : {
+    "Action": 10759,  "Adventure": 10759,  "Animation": 16, 
+    "Comedy": 35, "Crime": 80, "Documentary": 99, "Drama": 18, 
+    "Family": 10751, "Fantasy": 10765, "Horror": 10765, // Map Horror to Sci-Fi/Fantasy for TV results
+    "Mystery": 9648, // Mystery TV ID is 9648
+     "Romance": 10749,  "Sci-Fi": 10765, 
+    "Thriller": 10759, // Thrillers are often under Action/Adventure in TV
+    "War": 10768, "Western": 37 } :
+     {
         "Action": 28, "Adventure": 12, "Animation": 16, "Comedy": 35,
         "Crime": 80, "Documentary": 99, "Drama": 18, "Family": 10751,
         "Fantasy": 14, "History": 36, "Horror": 27, "Music": 10402,
@@ -331,35 +344,46 @@ const api_key = process.env.TMDB_API_KEY;
                 </nav>
                 <div class="movie-grid">`;
 
-        for (const movie of movies) {
-            const movieTitle = movie.title || movie.name || "Unknown";
-            const releaseYear = (movie.release_date || movie.first_air_date || "").substring(0, 4) || "N/A";
-            const posterPath = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'images/icon.png';
-            const rating = (movie.vote_average && !isNaN(movie.vote_average)) ? Number(movie.vote_average).toFixed(1) : "N/A";
-            const genreText = movie.genre_ids ? movie.genre_ids.map(id => globalGenreMap[id]).filter(Boolean).join(", ") : "Unknown";
-            let ageCertificate = movie.adult ? "R / 18+" : (movie.genre_ids && movie.genre_ids.includes(27)) ? "PG-13" : "PG";
+            if (movies.length === 0) {
+                html += `<h2 style="color:white; text-align: center; width: 100%;">No matches found for your filter criteria.</h2>`;
+            } else{
+                for (const movie of movies) {
+                    const movieTitle = movie.title || movie.name || "Unknown";
+                    const releaseYear = (movie.release_date || movie.first_air_date || "").substring(0, 4) || "N/A";
+                    const posterPath = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'images/icon.png';
+                    const rating = (movie.vote_average && !isNaN(movie.vote_average)) ? Number(movie.vote_average).toFixed(1) : "N/A";
+                    const genreText = movie.genre_ids ? movie.genre_ids.map(id => globalGenreMap[id]).filter(Boolean).join(", ") : "Unknown";
+                    let ageCertificate = movie.adult ? "R / 18+" : (movie.genre_ids && movie.genre_ids.includes(27)) ? "PG-13" : "PG";
 
-            const escapedTitle = movieTitle.replace(/'/g, "\\'");
-            const escapedGenres = genreText.replace(/'/g, "\\'");
-            const isFav = favoriteIds.includes(movie.id.toString()) ? 'active' : '';
+                    const escapedTitle = movieTitle.replace(/'/g, "\\'");
+                    const escapedGenres = genreText.replace(/'/g, "\\'");
+                    const isFav = favoriteIds.includes(movie.id.toString()) ? 'active' : '';
+                    const displayType = (normalizedType === 'tv') ? "TV Series" : "Movie";
+                    
+                    const certClass = ageCertificate.replace(/[^a-zA-Z0-9]/g, '-');
+                    html += `
+                    <div class="movie-card" onclick="window.location.href='/media/${movie.media_type || normalizedType}/${movie.id}'">
+                        <div class="poster-container"> 
+                            <span class="cert-badge ${certClass}">${ageCertificate}</span>
+                            <img src="${posterPath}" alt="movie poster">
+                            </div>
+                        
+                        <h3>${movieTitle}</h3>
+                        <p>Year: ${releaseYear || "N/A"}</p>
+                        <p><strong>Genre:</strong> ${genreText}</p>
+                        <p><strong>Rating:</strong> ${rating}</p>
+                
+                        <div class="movie-card-bottom-bar">
+                            <p><strong>Type:</strong> ${displayType}</p>
+                            <button class="heart-btn ${isFav}" onclick="event.stopPropagation(); addFavorite(this, '${escapedTitle}', '${releaseYear}', '${movie.id}', '${escapedGenres}', '${rating}', '${posterPath}', '${ageCertificate}')">
+                                <span class="heart-icon"></span>
+                            </button>
+                        </div>
+                    </div>
+                    `;
+                }
+            }
 
-            const certClass = ageCertificate.replace(/[^a-zA-Z0-9]/g, '-');
-
-            html += `
-            <div class="movie-card" onclick="window.location.href='/media/${normalizedType}/${movie.id}'">
-                <div class="poster-container"> 
-                    <span class="cert-badge ${certClass}">${ageCertificate}</span>
-                    <img src="${posterPath}" alt="poster">
-                    <button class="heart-btn ${isFav}" onclick="event.stopPropagation(); addFavorite(this, '${escapedTitle}', '${releaseYear}', '${movie.id}', '${escapedGenres}', '${rating}', '${posterPath}', '${ageCertificate}')">
-                        <span class="heart-icon"></span>
-                    </button>
-                </div>
-                <h3>${movieTitle}</h3>
-                <p>Year: ${releaseYear}</p>
-                <p><strong>Genre:</strong> ${genreText}</p>
-                <p><strong>Rating:</strong> ${rating}</p>
-            </div>`;
-        }
 
         html += `</div>
         <div id="cntrl-btn">
