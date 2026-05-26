@@ -221,8 +221,15 @@ app.get("/results", async (req,res) => {
             </div>
             `;
         }
+
+        
         
         html += `
+            </div>
+            <div id="cntrl-btn">
+                ${page > 1 ? `<a href="/results?q=${encodeURIComponent(searchMovie)}&page=${page - 1}" id="showLess">Previous</a>` : ''}
+                <span id="txtPage">Page ${page} of ${totalPages}</span>
+                ${page < totalPages ? `<a href="/results?q=${encodeURIComponent(searchMovie)}&page=${page + 1}" id="showMore">Next</a>` : ''}
             </div>
             <script>
                 async function addFavorite(btn, title, year, imdbId, genres, rating, image, certification) {
@@ -259,6 +266,7 @@ app.get("/discover", async(req, res) => {
     const normalizedType = (typeSearch === "tv") ? "tv" : "movie";
     const page = Number(req.query.page) || 1;
 
+
     try{
         let apiUrl = `https://api.themoviedb.org/3/discover/${normalizedType}?page=${page}&sort_by=popularity.desc`;
         if (ratingSearch) apiUrl += `&vote_average.gte=${parseFloat(ratingSearch)}`;
@@ -273,30 +281,75 @@ app.get("/discover", async(req, res) => {
         const movies = apiData.results || [];
         const favorites = await fetchFavoritesFromDB(req.session.userId);
         const favoriteIds = favorites.map(f => String(f.imdbId).trim());
+        const totalPages = Math.min(apiData.total_pages || 1, 500);
 
-        let html = `<!DOCTYPE html><html><body><div class="movie-grid">`;
+       let html = `
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link rel="stylesheet" href="/style.css">
+                <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+                <link rel="icon" type="image/x-icon" href="images/icon.png">
+                <title>Discover Results</title>
+            </head>
+            <body>
+                <nav class="navbar2">
+                    <span class="nav-title2">Discovery Results</span>
+                    <div class="nav-links2">
+                        <a id="elemNav" href="/" class="nav-item">Home</a>
+                        <a href="/favorites" class="nav-item">Favorites</a>
+                    </div>
+                </nav>
+                <div class="movie-grid">`;
 
         for (const movie of movies) {
             const movieTitle = movie.name || movie.title || "Unknown";
             const releaseYear = (movie.first_air_date || movie.release_date || "").substring(0, 4) || "N/A";
             const posterPath = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'images/icon.png';
-            const escapedTitle = movieTitle.replace(/'/g, "\\'");
-            const isFav = favoriteIds.includes(movie.id.toString()) ? 'active' : '';
+            
+            const rating = (movie.vote_average && !isNaN(movie.vote_average)) ? Number(movie.vote_average).toFixed(1) : "N/A";
+            const type = normalizedType === "tv" ? "TV" : "Movie";
+            
+            let genreText = "Unknown";
+            if (movie.genre_ids && movie.genre_ids.length > 0) {
+                const names = movie.genre_ids.map(id => globalGenreMap[id]).filter(Boolean);
+                if (names.length > 0) genreText = names.join(", ");
+            }
 
+            let ageCertificate = "PG";
+            if (movie.adult) ageCertificate = "R / 18+";
+            else if (movie.genre_ids && movie.genre_ids.includes(27)) ageCertificate = "PG-13";
+            else if (movie.genre_ids && (movie.genre_ids.includes(16) || movie.genre_ids.includes(10751))) ageCertificate = "G";
+
+            const escapedTitle = movieTitle.replace(/'/g, "\\'");
+            const escapedGenres = genreText.replace(/'/g, "\\'");
+            const isFav = favoriteIds.includes(movie.id.toString()) ? 'active' : '';
 
             html += `
             <div class="movie-card" onclick="window.location.href='/media/${normalizedType}/${movie.id}'">
-                <div class="poster-container">
-                    <img src="${posterPath}" alt="poster">
-                    <button class="heart-btn ${isFav}" onclick="event.stopPropagation(); addFavorite(this, '${escapedTitle}', '${releaseYear}', '${movie.id}', '', '', '${posterPath}', '')">
+                <div class="poster-container"> 
+                    <span class="cert-badge ${ageCertificate.replace(/[^a-zA-Z0-9]/g, '-')}">${ageCertificate}</span>
+                    <img src="${posterPath}" alt="movie poster">
+                    <button class="heart-btn ${isFav}" onclick="event.stopPropagation(); addFavorite(this, '${escapedTitle}', '${releaseYear}', '${movie.id}', '${escapedGenres}', '${rating}', '${posterPath}', '${ageCertificate}')">
                         <span class="heart-icon"></span>
                     </button>
                 </div>
                 <h3>${movieTitle}</h3>
-            </div>`;
+                <p>Year: ${releaseYear || "N/A"}</p>
+                <p><strong>Genre:</strong> ${genreText}</p>
+                <p><strong>Rating:</strong> ${rating}</p>
+                <p><strong>Type:</strong> ${type}</p>
+            </div>
+            `;
         }
-
         html += `</div>
+                <div id="cntrl-btn">
+                    ${page > 1 ? `<a href="/discover?${new URLSearchParams({...req.query, page: page - 1}).toString()}" id="showLess">Previous</a>` : ''}
+                    <span id="txtPage">Page ${page} of ${totalPages}</span>
+                    ${page < totalPages ? `<a href="/discover?${new URLSearchParams({...req.query, page: page + 1}).toString()}" id="showMore">Next</a>` : ''}
+                </div>
                 <script>
                         async function addFavorite(btn, title, year, imdbId, genres, rating, image, certification) {
                             const isActive = btn.classList.toggle('active');
