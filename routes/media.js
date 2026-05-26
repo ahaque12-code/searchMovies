@@ -50,8 +50,8 @@ router.get("/:type/:id", async (req,res)=>{
     }
 
     function getKissKhSearchLink(title) {
-        const encodedTitle = encodeURIComponent(title);
-        return `https://kisskh.co/search?q=${encodedTitle}`;
+       const query = encodeURIComponent(`site:kisskh.co ${title}`);
+        return `https://www.google.com/search?q=${query}`;
     }
 
     try{
