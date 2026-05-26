@@ -13,7 +13,6 @@ mongoose.connect(process.env.MONGO_CONNECTION_STRING,{dbName: "CMSC335DB"}).then
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-app.use(express.static(__dirname));
 
 const redirectLogin = (req, res, next) => {
     if (!req.session || !req.session.userId) {
@@ -36,6 +35,7 @@ app.use(session({
 const usersRouter = require("./routes/users");
 app.use("/users", usersRouter);
 app.use(redirectLogin);
+app.use(express.static(__dirname));
 
 const globalGenreMap = {
     28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy",
@@ -46,24 +46,14 @@ const globalGenreMap = {
 };
 
 app.get('/', (req,res) => {
-    const isLoggedIn = req.session && req.session.userId;
     const username = req.session ? req.session.username : "";
-    let navLinksHtml = "";
-
-    if (isLoggedIn) {
-        navLinksHtml = `
-            <span class="nav-greeting">Hello, ${username}!</span>
-            <a href="/favorites" class="nav-item">Favorite List</a>
-            <form action="/users/logout" method="post" style="display: inline;">
-                <button type="submit" id="logout-link-btn">Sign Out</button>
-            </form>
-        `;
-    } else {
-        navLinksHtml = `
-            <a href="/users/login" class="nav-item">Login</a>
-            <a href="/favorites" class="nav-item">Favorite List</a>
-        `;
-    }
+    let navLinksHtml = `
+        <span class="nav-greeting">Hello, ${username}!</span>
+        <a href="/favorites" class="nav-item">Favorite List</a>
+        <form action="/users/logout" method="post" style="display: inline;">
+            <button type="submit" id="logout-link-btn">Sign Out</button>
+        </form>
+    `;
 
     res.send(`<!DOCTYPE html>
         <html>
@@ -111,8 +101,7 @@ app.get('/', (req,res) => {
                      <input type = "text" name = "year" id = "yearRelease" placeholder = "Year">
                      <div id="typeSelector">
                         <label><input type="radio" name="type" value="movie" checked> Movie</label>
-                        <label><input type="radio" name="type" value="tvSeries"> TV Show</label>
-                     </div>
+                        <label><input type="radio" name="type" value="tv"> TV Show</label> </div>
                      <br><br>
                      <input type = "submit" id = "submit" value = "Search">
                     </form>
@@ -125,7 +114,6 @@ app.get('/', (req,res) => {
 app.get("/results", async (req,res) => {
     const searchMovie = req.query.q ? req.query.q.trim(): "";
     const api_key = process.env.TMDB_API_KEY;
-    const rows = Number(req.query.rows) || 8;
     const page = Number(req.query.page) || 1;
     let html;
 
@@ -155,7 +143,7 @@ app.get("/results", async (req,res) => {
         const totalPages = apiData.total_pages || 1;
 
         html = `
-        <!DOCTYPE> 
+        <!DOCTYPE html> 
         <html>
             <head>
                 <meta charset = "utf-8">
@@ -167,9 +155,8 @@ app.get("/results", async (req,res) => {
             <body>
                 <nav class="navbar2">
                     <span class="nav-title2">Search Results</span>
-                    <div class="nav-item2">
-                        <a id="elemNav" href="/">Home</a>
-                        <a href="/favorites">Favorites</a>
+                    <div class="nav-links2"> <a id="elemNav" href="/" class="nav-item">Home</a>
+                        <a href="/favorites" class="nav-item">Favorites</a>
                     </div>
                 </nav>
                 <h2 id = "msg" >Double click on the card to add to your favorite list!</h2>
@@ -178,11 +165,12 @@ app.get("/results", async (req,res) => {
         `;
 
         movies.forEach(movie =>{
-            const movieTitle = movie.title || movie.name || "Unknown"
-            const dateString = movie.release_date || movie.first_air_date || "";
+            const movieTitle = movie.media_type === "movie" ? (movie.title || "Unknown Movie") : (movie.name || "Unknown Show");
+            const dateString = movie.media_type === "movie" ? (movie.release_date || "") : (movie.first_air_date || "");
             const releaseYear = dateString ? dateString.substring(0, 4) : "N/A";
             const rating = (movie.vote_average && !isNaN(movie.vote_average)) ? Number(movie.vote_average).toFixed(1) : "N/A";
             const posterPath = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'images/icon.png';
+            
             let genreText = "Unknown";
             if (movie.genre_ids && movie.genre_ids.length > 0) {
                 const names = movie.genre_ids.map(id => globalGenreMap[id]).filter(Boolean);
@@ -190,11 +178,25 @@ app.get("/results", async (req,res) => {
                     genreText = names.join(", ");
                 }
             }
+
+            let ageCertificate = "PG";
+            if (movie.adult) {
+                ageCertificate = "R / 18+";
+            } else if (movie.genre_ids && movie.genre_ids.includes(27)) { 
+                ageCertificate = "PG-13";
+            } else if (movie.genre_ids && (movie.genre_ids.includes(16) || movie.genre_ids.includes(10751))) {
+                ageCertificate = "G";
+            }
+
+            const escapedTitle = movieTitle.replace(/'/g, "\\'");
+            const escapedGenres = genreText.replace(/'/g, "\\'");
             
             html += `
             <div class="movie-card"
-                ondblclick="addFavorite('${movieTitle}', '${releaseYear}', '${movie.id}', '${genreText}', '${rating}', '${posterPath}')">
-                <img src="${posterPath}" alt="movie poster">
+                ondblclick="addFavorite('${escapedTitle}', '${releaseYear}', '${movie.id}', '${escapedGenres}', '${rating}', '${posterPath}', '${ageCertificate}')">
+                <div class="poster-container"> <span class="cert-badge ${ageCertificate.replace(/[^a-zA-Z0-9]/g, '-')}">${ageCertificate}</span>
+                    <img src="${posterPath}" alt="movie poster">
+                </div>
                 <h3>${movieTitle}</h3>
                 <p>Year: ${releaseYear || "N/A"}</p>
                 <p><strong>Genre:</strong> ${genreText}</p>
@@ -219,13 +221,13 @@ app.get("/results", async (req,res) => {
             </div>
 
             <script>
-                async function addFavorite(title, year, imdbId, genres, rating, image) {
+                async function addFavorite(title, year, imdbId, genres, rating, image, certification) {
                     await fetch("/favorites/add", {
                         method: "POST",
                         headers: {
                         "Content-Type": "application/json"
                         },
-                        body: JSON.stringify({ title, year, imdbId, genres, rating, image })
+                        body: JSON.stringify({ title, year, imdbId, genres, rating, image, certification})
                     });
                     alert(title + " added to favorites!");
                 }
@@ -305,9 +307,8 @@ app.get("/discover", async(req, res) => {
             <body>
                 <nav class="navbar2">
                     <span class="nav-title2">Discover Recommendations</span>
-                    <div class="nav-item2">
-                        <a href="/">Home</a>
-                        <a href="/favorites">Favorites</a>
+                    <div class="nav-links2"> <a href="/" class="nav-item">Home</a>
+                        <a href="/favorites" class="nav-item">Favorites</a>
                     </div>
                 </nav>
                 <h2 id="msg">Double click on the card to add to your favorite list!</h2>
@@ -330,10 +331,25 @@ app.get("/discover", async(req, res) => {
                 const names = movie.genre_ids.map(id => globalGenreMap[id]).filter(Boolean);
                 if (names.length > 0) genreText = names.join(", ");
             }
+            
+            let ageCertificate = "PG";
+            if (movie.adult) {
+                ageCertificate = "R / 18+";
+            } else if (movie.genre_ids && movie.genre_ids.includes(27)) { 
+                ageCertificate = "PG-13";
+            } else if (movie.genre_ids && (movie.genre_ids.includes(16) || movie.genre_ids.includes(10751))) {
+                ageCertificate = "G";
+            }
+
+            const escapedTitle = movieTitle.replace(/'/g, "\\'");
+            const escapedGenres = genreText.replace(/'/g, "\\'");
 
             html += `
-            <div class="movie-card" ondblclick="addFavorite('${movieTitle}', '${releaseYear}', '${movie.id}', '${genreText}', '${rating}', '${posterPath}')">
-                <img src="${posterPath}" alt="movie poster">
+            <div class="movie-card" ondblclick="addFavorite('${escapedTitle}', '${releaseYear}', '${movie.id}', '${escapedGenres}', '${rating}', '${posterPath}', '${ageCertificate}')">
+                <div class="poster-container">
+                    <span class="cert-badge ${ageCertificate.replace(/[^a-zA-Z0-9]/g, '-')}">${ageCertificate}</span>
+                    <img src="${posterPath}" alt="movie poster">
+                </div>
                 <h3>${movieTitle}</h3>
                 <p>Year: ${releaseYear}</p>
                 <p><strong>Genre:</strong> ${genreText}</p>
@@ -357,11 +373,11 @@ app.get("/discover", async(req, res) => {
              }
         </div>
         <script>
-            async function addFavorite(title, year, imdbId, genres, rating, image) {
+            async function addFavorite(title, year, imdbId, genres, rating, image, certification) {
                 await fetch("/favorites/add", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ title, year, imdbId, genres, rating, image })
+                    body: JSON.stringify({ title, year, imdbId, genres, rating, image, certification })
                 });
                 alert(title + " added to favorites!");
             }

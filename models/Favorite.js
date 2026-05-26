@@ -11,7 +11,8 @@ const favoriteSchema = new mongoose.Schema({
   imdbId: String,
   genres: String,
   rating: String,
-  image: String
+  image: String,
+  certification: { type: String, default: "PG" },
 });
 
 module.exports = mongoose.model("Favorite", favoriteSchema);

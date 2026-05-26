@@ -32,19 +32,23 @@ router.get("/", async (req, res) => {
         </div>
         <div class="movie-grid">
     `;
-
+  
   favorites.forEach(movie => {
+    const cert = movie.certification || "PG";
     html += `
       <div class="movie-card">
-      <img src="${movie.image || ''}" alt="movie poster">
-      <h3>${movie.title}</h3>
-      <p><strong>Year:</strong> ${movie.year || "N/A"}</p>
-      <p><strong>Genre:</strong> ${movie.genres || "Unknown"}</p>
-      <p><strong>Rating:</strong> ${movie.rating || "N/A"}</p>
-      <form action="/favorites/delete/${movie._id}" method="POST">
-        <button type="submit" id = "deleteBtn">Delete</button>
-      </form>
-    </div>
+        <div class="poster-container">
+          <span class="cert-badge ${cert.replace(/[^a-zA-Z0-9]/g, '-')}">${cert}</span>
+          <img src="${movie.image || ''}" alt="movie poster">
+        </div>
+        <h3>${movie.title}</h3>
+        <p><strong>Year:</strong> ${movie.year || "N/A"}</p>
+        <p><strong>Genre:</strong> ${movie.genres || "Unknown"}</p>
+        <p><strong>Rating:</strong> ${movie.rating || "N/A"}</p>
+        <form action="/favorites/delete/${movie._id}" method="POST">
+          <button type="submit" id = "deleteBtn">Delete</button>
+        </form>
+      </div>
     `;
   });
 
@@ -72,14 +76,14 @@ router.post("/add", async (req, res) => {
     return res.send("Please login to add favorites.");
   }
   
-  const { title, year, imdbId, genres, rating, image } = req.body;
+  const { title, year, imdbId, genres, rating, image, certification} = req.body;
 
   await Favorite.create({
     user: req.session.userId, 
-    title, year, imdbId, genres, rating, image
+    title, year, imdbId, genres, rating, image, certification
   });
 
-  res.redirect("/favorites");
+  res.sendStatus(200);
 });
 
 router.post("/delete/:id", async (req, res) => {
