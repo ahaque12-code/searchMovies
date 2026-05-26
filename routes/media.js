@@ -49,6 +49,11 @@ router.get("/:type/:id", async (req,res)=>{
         return `https://asiaflix.net/drama/${slug}`;
     }
 
+    function getKissKhSearchLink(title) {
+        const encodedTitle = encodeURIComponent(title);
+        return `https://kisskh.co/search?q=${encodedTitle}`;
+    }
+
     try{
         const [detailsRes, providersRes] = await Promise.all([
         fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${api_key}&language=en-US&append_to_response=external_ids`, { headers: { 'Authorization': `Bearer ${process.env.TMDB_BEARER_TOKEN}` } }),
@@ -117,6 +122,10 @@ router.get("/:type/:id", async (req,res)=>{
             links.push({ 
                 name: "AsiaFlix", 
                 url: getAsiaFlixLink(title, year) 
+            });
+            links.push({ 
+                name: "KissKH (Search)", 
+                url: getKissKhSearchLink(title) 
             });
         }
 
