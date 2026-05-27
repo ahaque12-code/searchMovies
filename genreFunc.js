@@ -1,51 +1,58 @@
-document.addEventListener("DOMContentLoaded", () => {
-    const genreBtn = document.querySelector("#genreBtn");
-    const genreBox = document.querySelector("#genreBox");
-    const selectedGenresInput = document.querySelector("#selectedGenres");
+// --- Typewriter Logic ---
+const input = document.getElementById("movieName");
+const phrases = ["Search movies...", "Search TV shows..."];
+let phraseIndex = 0, charIndex = 0, isDeleting = false, typeSpeed = 100;
 
-    if (genreBtn) {
-        genreBtn.addEventListener("click", () => genreBox.classList.toggle("hidden"));
-        genreBox.addEventListener("change", () => {
-            const selected = Array.from(genreBox.querySelectorAll("input[type='checkbox']:checked")).map(box => box.value);
-            selectedGenresInput.value = selected.join(",");
-            genreBtn.textContent = selected.length > 0 ? selected.join(", ") : "Select Genre";
-        });
+function type() {
+    const currentPhrase = phrases[phraseIndex];
+    if (isDeleting) {
+        input.placeholder = currentPhrase.substring(0, charIndex - 1);
+        charIndex--;
+        typeSpeed = 50;
+    } else {
+        input.placeholder = currentPhrase.substring(0, charIndex + 1);
+        charIndex++;
+        typeSpeed = 100;
     }
 
-    const searchInput = document.getElementById('movieName');
-    const suggestionsBox = document.getElementById('suggestionsBox');
+    if (!isDeleting && charIndex === currentPhrase.length) {
+        isDeleting = true;
+        typeSpeed = 2000;
+    } else if (isDeleting && charIndex === 0) {
+        isDeleting = false;
+        phraseIndex = (phraseIndex + 1) % phrases.length;
+        typeSpeed = 500;
+    }
+    setTimeout(type, typeSpeed);
+}
 
-    if (searchInput && suggestionsBox) {
-        searchInput.addEventListener('input', debounce(async (e) => {
+// --- Autocomplete Logic ---
+const suggestionsBox = document.getElementById('suggestionsBox');
+function debounce(func, delay) {
+    let timeout;
+    return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), delay);
+    };
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    if (input) type();
+    if (input && suggestionsBox) {
+        input.addEventListener('input', debounce(async (e) => {
             const query = e.target.value;
             if (query.length < 3) {
                 suggestionsBox.innerHTML = '';
                 return;
             }
-
-            try {
-                const response = await fetch('/api/search-suggestions?q=' + encodeURIComponent(query));
-                const data = await response.json();
-
-                suggestionsBox.innerHTML = data.map(movie => 
-                    `<div class="suggestion-item" onclick="window.location.href='/media/movie/${movie.id}'">${movie.title}</div>`
-                ).join('');
-            } catch (err) {
-                console.error("Suggestion fetch failed", err);
-            }
+            const response = await fetch('/api/search-suggestions?q=' + encodeURIComponent(query));
+            const data = await response.json();
+            suggestionsBox.innerHTML = data.map(movie => 
+            `<div class="suggestion-item" 
+                onclick="window.location.href='/media/${movie.media_type}/${movie.id}'">
+                ${movie.title} (${movie.media_type === 'tv' ? 'TV' : 'Movie'})
+            </div>`
+        ).join('');
         }, 300));
-    }
-
-    function debounce(func, delay) {
-        let timeout;
-        return (...args) => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(this, args), delay);
-        };
-    }
-
-    const input = document.getElementById("movieName");
-    if (input) {
-        type();
     }
 });

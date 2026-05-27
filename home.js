@@ -302,13 +302,26 @@ app.get("/results", async (req,res) => {
 app.get('/api/search-suggestions', async (req, res) => {
     const query = req.query.q;
     const api_key = process.env.TMDB_API_KEY;
-    const url = `https://api.themoviedb.org/3/search/movie?api_key=${api_key}&query=${encodeURIComponent(query)}&page=1`;
+    const url = `https://api.themoviedb.org/3/search/multi?api_key=${api_key}&query=${encodeURIComponent(query)}&page=1`;
     
-    const response = await fetch(url);
-    const data = await response.json();
-    
-    const suggestions = (data.results || []).slice(0, 5).map(m => ({ title: m.title, id: m.id }));
-    res.json(suggestions);
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        const suggestions = (data.results || [])
+            .filter(m => (m.title || m.name) && m.poster_path) 
+            .sort((a, b) => b.popularity - a.popularity)       
+            .slice(0, 5)                                       
+            .map(m => ({ 
+                title: m.title || m.name, 
+                id: m.id,
+                media_type: m.media_type 
+            }));
+            
+        res.json(suggestions);
+    } catch (err) {
+        res.json([]);
+    }
 });
 
 app.get("/discover", async(req, res) => {

@@ -16,7 +16,7 @@ router.get("/:type/:id", async (req,res)=>{
     const api_key = process.env.TMDB_API_KEY;
     
     function getXPrimeUrl(imdbId) {
-        if (!imdbId) return null;
+        if (!imdbId) return [];
         
         const cleanId = imdbId.startsWith('tt') ? imdbId : `tt${imdbId}`;
         
