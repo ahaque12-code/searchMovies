@@ -67,13 +67,6 @@ router.get("/:type/:id", async (req,res)=>{
 
         const videoData = await videoRes.json();
         const trailer = videoData.results.find(v => v.type === "Trailer" && v.site === "YouTube");
-        const trailerHtml = trailer 
-            ? `<h3 class="overview-heading">Trailer</h3>
-            <div class="video-container">
-                <iframe width="100%" height="315" src="https://www.youtube.com/embed/${trailer.key}" frameborder="0" allowfullscreen></iframe>
-            </div>` 
-            : "";
-            
 
         const favorites = await fetchFavoritesFromDB(req.session.userId);
         const isFav = favorites.some(f => String(f.imdbId).trim() === String(id).trim()) ? 'active' : '';
