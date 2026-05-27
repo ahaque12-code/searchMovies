@@ -56,13 +56,24 @@ router.get("/:type/:id", async (req,res)=>{
     }
 
     try{
-        const [detailsRes, providersRes] = await Promise.all([
+        const [detailsRes, providersRes, videoRes] = await Promise.all([
         fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${api_key}&language=en-US&append_to_response=external_ids`, { headers: { 'Authorization': `Bearer ${process.env.TMDB_BEARER_TOKEN}` } }),
-        fetch(`https://api.themoviedb.org/3/${type}/${id}/watch/providers?api_key=${api_key}&append_to_response=external_ids`, { headers: { 'Authorization': `Bearer ${process.env.TMDB_BEARER_TOKEN}` } })
+        fetch(`https://api.themoviedb.org/3/${type}/${id}/watch/providers?api_key=${api_key}&append_to_response=external_ids`, { headers: { 'Authorization': `Bearer ${process.env.TMDB_BEARER_TOKEN}` } }),
+        fetch(`https://api.themoviedb.org/3/${type}/${id}/videos?api_key=${api_key}`, { headers: { 'Authorization': `Bearer ${process.env.TMDB_BEARER_TOKEN}` } })
         ]);
 
         const data = await detailsRes.json();
         const providerData = await providersRes.json();
+
+        const videoData = await videoRes.json();
+        const trailer = videoData.results.find(v => v.type === "Trailer" && v.site === "YouTube");
+        const trailerHtml = trailer 
+            ? `<h3 class="overview-heading">Trailer</h3>
+            <div class="video-container">
+                <iframe width="100%" height="315" src="https://www.youtube.com/embed/${trailer.key}" frameborder="0" allowfullscreen></iframe>
+            </div>` 
+            : "";
+            
 
         const favorites = await fetchFavoritesFromDB(req.session.userId);
         const isFav = favorites.some(f => String(f.imdbId).trim() === String(id).trim()) ? 'active' : '';
@@ -227,6 +238,18 @@ router.get("/:type/:id", async (req,res)=>{
                                 
                                 <h3 class="overview-heading">Overview</h3>
                                 <p class="details-overview">${overview}</p>
+
+                                ${trailer 
+                                    ? `<button class="trailer-btn" onclick="openTrailer('${trailer.key}')">▶ Watch Trailer</button>` 
+                                    : `<p>No trailer available.</p>`
+                                }
+
+                                <div id="trailerModal" class="modal">
+                                    <div class="modal-content">
+                                        <span class="close" onclick="closeTrailer()">&times;</span>
+                                        <div id="player"></div>
+                                    </div>
+                                </div>
                                 
                                 <h3 class="overview-heading">Where to Watch</h3>
                                 <div class="watch-providers">
@@ -270,6 +293,17 @@ router.get("/:type/:id", async (req,res)=>{
                         console.log("Favorite status updated: " + isActive);
                     }
 
+                    function openTrailer(key) {
+                        const modal = document.getElementById('trailerModal');
+                        const player = document.getElementById('player');
+                        player.innerHTML = '<iframe width="100%" height="400" src="https://www.youtube.com/embed/' + key + '" frameborder="0" allowfullscreen></iframe>';                        
+                        modal.style.display = "flex";
+                    }
+
+                    function closeTrailer() {
+                        document.getElementById('trailerModal').style.display = "none";
+                        document.getElementById('player').innerHTML = ""; // Stops the video
+                    }
                 </script>
             </html>`);
 
