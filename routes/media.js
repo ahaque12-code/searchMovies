@@ -55,6 +55,16 @@ router.get("/:type/:id", async (req,res)=>{
         return `https://www.google.com/search?q=${query}`;
     }
 
+    function getMovieLinkBd(title){
+        const slug = title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')
+        .trim()
+        .replace(/\s+/g, '+');
+
+        return `https://yr7prg.movielinkbd.li/search?q=${slug}`;
+    }
+
     try{
         const [detailsRes, providersRes, videoRes] = await Promise.all([
         fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${api_key}&language=en-US&append_to_response=external_ids`, { headers: { 'Authorization': `Bearer ${process.env.TMDB_BEARER_TOKEN}` } }),
@@ -135,6 +145,14 @@ router.get("/:type/:id", async (req,res)=>{
             links.push({ 
                 name: "KissKH (Search)", 
                 url: getKissKhSearchLink(title) 
+            });
+        }
+
+        const isBengali = data.spoken_languages?.some(lang => lang.iso_639_1 === "bn");
+        if (isBengali) {
+            links.push({ 
+                name: "MovieLink BD", 
+                url: getMovieLinkBd(title) 
             });
         }
 
