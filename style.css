@@ -250,7 +250,7 @@ button{
   left: 0;
   width: 100%;
   background: #000;
-  border: 1px solid #333;
+  border: 1px none #333;
   z-index: 9999;
   margin-top: 10px;
   border-radius: 0 0 8px 8px;
