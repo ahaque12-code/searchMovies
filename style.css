@@ -83,7 +83,7 @@ body{
 #movieForm #movieName{
   width: 400px;
   font-size: medium;
-  border-width: 4px;
+  border-width: 2px;
   color:white;
 }
 
@@ -94,6 +94,7 @@ body{
 #movieForm #movieRating{
   text-align: center;
   width: 140px;
+  border:none;
     
 }
 
@@ -125,6 +126,7 @@ body{
   background-color:rgba(49, 232, 162, 0.94);
   border-radius: 10px;;
   padding: 10px;
+  border:none;
 }
 
 #genreBtn:hover{
@@ -133,6 +135,7 @@ body{
 
 #movieForm #yearRelease{
   width: 55px;
+  border:none;
 }
 
 #typeSelector{
