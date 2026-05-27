@@ -317,10 +317,20 @@ button{
   padding-right: 10px;
 }
 
+#dltForm{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: auto;
+}
+
 #deleteBtn{
   background-color: rgb(255, 0, 0);
   color:white;
   border-radius: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+  margin-top: 15px;
 }
 
 #deleteBtn:hover{
@@ -335,6 +345,7 @@ button{
   background-color: rgb(255, 0, 0);
   color:white;
   border-radius: 10px;
+  font-size: medium;
 }
 
 #deleteAllBtn:hover{

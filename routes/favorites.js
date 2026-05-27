@@ -36,24 +36,25 @@ router.get("/", async (req, res) => {
         <div class="movie-grid">
     `;
   
-  favorites.forEach(movie => {
-    const cert = movie.certification || "PG";
-    html += `
-      <div class="movie-card">
-        <div class="poster-container">
-          <span class="cert-badge ${cert.replace(/[^a-zA-Z0-9]/g, '-')}">${cert}</span>
-          <img src="${movie.image || ''}" alt="movie poster">
-        </div>
-        <h3>${movie.title}</h3>
-        <p><strong>Year:</strong> ${movie.year || "N/A"}</p>
-        <p><strong>Genre:</strong> ${movie.genres || "Unknown"}</p>
-        <p><strong>Rating:</strong> ${movie.rating || "N/A"}</p>
-        <form action="/favorites/delete/${movie._id}" method="POST">
-          <button type="submit" id = "deleteBtn">Delete</button>
-        </form>
-      </div>
-    `;
-  });
+    favorites.forEach(movie => {
+        const cert = movie.certification || "PG";
+        html += `
+          <div class="movie-card" style="cursor: pointer;" onclick="window.location.href='/media/movie/${movie.imdbId}'">
+            <div class="poster-container">
+              <span class="cert-badge ${cert.replace(/[^a-zA-Z0-9]/g, '-')}">${cert}</span>
+              <img src="${movie.image || ''}" alt="movie poster">
+            </div>
+            <h3>${movie.title}</h3>
+            <p><strong>Year:</strong> ${movie.year || "N/A"}</p>
+            <p><strong>Genre:</strong> ${movie.genres || "Unknown"}</p>
+            <p><strong>Rating:</strong> ${movie.rating || "N/A"}</p>
+            
+            <form id="dltForm" action="/favorites/delete/${movie._id}" method="POST" onclick="event.stopPropagation()">
+              <button type="submit" id="deleteBtn">Delete</button>
+            </form>
+          </div>
+        `;
+    });
 
     html += `
     </div>
