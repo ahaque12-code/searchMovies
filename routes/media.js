@@ -174,6 +174,12 @@ router.get("/:type/:id", async (req,res)=>{
 
         if (isAnime) {
             links = [];
+
+            links.push({
+                name: "Cineby",
+                url: `https://www.cineby.sc/${type}/${id}`
+            });
+
             links.push({ 
                 name: "AniSuge", 
                 url: getAnimeLink(title) 
