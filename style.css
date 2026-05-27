@@ -64,6 +64,12 @@ body{
   text-align: center;
 }
 
+#movieForm {
+   position: relative;
+    display: inline-block;
+    width: 400px;
+}
+
 #movieForm input{
   background-color:rgba(49, 232, 162, 0.94);
   border-radius: 10px;;
@@ -183,7 +189,7 @@ body{
 }
 
 .movie-card:hover {
-  transform: scale(1.03);
+  transform: scale(1.05);
 }
 
 .movie-card h3 {
@@ -228,6 +234,49 @@ body{
 
 button{
   color: white;
+}
+
+.search-container {
+  position: relative; 
+  width: 400px; 
+}
+
+#suggestionsBox {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: #000;
+  border: 1px solid #333;
+  z-index: 9999;
+  margin-top: 10px;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  overflow: hidden;
+}
+
+.suggestion-item {
+  padding: 12px;
+  cursor: pointer;
+  color: white;
+  transition: background 0.2s;
+}
+
+.suggestion-item:hover {
+  background: #21d07a;
+  color: black;
+}
+
+.rec-container{
+  display: flex;          
+  flex-wrap: wrap;           
+  justify-content: center;   
+  gap: 20px;                 
+  padding: 20px;             
+  margin-top: 20px;
+  background: rgba(255, 255, 255, 0.05); 
+  border-radius: 15px;
+  margin-bottom: 10px;
 }
 
 .navbar2 {

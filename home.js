@@ -109,30 +109,40 @@ app.get('/', (req,res) => {
                 <div id = "movieBody">
                     <h2>Making searching movies easier</h2> 
                     <form id = "movieForm" action = "/results" method = "get">
-                     <input type = "text" name = "q" id = "movieName" placeholder = "" ><br><br>
-                     <h3>Not sure what to search? Just fill up these and get recommendations!</h3>
-                     <input type = "number" name="rating" id = "movieRating" max = 10 min = 0 step = 0.1 placeholder = "Minimum Rating" >
-                     <div class="genre-wrapper">
-                        <button type="button" id="genreBtn">Select Genre</button>
-                        <div id="genreBox" class="genre-box hidden">
-                            <label><input type="checkbox" value="Action"> Action</label>
-                            <label><input type="checkbox" value="Comedy"> Comedy</label>
-                            <label><input type="checkbox" value="Drama"> Drama</label>
-                            <label><input type="checkbox" value="Horror"> Horror</label>
-                            <label><input type="checkbox" value="Romance"> Romance</label>
-                            <label><input type="checkbox" value="Sci-Fi"> Sci-Fi</label>
-                            <label><input type="checkbox" value="Thriller"> Thriller</label>
-                            <label><input type="checkbox" value="Animation"> Animation</label>
-                            <label><input type="checkbox" value="Crime"> Crime</label>
-                            <label><input type="checkbox" value="Adventure"> Adventure</label>
-                        </div>
-                        <input type="hidden" name="genres" id="selectedGenres">
-                     </div>
-                     <input type = "text" name = "year" id = "yearRelease" placeholder = "Year">
-                     <div id="typeSelector">
-                        <label><input type="radio" name="type" value="movie" checked> Movie</label>
-                        <label><input type="radio" name="type" value="tv"> TV Show</label> </div>
+                    <div class="search-container" style="position: relative; display: inline-block;">
+                        <input type="text" name="q" id="movieName" placeholder="Search movies...">
+                        <div id="suggestionsBox"></div>
+                    </div>
+
                      <br><br>
+
+                     <h3>Not sure what to search? Just fill up these and get recommendations!</h3>
+
+                     <div class = "rec-container">
+                        <input type = "number" name="rating" id = "movieRating" max = 10 min = 0 step = 0.1 placeholder = "Minimum Rating" >
+                        <div class="genre-wrapper">
+                            <button type="button" id="genreBtn">Select Genre</button>
+                            <div id="genreBox" class="genre-box hidden">
+                                <label><input type="checkbox" value="Action"> Action</label>
+                                <label><input type="checkbox" value="Comedy"> Comedy</label>
+                                <label><input type="checkbox" value="Drama"> Drama</label>
+                                <label><input type="checkbox" value="Horror"> Horror</label>
+                                <label><input type="checkbox" value="Romance"> Romance</label>
+                                <label><input type="checkbox" value="Sci-Fi"> Sci-Fi</label>
+                                <label><input type="checkbox" value="Thriller"> Thriller</label>
+                                <label><input type="checkbox" value="Animation"> Animation</label>
+                                <label><input type="checkbox" value="Crime"> Crime</label>
+                                <label><input type="checkbox" value="Adventure"> Adventure</label>
+                            </div>
+                            <input type="hidden" name="genres" id="selectedGenres">
+                        </div>
+                        <input type = "text" name = "year" id = "yearRelease" placeholder = "Year">
+                        <div id="typeSelector">
+                            <label><input type="radio" name="type" value="movie" checked> Movie</label>
+                            <label><input type="radio" name="type" value="tv"> TV Show</label> </div>
+                        <br><br>
+                     </div>
+
                      <input type = "submit" id = "submit" value = "Search">
                     </form>
                 </div>
@@ -282,10 +292,23 @@ app.get("/results", async (req,res) => {
             </body>
             </html>
         `;
+
         return res.send(html);
     } catch(err){
         return res.status(500).send("Error reading data.");
     }
+});
+
+app.get('/api/search-suggestions', async (req, res) => {
+    const query = req.query.q;
+    const api_key = process.env.TMDB_API_KEY;
+    const url = `https://api.themoviedb.org/3/search/movie?api_key=${api_key}&query=${encodeURIComponent(query)}&page=1`;
+    
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    const suggestions = (data.results || []).slice(0, 5).map(m => ({ title: m.title, id: m.id }));
+    res.json(suggestions);
 });
 
 app.get("/discover", async(req, res) => {
