@@ -65,6 +65,17 @@ router.get("/:type/:id", async (req,res)=>{
         return `https://yr7prg.movielinkbd.li/search?q=${slug}`;
     }
 
+    function getAnimeLink(title) {
+        const query = encodeURIComponent(title);
+        return `https://anisuge.tv/filter?keyword=${query}`;
+    }
+
+    function getAnimeLink2(title){
+        const query = encodeURIComponent(title);
+        return `https://anizone.to/anime?search=${query}`;
+    }
+
+
     try{
         const [detailsRes, providersRes, videoRes] = await Promise.all([
         fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${api_key}&language=en-US&append_to_response=external_ids`, { headers: { 'Authorization': `Bearer ${process.env.TMDB_BEARER_TOKEN}` } }),
@@ -124,13 +135,16 @@ router.get("/:type/:id", async (req,res)=>{
 
         const imdbId = data.external_ids?.imdb_id;
         const xPrimeLinks = getXPrimeUrl(imdbId);
-        const links = [
+        let links = [
             { name: "123 Chill", url: `https://123chill.in/${mediaType}/${searchSlug}/` },
+            {name: "Cineby", url: `https://www.cineby.sc/${type}/${id}`},
             ...xPrimeLinks
         ];
 
         const isHindi = data.spoken_languages?.some(lang => lang.iso_639_1 === "hi");
         if (isHindi) {
+            links.splice(0,1);
+            links.splice(1,1);
             links.push({ name: "YoMovies", url: getHindiLink(title, year) });
         }
 
@@ -154,6 +168,26 @@ router.get("/:type/:id", async (req,res)=>{
                 name: "MovieLink BD", 
                 url: getMovieLinkBd(title) 
             });
+        }
+
+        const isAnime = data.genres?.some(g => g.name === "Animation") && data.original_language === "ja";
+
+        if (isAnime) {
+            links = [];
+            links.push({ 
+                name: "AniSuge", 
+                url: getAnimeLink(title) 
+            });
+
+            links.push({
+                name: "AniZone",
+                url: getAnimeLink2(title)
+            })
+
+            links.push({
+                name: "Anime Websites list",
+                url: `https://yarrlist.net/anime-list`
+            })
         }
 
        const secretLinksHtml = links.map(link => 
