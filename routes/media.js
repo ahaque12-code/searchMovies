@@ -1,4 +1,6 @@
 const express = require("express");
+const axios = require("axios");
+const cheerio = require("cheerio");
 const router = express.Router();
 const { fetchFavoritesFromDB } = require("../db.js");
 
@@ -10,6 +12,34 @@ const detailGenreMap = {
     10752: "War", 37: "Western", 10759: "Action & Adventure", 10765: "Sci-Fi & Fantasy"
 };
 
+async function getRottenTomatoesScore(title, type) {
+    try {
+        const prefix = (type === 'tv') ? 'tv' : 'm';
+        const formattedTitle = title.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+        const url = `https://www.rottentomatoes.com/${prefix}/${formattedTitle}`;
+
+        const { data } = await axios.get(url, {
+            headers: { 
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' 
+            }
+        });
+
+        const $ = cheerio.load(data);
+        
+        const jsonLd = $('script[type="application/ld+json"]').html();
+        if (jsonLd) {
+            const parsed = JSON.parse(jsonLd);
+            if (parsed.aggregateRating && parsed.aggregateRating.ratingValue) {
+                return `${parsed.aggregateRating.ratingValue}%`;
+            }
+        }
+        
+        return "N/A";
+    } catch (err) {
+        console.error("Scraping failed for:", title, err.message);
+        return "N/A";
+    }
+}
                     
 router.get("/:type/:id", async (req,res)=>{
     const { type, id } = req.params;
@@ -97,6 +127,7 @@ router.get("/:type/:id", async (req,res)=>{
         const dateString = data.release_date || data.first_air_date || "";
         const year = (data.release_date || data.first_air_date || "").substring(0, 4) || "0000";        
         const rating = data.vote_average ? Number(data.vote_average).toFixed(1) : "N/A";
+        const rtScore = await getRottenTomatoesScore(data.title || data.name, type);
         const overview = data.overview || "No overview available.";
         const tagline = data.tagline ? `"${data.tagline}"` : "";
         const lang = data.original_language;
@@ -283,6 +314,8 @@ router.get("/:type/:id", async (req,res)=>{
                                 <div class="score-container">
                                     <div class="score-circle">⭐ ${rating}</div>
                                     <span class="score-label">User Score</span>
+                                    <span class="score-label">🍅 RT:</span>
+                                    <span class="score-circle"> ${rtScore}</span>
                                 </div>
 
                                 <p class="details-tagline"><em>${tagline}</em></p>
