@@ -326,6 +326,8 @@ body{
 .secret-link-list{
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
     list-style: none;
     padding: 0;
     margin: 0;
@@ -455,5 +457,14 @@ body{
 
     input:checked + .slider:before {
         transform: translateX(26px);
+    }
+
+   .secret-link-list {
+        justify-content: center;
+    }
+
+    .secret-link {
+        font-size: 0.85rem;    
+        padding: 8px 10px;
     }
 }
