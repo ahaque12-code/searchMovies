@@ -71,11 +71,39 @@ document.addEventListener("DOMContentLoaded", () => {
 document.addEventListener("DOMContentLoaded", () => {
     const genreBtn = document.getElementById("genreBtn");
     const genreBox = document.getElementById("genreBox");
+    const checkboxes = document.querySelectorAll("#genreBox input[type='checkbox']");
+    const selectedGenresInput = document.getElementById("selectedGenres");
 
+    // 1. Toggle visibility (keep existing)
     if (genreBtn && genreBox) {
         genreBtn.addEventListener("click", (e) => {
-            e.stopPropagation(); // Stops the click from bubbling up
+            e.stopPropagation();
             genreBox.classList.toggle("hidden");
         });
+        
+        document.addEventListener("click", (e) => {
+            if (!genreBox.contains(e.target) && e.target !== genreBtn) {
+                genreBox.classList.add("hidden");
+            }
+        });
     }
+
+    // 2. UPDATED: Sync checkboxes, hidden input, AND button text
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener("change", () => {
+            const selected = Array.from(checkboxes)
+                .filter(i => i.checked)
+                .map(i => i.value);
+            
+            // Update the hidden input for the form submission
+            selectedGenresInput.value = selected.join(",");
+            
+            // Update the button text
+            if (selected.length > 0) {
+                genreBtn.textContent = selected.join(", ");
+            } else {
+                genreBtn.textContent = "Select Genre";
+            }
+        });
+    });
 });
