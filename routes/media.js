@@ -257,7 +257,7 @@ router.get("/:type/:id", async (req,res)=>{
                     <link rel="stylesheet" href="/routes/media.css">
                     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
                     <link rel="icon" type="image/x-icon" href="/images/icon.png">
-                    <title>${title} (${year})</title>
+                    <title>${title} (${year}) - SearchMovie</title>
                     <style>
                         .details-hero {
                             position: relative;
@@ -308,7 +308,7 @@ router.get("/:type/:id", async (req,res)=>{
                                     <span class="meta-badge">${type === 'movie' ? 'Movie' : 'TV Show'}</span>
                                     <span>• ${dateString || "N/A"}</span>
                                     <span>• ${genresText}</span>
-                                    <span>• ⏱️ ${durationText}</span>
+                                    <span>• ${durationText}</span>
                                 </div>
 
                                 <div class="score-container">

@@ -90,6 +90,7 @@ app.get('/', (req,res) => {
             <head>
                 <meta charset = "utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <meta name="description" content="Search and discover movies and TV shows, read reviews, and find where to watch them with SearchMovie.">
                 <link rel = "stylesheet" href= "style.css">
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
                 <link rel="icon" type="image/x-icon" href="images/icon.png">
@@ -97,12 +98,16 @@ app.get('/', (req,res) => {
                 <script src = "genreFunc.js" defer></script>
             </head>
             <body>
-                <nav class = "navbar">
-                    <a href = "/" id = "titleLink">
-                    <span class="nav-title">SearchMovie</span>
-                    </a>
-                    <div class="nav-links">
-                        ${navLinksHtml}
+                <nav class="navbar">
+                    <a href="/" id="titleLink"><span class="nav-title">SearchMovie</span></a>
+                    <button class="hamburger" id="hamburger">☰</button>
+
+                    <div class="nav-links" id="navLinks">
+                        <span class="nav-greeting">Hello, ${username}!</span>
+                        <a href="/favorites" class="nav-item">Favorite List</a>
+                        <form action="/users/logout" method="post" style="display: inline;">
+                            <button type="submit" id="logout-link-btn">Sign Out</button>
+                        </form>
                     </div>
                 </nav>
 
