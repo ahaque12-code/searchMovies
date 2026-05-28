@@ -391,9 +391,32 @@ body{
 }
 
 @media (max-width: 850px) {
+    .navbar{
+        margin-bottom: -5px;
+    }
+
+    .nav-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #ffffff;
+        letter-spacing: -0.5px;
+        margin-left: -20px;
+    }
+
+    .nav-links {
+        gap: 5px; 
+        justify-content: center; 
+    }
+
+    .nav-item {
+        padding: 5px 8px;
+        font-size: 0.85rem;
+    }
+
     .details-container {
         flex-direction: column;
         text-align: center;
+        align-items: center;
         padding: 25px;
         gap: 30px;
     }
@@ -404,7 +427,9 @@ body{
     }
 
     .details-title {
-        font-size: 2rem;
+       font-size: 2rem;
+        margin-left: 51px;
+        margin-bottom: 30px;
     }
 
     .details-meta {
@@ -414,5 +439,21 @@ body{
 
     .details-poster {
         width: 220px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 27px;
+        width: 26px;
+        left: 1px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        top: -2px;
+    }
+
+    input:checked + .slider:before {
+        transform: translateX(26px);
     }
 }
