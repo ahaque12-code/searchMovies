@@ -94,6 +94,7 @@ body{
   font-size: medium;
   border-width: 2px;
   color:white;
+  transition:  0.3s ease;
 }
 
 #movieForm #movieName:hover{
@@ -120,6 +121,7 @@ body{
   padding: 10px;
   width: 180px;
   z-index: 10;
+  border-radius: 5px;
 }
 
 .genre-box label {
