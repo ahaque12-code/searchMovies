@@ -152,6 +152,7 @@ app.get('/', (req,res) => {
                     </form>
                     <br><br>
                 </div>
+                <!--
                 <div id="chatbot-container">
                     <div id="chatbot-header">
                         <h2 id="heading">Chat Bot</h2>
@@ -161,6 +162,7 @@ app.get('/', (req,res) => {
                         ON TESTING PHASE
                     </div>
                 </div>
+                -->
             </body>
         </html>
         `);

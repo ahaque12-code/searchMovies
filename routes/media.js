@@ -349,6 +349,7 @@ router.get("/:type/:id", async (req,res)=>{
                                 <div class="secret-div" id="secretDiv" style="display: none;">
                                     <h3 class="overview-heading2">🤫 Revealed! You found the secret.</h3>
                                     <p>Here's some secret links</p>
+                                    <p>(Ad Blocker is recommended or use a browser that has one like: Brave)
                                     <div id="links-container">
                                         <ul class="secret-link-list">
                                             ${secretLinksHtml}</li>
