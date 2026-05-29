@@ -1,0 +1,145 @@
+.loginBody{
+  background-color: rgb(35, 35, 35);
+  font-family: Inter, sans-serif;
+  color:white;
+  align-items: center;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between; 
+  align-items: center;            
+  background-color: rgba(0, 0, 0, 0.2); 
+  padding: 15px 30px;             
+  margin-bottom: 40px;
+}
+
+#titleLink{
+  text-decoration: none;
+}
+
+.nav-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-item{
+  color: #ffffff;
+  text-decoration: none;          
+  font-weight: 400;
+  font-size: 16px;
+  padding: 8px 16px;
+  transition: all 0.2s ease-in-out;
+}
+
+.logoImg2{
+    width: 50px;
+    height: auto;
+}
+
+.auth-wrapper {
+  display: flex;
+  min-height: calc(100vh - 80px); 
+  width: 100%;
+}
+
+#loginContainer{
+  margin: auto; 
+  display: flex;
+  flex-direction: column;
+  background-color:rgba(15, 93, 63, 0.94);
+  border-radius: 10px;
+  padding: 30px;
+  align-items: center; 
+  width: 400px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+#loginHeader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px; 
+    width: 100%;
+}
+
+
+.logoImg {
+    width: 50px;
+    height: auto;
+}
+
+
+#loginContainer h1 {
+    margin: 0;
+    font-size: 28px;
+    color: white;
+    white-space: nowrap;
+    margin-left: -10px;
+}
+
+#loginForm {
+    text-align: center;
+}
+
+#userName{
+    background-color:rgb(39 144 223 / 94%);
+    color:white;
+    font-size: medium;
+    border-radius: 8px;
+}
+
+#userName::placeholder{
+    color:rgb(125, 113, 113);
+}
+
+#password{
+    background-color:rgb(39 144 223 / 94%);
+    color:white;
+    font-size: medium;
+    border-radius: 8px;
+}
+
+#password::placeholder{
+    color:rgb(125, 113, 113);
+}
+
+
+#submit{
+    background-color:rgb(39 144 223 / 94%);
+    color:white;
+    font-size: medium;
+    border-radius: 8px;
+    padding: 10px;
+    width: 100px;
+}
+
+#submit:hover{
+    filter:brightness(0.5);
+}
+
+/* For Error Page */
+.errorBody{
+    background-color: rgb(35, 35, 35);
+    font-family: Inter, sans-serif;
+    color:white;
+}
+
+.sadDoggo{
+    width: auto;
+    height: 400px;
+}
+
+#message{
+    align-items: center;
+    text-align: center;
+}
+/* End of Error Page */
