@@ -421,7 +421,7 @@ button{
 }
 
 .heart-icon {
- background-color: rgba(255, 255, 255, 0.6);;
+  background-color: rgba(255, 255, 255, 0.6);;
   width: 25px;
   aspect-ratio: 1;
   -webkit-mask: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E") no-repeat center;
@@ -429,11 +429,52 @@ button{
   transition: background-color 0.3s; 
 }
 
-
 .heart-btn.active .heart-icon {
-    background-color: #e50914;
-    opacity: 1;
+  background-color: #e50914;
+  opacity: 1;
 }
+
+#chatbot-container{
+  position: fixed; 
+  bottom: 20px;   
+  right: 20px;  
+  display: flex;
+  flex-direction: column;
+  background-color: #007bff;
+  color: white;
+  width: 300px;
+  min-height: 50px; 
+  border-radius: 10px;
+  z-index: 9999;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  overflow: hidden;
+}
+
+#chatbot-header{
+  display: inline-flex;
+  justify-content: space-between;
+  padding: 0 15px;
+  width: 100%;
+}
+
+#chatbot-button{
+  background-color: unset;
+  border:none;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+#chatbot-body {
+  display: none;
+  padding: 15px;
+  background-color: white;
+  color: lightblue;
+  color: black;
+  flex-grow: 1;
+  overflow-y: auto;  
+  text-align: center;
+}
+
 
 /* For Smaller devices, more work will come around */
 @media (max-width: 600px) {

@@ -1,8 +1,8 @@
-const session = require('express-session');
-const MongoStore = require('connect-mongo').default;
+require('dotenv').config();
+const session = require("express-session");
+const MongoStore = require("connect-mongo").default;
 const express = require("express");
 const path = require("path");
-require('dotenv').config();
 const port = process.env.PORT || 3001;
 const app = express();
 const mongoose = require("mongoose");
@@ -150,6 +150,16 @@ app.get('/', (req,res) => {
 
                      <input type = "submit" id = "submit" value = "Search">
                     </form>
+                    <br><br>
+                </div>
+                <div id="chatbot-container">
+                    <div id="chatbot-header">
+                        <h2 id="heading">Chat Bot</h2>
+                        <button id="chatbot-button">▲</button>
+                    </div>
+                    <div id="chatbot-body">
+                        ON TESTING PHASE
+                    </div>
                 </div>
             </body>
         </html>
