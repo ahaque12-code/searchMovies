@@ -49,8 +49,8 @@ body{
 }
 
 #logout-link-btn{
-  background-color: rgba(255, 255, 255, 0.15);
-  border-radius: 5px;
+  background-color: unset;
+  border:none;
   color: #ffffff;
   text-decoration: none;          
   font-weight: 400;
