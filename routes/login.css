@@ -1,3 +1,7 @@
+html {
+  scroll-behavior: smooth;
+}
+
 .loginBody{
   background-color: rgb(35, 35, 35);
   font-family: Inter, sans-serif;
@@ -38,6 +42,12 @@
   font-size: 16px;
   padding: 8px 16px;
   transition: all 0.2s ease-in-out;
+  border-radius: 5px;
+}
+
+.nav-item:hover{
+    background-color:rgba(255, 255, 255, 0.15); 
+    color: yellow;
 }
 
 .logoImg2{
@@ -95,6 +105,7 @@
     color:white;
     font-size: medium;
     border-radius: 8px;
+    padding: 5px;
 }
 
 #userName::placeholder{
@@ -106,12 +117,20 @@
     color:white;
     font-size: medium;
     border-radius: 8px;
+    padding: 5px;
 }
 
 #password::placeholder{
     color:rgb(125, 113, 113);
 }
 
+#hereBtn{
+    color: yellow;
+}
+
+#hereBtn:hover{
+    color: purple;
+}
 
 #submit{
     background-color:rgb(39 144 223 / 94%);
@@ -124,6 +143,39 @@
 
 #submit:hover{
     filter:brightness(0.5);
+}
+
+#feature-heading{
+    text-align: center;
+}
+
+.feature-container{
+    display: flex;
+    align-items: stretch;
+    justify-content: space-evenly;
+    flex-wrap: wrap;
+    gap: 25px;
+}
+
+#feature-section{
+    display: flex;
+    background-color: rgb(126 163 163);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    border-radius: 16px;
+    padding: 20px;
+    width: 300px;
+    margin-bottom: 10px;
+}
+
+#feature-section:hover{
+    transform: scale(1.05);
+}
+
+#feature-section h2{
+    text-align: center;
+    margin: 0;
 }
 
 /* For Error Page */

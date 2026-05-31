@@ -116,6 +116,7 @@ app.get('/', (req,res) => {
                     <form id = "movieForm" action = "/results" method = "get">
                     <div class="search-container" style="position: relative; display: inline-block;">
                         <input type="text" name="q" id="movieName" placeholder="Search movies...">
+                        <button id="searchBtn"><img id="srchImg" src="images/search-symbol-wbg.png" alt="Search"></button>
                         <div id="suggestionsBox"></div>
                     </div>
 

@@ -51,15 +51,15 @@ router.get("/login", (req,res) => {
             <body class="loginBody">
                 <nav class = "navbar">
                     <div class="nav-left">
-                        <img src="/images/icon-removebg.png" alt="Log" class="logoImg2">  
+                        <img src="/images/icon.png" alt="Log" class="logoImg2">  
                         <a href="/users/login" id="titleLink">
                             <span class="nav-title">SearchMovie</span>
                         </a>
                     </div>
                     <div class="nav-right">
-                        <a class="nav-item">About Dev</a>
-                        <a class="nav-item">Features</a>
-                        <a class="nav-tiem">Tools Used</a>
+                        <a href= "https://github.com/ah2355" target="_blank" class="nav-item">About Dev</a>
+                        <a href="#feature-heading" class="nav-item">Features</a>
+                        <a class="nav-item">Tools Used</a>
 
                     </div>
                 </nav>
@@ -75,9 +75,28 @@ router.get("/login", (req,res) => {
                             <input type="password" id="password" name="password" placeholder="Password" required><br><br>
                             <input type="submit" id="submit" value="Sign In">
                         </form>
-                        <p style="margin-top: 24px;">Don't have an account? Create one <a href="/users/register" style="color: #dfd327;">here</a></p>
+                        <p style="margin-top: 24px;">Don't have an account? Create one <a href="/users/register" id="hereBtn">here</a></p>
                     </div>
                 </div>
+                <!--
+                <hr>
+                <h1 id="feature-heading">Features</h1>
+                <br>
+                <div class="feature-container">
+                    <div id="feature-section">
+                        <h2>Intelligent Search & Autocomplete</h2>
+                        <p>Feature Info</p>
+                    </div>
+                    <div id="feature-section">
+                        <h2>Discovery Filter</h2>
+                        <p>Feature info</p>
+                    </div>
+                    <div id="feature-section">
+                         <h2>Personalized Favorites Management</h2>
+                         <p>Feature info</p>
+                    </div>
+                </div>
+                -->
             </body>
         </html>`);
 })
