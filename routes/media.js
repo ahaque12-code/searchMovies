@@ -188,7 +188,7 @@ router.get("/:type/:id", async (req,res)=>{
                 url: getAsiaFlixLink(title, year) 
             });
             links.push({ 
-                name: "KissKH (Search)", 
+                name: "⭐️ KissKH (Search)", 
                 url: getKissKhSearchLink(title) 
             });
         }
@@ -196,7 +196,7 @@ router.get("/:type/:id", async (req,res)=>{
         const isBengali = data.spoken_languages?.some(lang => lang.iso_639_1 === "bn");
         if (isBengali) {
             links.push({ 
-                name: "MovieLink BD", 
+                name: "⭐️ MovieLink BD", 
                 url: getMovieLinkBd(title) 
             });
         }
@@ -206,20 +206,20 @@ router.get("/:type/:id", async (req,res)=>{
         if (isAnime) {
             links = [];
 
-            links.push({
-                name: "Cineby",
-                url: `https://www.cineby.sc/${type}/${id}`
-            });
+             links.push({
+                name: "⭐️ AniZone",
+                url: getAnimeLink2(title)
+            })
 
-            links.push({ 
-                name: "AniSuge", 
+             links.push({ 
+                name: "🥈 AniSuge", 
                 url: getAnimeLink(title) 
             });
 
             links.push({
-                name: "AniZone",
-                url: getAnimeLink2(title)
-            })
+                name: "Cineby",
+                url: `https://www.cineby.sc/${type}/${id}`
+            });
 
             links.push({
                 name: "Anime Websites list",

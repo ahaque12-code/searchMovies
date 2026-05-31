@@ -83,6 +83,8 @@ body{
   background-color:rgba(49, 232, 162, 0.94);
   border-radius: 16px;;
   padding: 10px;
+   outline: none;
+
 }
 
 #movieForm input::placeholder{
@@ -113,7 +115,7 @@ body{
   height: 100%;
   width: 43px;
   border-radius: 50%;
-  background-color: teal;
+  background-color: unset;
   border: none;
   cursor: pointer;
 }
@@ -222,6 +224,7 @@ body{
 
 .movie-card:hover {
   transform: scale(1.05);
+  cursor: pointer;
 }
 
 .movie-card h3 {
