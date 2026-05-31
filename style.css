@@ -618,6 +618,7 @@ button{
   }
 
   .navbar2{
+    position: relative;
     width: 100%;
     text-align: center;
     padding: 10px;
@@ -636,6 +637,7 @@ button{
 
   .movie-card {
     padding: 5px; 
+    margin-top: -20px;
   }
 
   .poster-container img {
