@@ -21,9 +21,9 @@ router.get("/", async (req, res) => {
         <title>Favorite List</title>
       </head>
       <body>
-        <nav class="navbar2">
-          <span class="nav-title2">Favorite List</span>
-          <div class="nav-item2">
+        <nav class="navbar3">
+          <span class="nav-title3">Favorite List</span>
+          <div class="nav-item3">
             <a href="/">Back Home</a>
           </div>
         </nav>

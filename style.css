@@ -348,6 +348,41 @@ button{
   color: rgb(223, 211, 39);
 }
 
+/* Favorite navbar */
+.navbar3 {
+  display: flex;
+  justify-content: space-between; 
+  align-items: center;            
+  background-color: rgba(0, 0, 0, 0.2); 
+  padding: 15px 30px;             
+  margin-bottom: 40px;
+  font-family: Inter, sans-serif;
+}
+
+.nav-title3 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+}
+
+.nav-item3 a{
+  color: #ffffff;
+  text-decoration: none;          
+  font-weight: 400;
+  font-size: 16px;
+  padding: 8px 16px;
+  transition: all 0.2s ease-in-out;
+}
+
+.nav-item3 a:hover{
+  background-color: rgba(255, 255, 255, 0.15); 
+  border-radius: 5px;
+  color: rgb(223, 211, 39);
+}
+
+
+
 #elemNav{
   padding-right: 10px;
 }
