@@ -2,7 +2,7 @@ const express = require("express");
 const axios = require("axios");
 const cheerio = require("cheerio");
 const router = express.Router();
-const { fetchFavoritesFromDB } = require("../db.js");
+const { fetchFavoritesFromDB } = require("../misc/db.js");
 
 const detailGenreMap = {
     28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy",
@@ -254,7 +254,7 @@ router.get("/:type/:id", async (req,res)=>{
                 <head>
                     <meta charset="utf-8">
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <link rel="stylesheet" href="/routes/media.css">
+                    <link rel="stylesheet" href="/css/media.css">
                     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
                     <link rel="icon" type="image/x-icon" href="/images/icon.png">
                     <title>${title} (${year}) - SearchMovie</title>

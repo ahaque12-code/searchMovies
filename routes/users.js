@@ -10,7 +10,7 @@ router.get("/login", (req,res) => {
             <head>
                 <meta charset="utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <link rel="stylesheet" href="/style.css">
+                <link rel="stylesheet" href="/css/style.css">
                 <link rel="icon" type="image/x-icon" href="/images/icon.png">
                 <title>Already Logged In</title>
             </head>
@@ -43,7 +43,7 @@ router.get("/login", (req,res) => {
             <head>
                 <meta charset = "utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <link rel = "stylesheet" href= "/routes/login.css">
+                <link rel = "stylesheet" href= "/css/login.css">
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
                 <link rel="icon" type="image/x-icon" href="/images/icon.png">
                 <title>SearchMovie</title>
@@ -118,7 +118,7 @@ router.post("/login", async (req,res) =>{
                     <head>
                         <meta charset = "utf-8">
                         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <link rel = "stylesheet" href= "/routes/login.css">
+                        <link rel = "stylesheet" href= "/css/login.css">
                         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
                         <link rel="icon" type="image/x-icon" href="/images/icon.png">
                         <title>SearchMovie</title>
@@ -144,7 +144,7 @@ router.get("/register", (req, res) => {
             <head>
                 <meta charset = "utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <link rel="stylesheet" href="/routes/login.css">
+                <link rel="stylesheet" href="/css/login.css">
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
                 <title>Create Account - SearchMovie</title>
             </head>

@@ -544,6 +544,10 @@ button{
       display: block; /* Show the button */
   }
 
+  .navbar{
+    width: 100%;
+  }
+
   .nav-links { 
     display: none; 
     flex-direction: column; 

@@ -1,4 +1,4 @@
-const Favorite = require("./models/Favorite");
+const Favorite = require("../models/Favorite");
 async function fetchFavoritesFromDB(userId) {
     try {
         return await Favorite.find({ user: userId });

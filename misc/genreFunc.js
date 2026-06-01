@@ -68,21 +68,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     //4. Chat Bot Body
-    const chatbotBtn = document.getElementById('chatbot-button');
-    const chatbotBody = document.getElementById('chatbot-body');
+    // const chatbotBtn = document.getElementById('chatbot-button');
+    // const chatbotBody = document.getElementById('chatbot-body');
    
 
-    chatbotBtn.addEventListener("click",  () =>{
-        const isCurrentlyHidden = window.getComputedStyle(chatbotBody).display === "none";
-        if(isCurrentlyHidden){
-            chatbotBody.style.display = "block";
-            chatbotBtn.textContent = "▼";
-            isChatOpen = false;
-        } else{
-            chatbotBody.style.display = "none";
-            chatbotBtn.textContent = "▲";
-        }
-    });
+    // chatbotBtn.addEventListener("click",  () =>{
+    //     const isCurrentlyHidden = window.getComputedStyle(chatbotBody).display === "none";
+    //     if(isCurrentlyHidden){
+    //         chatbotBody.style.display = "block";
+    //         chatbotBtn.textContent = "▼";
+    //         isChatOpen = false;
+    //     } else{
+    //         chatbotBody.style.display = "none";
+    //         chatbotBtn.textContent = "▲";
+    //     }
+    // });
 });
 
 document.addEventListener("DOMContentLoaded", () => {

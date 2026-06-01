@@ -91,11 +91,11 @@ app.get('/', (req,res) => {
                 <meta charset = "utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <meta name="description" content="Search and discover movies and TV shows, read reviews, and find where to watch them with SearchMovie.">
-                <link rel = "stylesheet" href= "style.css">
+                <link rel = "stylesheet" href= "/css/style.css">
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
                 <link rel="icon" type="image/x-icon" href="images/icon.png">
                 <title>SearchMovie</title>
-                <script src = "genreFunc.js" defer></script>
+                <script src = "misc/genreFunc.js" defer></script>
             </head>
             <body>
                 <nav class="navbar">
@@ -202,7 +202,7 @@ app.get("/results", async (req,res) => {
             <head>
                 <meta charset="utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <link rel="stylesheet" href="/style.css">
+                <link rel="stylesheet" href="/css/style.css">
                 <link rel="icon" type="image/x-icon" href="images/icon.png">
                 <title>Results</title>
             </head>
@@ -393,7 +393,7 @@ const api_key = process.env.TMDB_API_KEY;
             <head>
                 <meta charset="utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <link rel="stylesheet" href="/style.css">
+                <link rel="stylesheet" href="/css/style.css">
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
                 <title>Discover Results</title>
             </head>
