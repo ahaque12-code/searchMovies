@@ -114,42 +114,41 @@ app.get('/', (req,res) => {
                 <div id = "movieBody">
                     <h2>Making searching movies easier</h2> 
                     <form id = "movieForm" action = "/results" method = "get">
-                    <div class="search-container" style="position: relative; display: inline-block;">
-                        <input type="text" name="q" id="movieName" placeholder="Search movies...">
-                        <button id="searchBtn"><img id="srchImg" src="images/search-symbol-wbg.png" alt="Search"></button>
-                        <div id="suggestionsBox"></div>
-                    </div>
-
-                     <br><br>
-
-                     <h3>Not sure what to search? Just fill up these and get recommendations!</h3>
-
-                     <div class = "rec-container">
-                        <input type = "number" name="rating" id = "movieRating" max = 10 min = 0 step = 0.1 placeholder = "Minimum Rating" >
-                        <div class="genre-wrapper">
-                            <button type="button" id="genreBtn">Select Genre</button>
-                            <div id="genreBox" class="genre-box hidden">
-                                <label><input type="checkbox" value="Action"> Action</label>
-                                <label><input type="checkbox" value="Comedy"> Comedy</label>
-                                <label><input type="checkbox" value="Drama"> Drama</label>
-                                <label><input type="checkbox" value="Horror"> Horror</label>
-                                <label><input type="checkbox" value="Romance"> Romance</label>
-                                <label><input type="checkbox" value="Sci-Fi"> Sci-Fi</label>
-                                <label><input type="checkbox" value="Thriller"> Thriller</label>
-                                <label><input type="checkbox" value="Animation"> Animation</label>
-                                <label><input type="checkbox" value="Crime"> Crime</label>
-                                <label><input type="checkbox" value="Adventure"> Adventure</label>
-                            </div>
-                            <input type="hidden" name="genres" id="selectedGenres">
+                        <div class="search-container" style="position: relative; display: inline-block;">
+                            <input type="text" name="q" id="movieName" placeholder="Search movies...">
+                            <button id="searchBtn"><img id="srchImg" src="images/search-symbol-wbg.png" alt="Search"></button>
+                            <div id="suggestionsBox"></div>
                         </div>
-                        <input type = "text" name = "year" id = "yearRelease" placeholder = "Year">
-                        <div id="typeSelector">
-                            <label><input type="radio" name="type" value="movie" checked> Movie</label>
-                            <label><input type="radio" name="type" value="tv"> TV Show</label> </div>
-                        <br><br>
-                     </div>
 
-                     <input type = "submit" id = "submit" value = "Search">
+                        <br><br>
+
+                        <h3>Not sure what to search? Just fill up these and get recommendations!</h3>
+
+                        <div class = "rec-container">
+                            <input type = "number" name="rating" id = "movieRating" max = 10 min = 0 step = 0.1 placeholder = "Minimum Rating" >
+                            <div class="genre-wrapper">
+                                <button type="button" id="genreBtn">Select Genre</button>
+                                <div id="genreBox" class="genre-box hidden">
+                                    <label><input type="checkbox" value="Action"> Action</label>
+                                    <label><input type="checkbox" value="Comedy"> Comedy</label>
+                                    <label><input type="checkbox" value="Drama"> Drama</label>
+                                    <label><input type="checkbox" value="Horror"> Horror</label>
+                                    <label><input type="checkbox" value="Romance"> Romance</label>
+                                    <label><input type="checkbox" value="Sci-Fi"> Sci-Fi</label>
+                                    <label><input type="checkbox" value="Thriller"> Thriller</label>
+                                    <label><input type="checkbox" value="Animation"> Animation</label>
+                                    <label><input type="checkbox" value="Crime"> Crime</label>
+                                    <label><input type="checkbox" value="Adventure"> Adventure</label>
+                                </div>
+                                <input type="hidden" name="genres" id="selectedGenres">
+                            </div>
+                            <input type = "text" name = "year" id = "yearRelease" placeholder = "Year">
+                            <div id="typeSelector">
+                                <label><input type="radio" name="type" value="movie" checked> Movie</label>
+                                <label><input type="radio" name="type" value="tv"> TV Show</label> </div>
+                            <br><br>
+                        </div>
+                        <input type = "submit" id = "submit" value = "Search">
                     </form>
                     <br><br>
                 </div>
@@ -209,8 +208,13 @@ app.get("/results", async (req,res) => {
             <body>
                 <nav class="navbar2">
                     <span class="nav-title2">Search Results</span>
-                    <div class="nav-links2"> <a id="elemNav" href="/" class="nav-item">Home</a>
-                        <a href="/favorites" class="nav-item">Favorites</a>
+                    <div class="nav-links2"> 
+                    <a id="elemNav" href="/" class="nav-item">Home</a>
+                    <a href="/favorites" class="nav-item">Favorites</a>
+                    <form id="searchForm" action="/results" method = "get">
+                        <input type="text" name="q" id="movieName" placeholder="Search">
+                        <button id="searchBtn"><img id="srchImg2" src="images/search-symbol-wbg.png" alt="Search"></button>
+                    </form>
                     </div>
                 </nav>
                 <div class="movie-grid">

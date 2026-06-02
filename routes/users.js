@@ -96,6 +96,9 @@ router.get("/login", (req,res) => {
                          <p>Feature info</p>
                     </div>
                 </div>
+                <br>
+                <div class = "tools-container">
+                </div>
                 -->
             </body>
         </html>`);
