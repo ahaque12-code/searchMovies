@@ -564,7 +564,7 @@ button{
 /* For Smaller devices, more work will come around */
 @media (max-width: 600px) {
  .hamburger {
-      display: block; /* Show the button */
+    display: block; /* Show the button */
   }
 
   .navbar{

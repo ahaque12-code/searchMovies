@@ -56,7 +56,10 @@ router.get("/login", (req,res) => {
                             <span class="nav-title">SearchMovie</span>
                         </a>
                     </div>
-                    <div class="nav-right">
+
+                    <button class="hamburger" id="hamburger">☰</button>
+
+                    <div class="nav-right" id="navLinks">
                         <a href= "https://github.com/ah2355" target="_blank" class="nav-item">About Dev</a>
                         <a href="#feature-heading" class="nav-item">Features</a>
                         <a class="nav-item">Tools Used</a>
@@ -100,6 +103,14 @@ router.get("/login", (req,res) => {
                 <div class = "tools-container">
                 </div>
                 -->
+                <script>
+                    const hamburger = document.getElementById('hamburger');
+                    const navLinks = document.getElementById('navLinks');
+
+                    hamburger.addEventListener('click', () => {
+                        navLinks.classList.toggle('active');
+                    });
+                </script>
             </body>
         </html>`);
 })
