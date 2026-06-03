@@ -43,10 +43,21 @@ router.get("/login", (req,res) => {
             <head>
                 <meta charset = "utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <meta name="description" content="SearchMovie is a fast, intelligent movie discovery platform. Search for your favorite films, filter by genre, and manage your personalized favorites list.">
+                <meta property="og:site_name" content="SearchMovie">
                 <link rel = "stylesheet" href= "/css/login.css">
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-                <link rel="icon" type="image/x-icon" href="/images/icon.png">
+                <link rel="icon" type="image/png" href="/images/icon.png">
                 <title>SearchMovie</title>
+                <script type="application/ld+json">
+                    {
+                        "@context": "https://schema.org",
+                        "@type": "WebSite",
+                        "name": "SearchMovie",
+                        "alternateName": ["SearchMovie Win"],
+                        "url": "https://searchmovie.win/"
+                    }
+                </script>
             </head>
             <body class="loginBody">
                 <nav class = "navbar">
