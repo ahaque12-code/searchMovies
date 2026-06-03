@@ -294,8 +294,9 @@ button{
   z-index: 9999;
   margin-top: 10px;
   border-radius: 0 0 8px 8px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+  overflow: auto;
+  max-height: 300px;
 }
 
 .suggestion-item {

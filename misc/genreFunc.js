@@ -60,6 +60,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 300));
     }
 
+    document.addEventListener('click', (e) => {
+        const input = document.getElementById('movieName');
+        const suggestionsBox = document.getElementById('suggestionsBox');
+
+        if (e.target !== input && !suggestionsBox.contains(e.target)) {
+            suggestionsBox.innerHTML = '';
+        }
+    });
+
     // 3. Hamburger Menu Logic
     const hamburger = document.getElementById('hamburger');
     const navLinks = document.getElementById('navLinks');
@@ -85,6 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
     //         chatbotBtn.textContent = "▲";
     //     }
     // });
+
 });
 
 document.addEventListener("DOMContentLoaded", () => {
