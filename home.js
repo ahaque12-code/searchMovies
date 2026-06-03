@@ -77,14 +77,9 @@ const globalGenreMap = {
 
 app.get('/', (req,res) => {
     const username = req.session ? req.session.username : "";
-    let navLinksHtml = `
-        <span class="nav-greeting">Hello, ${username}!</span>
-        <a href="/favorites" class="nav-item">Favorite List</a>
-        <form action="/users/logout" method="post" style="display: inline;">
-            <button type="submit" id="logout-link-btn">Sign Out</button>
-        </form>
-    `;
-
+    let displayName = username.includes('@') ? username.split('@')[0] : username;
+    displayName = displayName[0].toUpperCase() + displayName.substring(1);
+    
     res.send(`<!DOCTYPE html>
         <html>
             <head>
@@ -103,7 +98,7 @@ app.get('/', (req,res) => {
                     <button class="hamburger" id="hamburger">☰</button>
 
                     <div class="nav-links" id="navLinks">
-                        <span class="nav-greeting">Hello, ${username}!</span>
+                        <span class="nav-greeting">Hello, ${displayName}!</span>
                         <a href="/favorites" class="nav-item">Favorite List</a>
                         <form action="/users/logout" method="post" style="display: inline;">
                             <button type="submit" id="logout-link-btn">Sign Out</button>
