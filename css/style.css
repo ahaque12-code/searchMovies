@@ -299,10 +299,16 @@ button{
 }
 
 .suggestion-item {
+  display: flex;
+  align-items: center;
   padding: 12px;
   cursor: pointer;
   color: white;
   transition: background 0.2s;
+}
+
+.suggestion-img{
+  height: 10px;
 }
 
 .suggestion-item:hover {

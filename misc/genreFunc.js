@@ -49,9 +49,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             const response = await fetch('/api/search-suggestions?q=' + encodeURIComponent(query));
             const data = await response.json();
+
             suggestionsBox.innerHTML = data.map(movie => 
                 `<div class="suggestion-item" 
                     onclick="window.location.href='/media/${movie.media_type}/${movie.id}'">
+                    <img src="${`https://image.tmdb.org/t/p/w92${movie.poster_path}`}" alt="${movie.title}" style="width: 60px; height: 80px; margin-right: 10px; border-radius: 2px;">
                     ${movie.title} (${movie.media_type === 'tv' ? 'TV' : 'Movie'})
                 </div>`
             ).join('');

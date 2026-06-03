@@ -332,7 +332,8 @@ app.get('/api/search-suggestions', async (req, res) => {
             .map(m => ({ 
                 title: m.title || m.name, 
                 id: m.id,
-                media_type: m.media_type 
+                media_type: m.media_type ,
+                poster_path: m.poster_path
             }));
             
         res.json(suggestions);
