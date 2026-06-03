@@ -99,7 +99,7 @@ app.get('/', (req,res) => {
             </head>
             <body>
                 <nav class="navbar">
-                    <a href="/" id="titleLink"><span class="nav-title">SearchMovie</span></a>
+                    <span class="nav-title">SearchMovie</span>
                     <button class="hamburger" id="hamburger">☰</button>
 
                     <div class="nav-links" id="navLinks">
