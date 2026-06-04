@@ -68,9 +68,11 @@ const globalGenreMap = {
 };
 
 app.get('/', (req,res) => {
-    const username = req.session ? req.session.username : "";
-    let displayName = username.includes('@') ? username.split('@')[0] : username;
-    displayName = displayName[0].toUpperCase() + displayName.substring(1);
+    const username = (req.session && req.session.username) ? req.session.username : "Guest";
+    let displayName = (username !== "Guest" && username.includes('@')) 
+        ? username.split('@')[0] 
+        : username;
+    displayName = displayName.charAt(0).toUpperCase() + displayName.substring(1);
     
     res.send(`<!DOCTYPE html>
         <html>
