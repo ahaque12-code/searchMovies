@@ -14,7 +14,8 @@ const detailGenreMap = {
 };
 
 async function tryScrape(title, type) {
-    const cleanTitle = title.toLowerCase()
+    const normalizedTitle = title.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const cleanTitle = normalizedTitle.toLowerCase()
         .replace(/'/g, '')
         .replace(/[^a-z0-9]+/g, '_');
     const finalSlug = cleanTitle.replace(/_+$/, '');
@@ -33,12 +34,18 @@ async function tryScrape(title, type) {
         await page.goto(url, { waitUntil: 'networkidle2', timeout: 20000 });
 
         const score = await page.evaluate(() => {
-            // Select the host element
-            const rtText = document.querySelector('rt-text[slot="critics-score"]');
+            const scoreBoard = document.querySelector('rt-score-board');
+            if (scoreBoard && scoreBoard.getAttribute('critics-score')) {
+                return scoreBoard.getAttribute('critics-score') + '%';
+            }
 
-            // Return the textContent of the host element directly
-            // This reads the value projected into the <slot>
-            return rtText ? rtText.textContent.trim() : "N/A";
+            const scoreElement = document.querySelector('rt-text[slot="critics-score"]');
+            if (scoreElement && scoreElement.textContent.trim()) {
+                return scoreElement.textContent.trim();
+            }
+
+            return "N/A";
+
         });
 
         await browser.close();

@@ -84,13 +84,24 @@ app.get('/', (req,res) => {
     res.send(`<!DOCTYPE html>
         <html>
             <head>
-                <meta charset = "utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <meta name="description" content="Search and discover movies and TV shows, read reviews, and find where to watch them with SearchMovie.">
+                <title>SearchMovie | Discover & Track Movies</title>
+                <meta name="description" content="Search, discover, and track your favorite movies and TV shows. Find reviews and streaming providers with SearchMovie.">
+                
+                <meta property="og:title" content="SearchMovie - Movie & TV Discovery">
+                <meta property="og:description" content="Discover, search, and track your favorite movies and TV shows with real-time Rotten Tomatoes scores.">
+                <meta property="og:image" content="https://searchmovie.win/images/icon.png">
+                <meta property="og:url" content="https://searchmovie.win">
+                <meta property="og:type" content="website">
+
+                <meta name="twitter:card" content="summary_large_image">
+                <meta name="twitter:title" content="SearchMovie - Movie & TV Discovery">
+                <meta name="twitter:description" content="Discover, search, and track your favorite movies and TV shows.">
+                <meta name="twitter:image" content="https://searchmovie.win/images/icon.png">
+
+                <link rel="icon" type="image/x-icon" href="/images/icon.png">
                 <link rel = "stylesheet" href= "/css/style.css">
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-                <link rel="icon" type="image/x-icon" href="images/icon.png">
-                <title>SearchMovie</title>
                 <script src = "misc/genreFunc.js" defer></script>
             </head>
             <body>
@@ -200,11 +211,24 @@ app.get("/results", async (req,res) => {
         <!DOCTYPE html> 
         <html>
             <head>
-                <meta charset="utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <link rel="stylesheet" href="/css/style.css">
-                <link rel="icon" type="image/x-icon" href="images/icon.png">
-                <title>Results</title>
+                <title>Result</title>
+                <meta name="description" content="Search, discover, and track your favorite movies and TV shows. Find reviews and streaming providers with SearchMovie.">
+                
+                <meta property="og:title" content="SearchMovie - Movie & TV Discovery">
+                <meta property="og:description" content="Discover, search, and track your favorite movies and TV shows with real-time Rotten Tomatoes scores.">
+                <meta property="og:image" content="https://searchmovie.win/images/icon.png">
+                <meta property="og:url" content="https://searchmovie.win">
+                <meta property="og:type" content="website">
+
+                <meta name="twitter:card" content="summary_large_image">
+                <meta name="twitter:title" content="SearchMovie - Movie & TV Discovery">
+                <meta name="twitter:description" content="Discover, search, and track your favorite movies and TV shows.">
+                <meta name="twitter:image" content="https://searchmovie.win/images/icon.png">
+
+                <link rel="icon" type="image/x-icon" href="/images/icon.png">
+                <link rel = "stylesheet" href= "/css/style.css">
+                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
             </head>
             <body>
                 <nav class="navbar2">
@@ -406,11 +430,24 @@ app.get("/discover", async(req, res) => {
         <!DOCTYPE html>
         <html>
             <head>
-                <meta charset="utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <link rel="stylesheet" href="/css/style.css">
-                <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
                 <title>Discover Results</title>
+                <meta name="description" content="Search, discover, and track your favorite movies and TV shows. Find reviews and streaming providers with SearchMovie.">
+                
+                <meta property="og:title" content="SearchMovie - Movie & TV Discovery">
+                <meta property="og:description" content="Discover, search, and track your favorite movies and TV shows with real-time Rotten Tomatoes scores.">
+                <meta property="og:image" content="https://searchmovie.win/images/icon.png">
+                <meta property="og:url" content="https://searchmovie.win">
+                <meta property="og:type" content="website">
+
+                <meta name="twitter:card" content="summary_large_image">
+                <meta name="twitter:title" content="SearchMovie - Movie & TV Discovery">
+                <meta name="twitter:description" content="Discover, search, and track your favorite movies and TV shows.">
+                <meta name="twitter:image" content="https://searchmovie.win/images/icon.png">
+
+                <link rel="icon" type="image/x-icon" href="/images/icon.png">
+                <link rel = "stylesheet" href= "/css/style.css">
+                <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
             </head>
             <body>
                 <nav class="navbar2">
