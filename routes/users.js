@@ -219,10 +219,10 @@ router.post("/logout", (req, res) => {
             }
             res.clearCookie('connect.sid'); 
             
-            res.redirect("/");
+            res.redirect("/users/login");
         });
     } else {
-        res.redirect("/");
+        res.redirect("/users/login");
     }
 });
 
