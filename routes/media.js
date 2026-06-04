@@ -1,6 +1,7 @@
 const express = require("express");
 const axios = require("axios");
 const cheerio = require("cheerio");
+const puppeteer = require('puppeteer');
 const router = express.Router();
 const { fetchFavoritesFromDB } = require("../misc/db.js");
 
@@ -12,38 +13,84 @@ const detailGenreMap = {
     10752: "War", 37: "Western", 10759: "Action & Adventure", 10765: "Sci-Fi & Fantasy"
 };
 
-async function getRottenTomatoesScore(title, type) {
-    try {
-        const prefix = (type === 'tv') ? 'tv' : 'm';
-        const formattedTitle = encodeURIComponent(title.toLowerCase().replace(/[^a-z0-9]+/g, '_'));
-        const url = `https://www.rottentomatoes.com/${prefix}/${formattedTitle}`;
+async function tryScrape(title, type) {
+    const cleanTitle = title.toLowerCase()
+        .replace(/'/g, '')
+        .replace(/[^a-z0-9]+/g, '_');
+    const finalSlug = cleanTitle.replace(/_+$/, '');
 
-        const { data } = await axios.get(url, {
-            headers: { 
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' 
-            }
+    let browser;
+    try {
+        browser = await puppeteer.launch({ 
+            headless: "new",
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+        const page = await browser.newPage();
+        
+        const prefix = (type === 'tv') ? 'tv' : 'm';
+        const url = `https://www.rottentomatoes.com/${prefix}/${finalSlug}`;
+        console.log("Navigating to: ", url);
+        await page.goto(url, { waitUntil: 'networkidle2', timeout: 20000 });
+
+        const score = await page.evaluate(() => {
+            // Select the host element
+            const rtText = document.querySelector('rt-text[slot="critics-score"]');
+
+            // Return the textContent of the host element directly
+            // This reads the value projected into the <slot>
+            return rtText ? rtText.textContent.trim() : "N/A";
         });
 
-        const $ = cheerio.load(data);
-        
-        const jsonLd = $('script[type="application/ld+json"]').html();
-        if (jsonLd) {
-            const parsed = JSON.parse(jsonLd);
-            if (parsed.aggregateRating && parsed.aggregateRating.ratingValue) {
-                return `${parsed.aggregateRating.ratingValue}%`;
-            }
-        }
-        
-        return "N/A";
+        await browser.close();
+        return score;
     } catch (err) {
-        console.error("Scraping failed for:", title, err.message);
+        if (browser) await browser.close();
+        console.error("Puppeteer scraping failed:", err.message);
         return "N/A";
     }
 }
+
+async function tryOMDB(title){
+    try {
+        const apiKey = process.env.OMDB_API_KEY;
+        const url = `https://www.omdbapi.com/?t=${encodeURIComponent(title)}&apikey=${apiKey}`;
+        const response = await axios.get(url);
+        
+        const rtRating = response.data.Ratings?.find(r => r.Source === "Rotten Tomatoes");
+        console.log(rtRating ? rtRating.Value : "N/A");
+        return rtRating ? rtRating.Value : "N/A";
+    } catch (err) {
+        console.error("OMDb API fallback failed:", err.message);
+        return "N/A";
+    }
+}
+
+async function getRottenTomatoesScore(title, type) {
+    const scraperResult = await tryScrape(title, type);
+    
+    if (scraperResult !== "N/A") {
+        console.log("Scraper Result: ", scraperResult);
+        return scraperResult;
+    }
+
+    console.log(`Scraper returned N/A or failed for ${title}, trying OMDb API...`);
+    return await tryOMDB(title);
+}
+
+router.get("/api/score", async (req, res) => {
+    const { title, type } = req.query;
+    try {
+        const score = await getRottenTomatoesScore(title, type);
+        res.json({ score });
+    } catch (err) {
+        res.json({ score: "N/A" });
+    }
+});
                     
 router.get("/:type/:id", async (req,res)=>{
     const { type, id } = req.params;
     const api_key = process.env.TMDB_API_KEY;
+    const isGuest = !(req.session && req.session.userId);
     
     function getXPrimeUrl(imdbId) {
         if (!imdbId) return [];
@@ -127,7 +174,7 @@ router.get("/:type/:id", async (req,res)=>{
         const dateString = data.release_date || data.first_air_date || "";
         const year = (data.release_date || data.first_air_date || "").substring(0, 4) || "0000";        
         const rating = data.vote_average ? Number(data.vote_average).toFixed(1) : "N/A";
-        const rtScore = await getRottenTomatoesScore(data.title || data.name, type);
+        const rtScore = "Loading...";        
         const overview = data.overview || "No overview available.";
         const tagline = data.tagline ? `"${data.tagline}"` : "";
         const lang = data.original_language;
@@ -315,7 +362,7 @@ router.get("/:type/:id", async (req,res)=>{
                                     <div class="score-circle">⭐ ${rating}</div>
                                     <span class="score-label">User Score</span>
                                     <span class="score-label">🍅 RT:</span>
-                                    <span class="score-circle"> ${rtScore}</span>
+                                    <span class="score-circle" id="rt-score-display">${rtScore}</span>
                                 </div>
 
                                 <p class="details-tagline"><em>${tagline}</em></p>
@@ -369,13 +416,21 @@ router.get("/:type/:id", async (req,res)=>{
                     });
 
                     async function addFavorite(btn, title, year, imdbId, genres, rating, image, certification) {
+                        const isGuest = ${isGuest};
+        
+                        if (isGuest) {
+                            alert("Please log in to add favorites!");
+                            window.location.href = "/users/login";
+                            return;
+                        }
                         const isActive = btn.classList.toggle('active');
-                        
+
                         await fetch("/favorites/add", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ title, year, imdbId, genres, rating, image, certification })
                         });
+
                         
                         console.log("Favorite status updated: " + isActive);
                     }
@@ -391,6 +446,20 @@ router.get("/:type/:id", async (req,res)=>{
                         document.getElementById('trailerModal').style.display = "none";
                         document.getElementById('player').innerHTML = ""; // Stops the video
                     }
+
+                    window.addEventListener('DOMContentLoaded', () => {
+                        const title = '${escapedTitle}';
+                        const type = '${type}';
+                        
+                        fetch('/media/api/score?title=' + encodeURIComponent(title) + '&type=' + type)
+                            .then(response => response.json())
+                            .then(data => {
+                                document.getElementById('rt-score-display').innerText = data.score;
+                            })
+                            .catch(() => {
+                                document.getElementById('rt-score-display').innerText = "N/A";
+                            });
+                    });
                 </script>
             </html>`);
 
@@ -399,5 +468,6 @@ router.get("/:type/:id", async (req,res)=>{
         console.log("API ERROR: ", err);
     }
 })
+
 
 module.exports = router;

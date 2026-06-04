@@ -166,7 +166,7 @@ const favoritesRouter = require("./routes/favorites");
 app.use("/favorites",redirectLogin, favoritesRouter);
 
 const mediaRouter = require("./routes/media");
-app.use("/media",redirectLogin, mediaRouter);
+app.use("/media", mediaRouter);
 
 app.get("/results", async (req,res) => {
     const isGuest = !(req.session && req.session.userId);
