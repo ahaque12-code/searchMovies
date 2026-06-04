@@ -44,17 +44,9 @@ app.use(session({
 }));
 
 const usersRouter = require("./routes/users");
-app.use("/users", usersRouter); // Must be above redirectLogin!
+app.use("/users", usersRouter);
 
 app.use(express.static(__dirname));
-
-app.use(redirectLogin);
-
-const favoritesRouter = require("./routes/favorites");
-app.use("/favorites", favoritesRouter);
-
-const mediaRouter = require("./routes/media");
-app.use("/media", mediaRouter);
 
 const globalGenreMap = {
     // Movies
@@ -163,6 +155,12 @@ app.get('/', (req,res) => {
         `);
 });
 
+const favoritesRouter = require("./routes/favorites");
+app.use("/favorites",redirectLogin, favoritesRouter);
+
+const mediaRouter = require("./routes/media");
+app.use("/media",redirectLogin, mediaRouter);
+
 app.get("/results", async (req,res) => {
     const searchMovie = req.query.q ? req.query.q.trim(): "";
     const api_key = process.env.TMDB_API_KEY;
@@ -251,7 +249,7 @@ app.get("/results", async (req,res) => {
                     ageCertificate = "PG-13";
                 }
                 const certClass = ageCertificate.replace(/[^a-zA-Z0-9]/g, '-');
-                const escapedTitle = movieTitle.replace(/'/g, "\\'");
+                const escapedTitle = encodeURIComponent(movieTitle.replace(/'/g, "\\'"));
                 const escapedGenres = genreText.replace(/'/g, "\\'");
                 const isFav = favoriteIds.includes(String(movie.id).trim()) ? 'active' : '';
                 const displayType = (movie.media_type === "tv") ? "TV Series" : "Movie";

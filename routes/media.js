@@ -15,7 +15,7 @@ const detailGenreMap = {
 async function getRottenTomatoesScore(title, type) {
     try {
         const prefix = (type === 'tv') ? 'tv' : 'm';
-        const formattedTitle = title.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+        const formattedTitle = encodeURIComponent(title.toLowerCase().replace(/[^a-z0-9]+/g, '_'));
         const url = `https://www.rottentomatoes.com/${prefix}/${formattedTitle}`;
 
         const { data } = await axios.get(url, {
