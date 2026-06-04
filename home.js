@@ -44,7 +44,7 @@ app.use(session({
 }));
 
 const usersRouter = require("./routes/users");
-app.use("/users", usersRouter);
+app.use("/users",  usersRouter);
 
 app.use(express.static(__dirname));
 
@@ -68,12 +68,19 @@ const globalGenreMap = {
 };
 
 app.get('/', (req,res) => {
-    const username = (req.session && req.session.username) ? req.session.username : "Guest";
+    const isGuest = !(req.session && req.session.userId);
+    const username = isGuest ? "Guest" : req.session.username;
     let displayName = (username !== "Guest" && username.includes('@')) 
         ? username.split('@')[0] 
         : username;
     displayName = displayName.charAt(0).toUpperCase() + displayName.substring(1);
     
+    const authAction = isGuest 
+        ? `<a href="/users/login" class="nav-item" id="login-link">Log In</a>`
+        : `<form action="/users/logout" method="post" style="display: inline;">
+             <button type="submit" id="logout-link-btn">Sign Out</button>
+           </form>`;
+
     res.send(`<!DOCTYPE html>
         <html>
             <head>
@@ -94,9 +101,7 @@ app.get('/', (req,res) => {
                     <div class="nav-links" id="navLinks">
                         <span class="nav-greeting">Hello, ${displayName}!</span>
                         <a href="/favorites" class="nav-item">Favorite List</a>
-                        <form action="/users/logout" method="post" style="display: inline;">
-                            <button type="submit" id="logout-link-btn">Sign Out</button>
-                        </form>
+                        ${authAction}
                     </div>
                 </nav>
 
