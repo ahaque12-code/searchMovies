@@ -169,6 +169,7 @@ const mediaRouter = require("./routes/media");
 app.use("/media",redirectLogin, mediaRouter);
 
 app.get("/results", async (req,res) => {
+    const isGuest = !(req.session && req.session.userId);
     const searchMovie = req.query.q ? req.query.q.trim(): "";
     const api_key = process.env.TMDB_API_KEY;
     const page = Number(req.query.page) || 1;
@@ -295,6 +296,14 @@ app.get("/results", async (req,res) => {
             </div>
             <script>
                 async function addFavorite(btn, title, year, imdbId, genres, rating, image, certification) {
+                    const isGuest = ${isGuest};
+        
+                    if (isGuest) {
+                        alert("Please log in to add favorites!");
+                        window.location.href = "/users/login";
+                        return;
+                    }
+
                     const isActive = btn.classList.toggle('active');
                     
                     // Send ALL data that your schema expects
@@ -348,7 +357,8 @@ app.get('/api/search-suggestions', async (req, res) => {
 });
 
 app.get("/discover", async(req, res) => {
-const api_key = process.env.TMDB_API_KEY;
+    const isGuest = !(req.session && req.session.userId);
+    const api_key = process.env.TMDB_API_KEY;
     const ratingSearch = req.query.rating ? req.query.rating.trim() : "";
     const yearSearch = req.query.year ? req.query.year.trim() : "";
     const typeSearch = req.query.type || "movie";
@@ -474,6 +484,14 @@ const api_key = process.env.TMDB_API_KEY;
         </div>
         <script>
             async function addFavorite(btn, title, year, imdbId, genres, rating, image, certification) {
+                 const isGuest = ${isGuest};
+        
+                if (isGuest) {
+                    alert("Please log in to add favorites!");
+                    window.location.href = "/users/login";
+                    return;
+                }
+
                 const isActive = btn.classList.toggle('active');
                 await fetch("/favorites/add", {
                     method: "POST",
