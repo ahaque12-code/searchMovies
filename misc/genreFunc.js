@@ -1,3 +1,37 @@
+function parseMarkdown(text) {
+    let html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return html
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/^\* (.*$)/gim, '<li>$1</li>')
+        .replace(/\n/g, '<br>');
+}
+
+async function loadChatHistory() {
+        const chatContainer = document.getElementById('chat-messages');
+        if (!chatContainer) return;
+
+        try {
+            const response = await fetch('/chatbot/history');
+            const messages = await response.json();
+            
+            chatContainer.innerHTML = ''; 
+
+            messages.forEach(msg => {
+                const formattedText = parseMarkdown(msg.text); 
+                const div = document.createElement('div');
+                
+                div.className = (msg.sender === 'user') ? 'user-msg' : 'bot-msg';
+                div.innerHTML = `${msg.sender === 'user' ? 'You' : 'Bot'}: ${formattedText}`;
+                
+                chatContainer.appendChild(div);
+            });
+
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        } catch (err) {
+            console.error("Failed to load history:", err);
+        }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     // 1. Typewriter Logic
     const input = document.getElementById("movieName");
@@ -78,24 +112,75 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    //4. Chat Bot Body
-    // const chatbotBtn = document.getElementById('chatbot-button');
-    // const chatbotBody = document.getElementById('chatbot-body');
+    // 4. Chat Bot Body
+    const chatbotBtn = document.getElementById('chatbot-button');
+    const chatbotBody = document.getElementById('chatbot-body');
    
 
-    // chatbotBtn.addEventListener("click",  () =>{
-    //     const isCurrentlyHidden = window.getComputedStyle(chatbotBody).display === "none";
-    //     if(isCurrentlyHidden){
-    //         chatbotBody.style.display = "block";
-    //         chatbotBtn.textContent = "▼";
-    //         isChatOpen = false;
-    //     } else{
-    //         chatbotBody.style.display = "none";
-    //         chatbotBtn.textContent = "▲";
-    //     }
-    // });
+    chatbotBtn.addEventListener("click",  () =>{
+        const isCurrentlyHidden = window.getComputedStyle(chatbotBody).display === "none";
+        if(isCurrentlyHidden){
+            chatbotBody.style.display = "block";
+            chatbotBtn.textContent = "▼";
+            isChatOpen = false;
+        } else{
+            chatbotBody.style.display = "none";
+            chatbotBtn.textContent = "▲";
+        }
+    });
+
+    const chatBtn = document.getElementById('send-btn'); // Make sure your button has this ID
+    const chatInput = document.getElementById('chat-input');
+    const chatMessages = document.getElementById('chat-messages');
+
+    if (chatBtn && chatInput) {
+        chatBtn.addEventListener('click', async () => {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            chatMessages.innerHTML += `<p style="text-align: right; color: #4ade80;">You: ${message}</p>`;
+            chatInput.value = '';
+
+            try {
+                const res = await fetch('/chatbot/message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+                const data = await res.json();
+                
+                const formattedReply = parseMarkdown(data.reply);
+                chatMessages.innerHTML += `<p style="text-align: left; color: #d38282;">Bot: ${formattedReply}</p>`;
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            } catch (err) {
+                chatMessages.innerHTML += `<p style="color: red;">Error: Bot is offline.</p>`;
+            }
+        });
+    }
+
+    const clearBtn = document.getElementById('clear-btn');
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', async () => {
+            if (!confirm("Are you sure you want to clear your chat history?")) return;
+
+            try {
+                const res = await fetch('/chatbot/clear', { method: 'DELETE' });
+                const data = await res.json();
+                
+                if (data.success) {
+                    // Clear the UI immediately
+                    document.getElementById('chat-messages').innerHTML = '';
+                }
+            } catch (err) {
+                console.error("Failed to clear chat:", err);
+            }
+        });
+    }
 
 });
+
+window.addEventListener('load', loadChatHistory);
 
 document.addEventListener("DOMContentLoaded", () => {
     const genreBtn = document.getElementById("genreBtn");

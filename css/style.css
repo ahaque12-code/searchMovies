@@ -3,6 +3,44 @@ body{
   font-family: Inter, sans-serif;
   color:white
 }
+
+.app-container{
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  display: none;
+  width: 250px;
+  background-color: rgba(0, 0, 0, 0.3);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  text-align: center;
+  margin-left:-4px;
+}
+
+#sidebar-content{
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+  justify-self: center;
+}
+
+#sidebar-item{
+  color:white;
+  text-decoration: none;
+}
+
+#sidebar-item:hover{
+  color: purple;
+}
+
+.main-content {
+  flex: 1;
+  padding: 20px;
+}
+
 .navbar {
   display: flex;
   justify-content: space-between; 
@@ -10,6 +48,7 @@ body{
   background-color: rgba(0, 0, 0, 0.2); 
   padding: 15px 30px;             
   margin-bottom: 40px;
+  margin-top: -24px;
   font-family: Inter, sans-serif;
 }
 
@@ -390,7 +429,6 @@ button{
   top: 2px;
 }
 
-
 /* Favorite navbar */
 .navbar3 {
   display: flex;
@@ -542,12 +580,13 @@ button{
   flex-direction: column;
   background-color: #007bff;
   color: white;
-  width: 300px;
+  width: 450px;
   min-height: 50px; 
   border-radius: 10px;
   z-index: 9999;
   box-shadow: 0 4px 10px rgba(0,0,0,0.3);
   overflow: hidden;
+  max-height: 300px;
 }
 
 #chatbot-header{
@@ -565,16 +604,76 @@ button{
 }
 
 #chatbot-body {
-  display: none;
   padding: 15px;
   background-color: white;
   color: lightblue;
   color: black;
   flex-grow: 1;
   overflow-y: auto;  
-  text-align: center;
 }
 
+#user-input{
+  display: flex;
+  justify-content: end;
+  margin-top: 20px;
+  gap: 18px;
+}
+
+#chat-input{
+  background-color:rgba(49, 232, 162, 0.94);
+  border:none;
+  padding: 8px;
+  field-sizing: content; 
+  min-width: 300px;
+  border-radius: 5px;
+}
+
+#clear-btn{
+  background-color: rgb(229 35 55);
+  border: none;
+  border-radius: 5px;
+  padding: 10px;
+  margin-right: -6px;
+}
+
+#clear-btn:hover{
+  background-color: rgba(229, 35, 55, 0.771); 
+  cursor: pointer;
+}
+
+
+#send-btn{
+  background: rgb(13, 92, 239);
+  border:none;
+  border-radius: 5px;
+}
+
+#send-btn:hover{
+  background-color: rgba(13, 92, 239, 0.771); 
+  cursor: pointer;
+}
+
+.user-msg {
+  text-align: right;
+  color: #4ade80; /* Green for user */
+  margin: 5px 0;
+}
+
+.bot-msg {
+  text-align: left;
+  color: #d38282;
+  margin: 5px 0;
+  padding-left: 10px;
+}
+
+.bot-msg strong {
+  font-weight: bold;
+}
+
+.bot-msg li {
+    margin-left: 15px;
+    list-style-type: disc;
+}
 
 /* For Smaller devices, more work will come around */
 @media (max-width: 690px) {
@@ -597,7 +696,6 @@ button{
     padding: 20px; 
     z-index: 1000;
   }
-  
  
   .nav-links.active { 
     display: flex !important;

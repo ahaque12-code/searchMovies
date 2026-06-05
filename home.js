@@ -115,69 +115,84 @@ app.get('/', (req,res) => {
                 <script src = "misc/genreFunc.js" defer></script>
             </head>
             <body>
-                <nav class="navbar">
-                    <span class="nav-title">SearchMovie</span>
-                    <button class="hamburger" id="hamburger">☰</button>
-
-                    <div class="nav-links" id="navLinks">
-                        <span class="nav-greeting">Hello, ${displayName}!</span>
-                        <a href="/favorites" class="nav-item">Favorite List</a>
-                        ${authAction}
-                    </div>
-                </nav>
-
-                <div id = "movieBody">
-                    <h2>Making searching movies easier</h2> 
-                    <form id = "movieForm" action = "/results" method = "get">
-                        <div class="search-container" style="position: relative; display: inline-block;">
-                            <input type="text" name="q" id="movieName" placeholder="Search movies...">
-                            <button id="searchBtn"><img id="srchImg" src="images/search-symbol-wbg.png" alt="Search"></button>
-                            <div id="suggestionsBox"></div>
+               <div class="app-container">
+                    <aside class="sidebar">
+                        <h1>Sidebar</h1>
+                        <div id="sidebar-content">
+                            <a id="sidebar-item" href="/discover">Popular Movies</a>
+                            <a id="sidebar-item" href="/top">Top 250 movies</a>
                         </div>
+                    </aside>
+                    <main class="main-content">
+                        <div id = "movieBody">
+                            <nav class="navbar">
+                                <span class="nav-title">SearchMovie</span>
+                                <button class="hamburger" id="hamburger">☰</button>
 
-                        <br><br>
-
-                        <h3>Not sure what to search? Just fill up these and get recommendations!</h3>
-
-                        <div class = "rec-container">
-                            <input type = "number" name="rating" id = "movieRating" max = 10 min = 0 step = 0.1 placeholder = "Minimum Rating" >
-                            <div class="genre-wrapper">
-                                <button type="button" id="genreBtn">Select Genre</button>
-                                <div id="genreBox" class="genre-box hidden">
-                                    <label><input type="checkbox" value="Action"> Action</label>
-                                    <label><input type="checkbox" value="Comedy"> Comedy</label>
-                                    <label><input type="checkbox" value="Drama"> Drama</label>
-                                    <label><input type="checkbox" value="Horror"> Horror</label>
-                                    <label><input type="checkbox" value="Romance"> Romance</label>
-                                    <label><input type="checkbox" value="Sci-Fi"> Sci-Fi</label>
-                                    <label><input type="checkbox" value="Thriller"> Thriller</label>
-                                    <label><input type="checkbox" value="Animation"> Animation</label>
-                                    <label><input type="checkbox" value="Crime"> Crime</label>
-                                    <label><input type="checkbox" value="Adventure"> Adventure</label>
+                                <div class="nav-links" id="navLinks">
+                                    <span class="nav-greeting">Hello, ${displayName}!</span>
+                                    <a href="/favorites" class="nav-item">Favorite List</a>
+                                    ${authAction}
                                 </div>
-                                <input type="hidden" name="genres" id="selectedGenres">
-                            </div>
-                            <input type = "text" name = "year" id = "yearRelease" placeholder = "Year">
-                            <div id="typeSelector">
-                                <label><input type="radio" name="type" value="movie" checked> Movie</label>
-                                <label><input type="radio" name="type" value="tv"> TV Show</label> </div>
+                            </nav>
+                            <h2>Making searching movies easier</h2> 
+                            <form id = "movieForm" action = "/results" method = "get">
+                                <div class="search-container" style="position: relative; display: inline-block;">
+                                    <input type="text" name="q" id="movieName" placeholder="Search movies...">
+                                    <button id="searchBtn"><img id="srchImg" src="images/search-symbol-wbg.png" alt="Search"></button>
+                                    <div id="suggestionsBox"></div>
+                                </div>
+
+                                <br><br>
+
+                                <h3>Not sure what to search? Just fill up these and get recommendations!</h3>
+
+                                <div class = "rec-container">
+                                    <input type = "number" name="rating" id = "movieRating" max = 10 min = 0 step = 0.1 placeholder = "Minimum Rating" >
+                                    <div class="genre-wrapper">
+                                        <button type="button" id="genreBtn">Select Genre</button>
+                                        <div id="genreBox" class="genre-box hidden">
+                                            <label><input type="checkbox" value="Action"> Action</label>
+                                            <label><input type="checkbox" value="Comedy"> Comedy</label>
+                                            <label><input type="checkbox" value="Drama"> Drama</label>
+                                            <label><input type="checkbox" value="Horror"> Horror</label>
+                                            <label><input type="checkbox" value="Romance"> Romance</label>
+                                            <label><input type="checkbox" value="Sci-Fi"> Sci-Fi</label>
+                                            <label><input type="checkbox" value="Thriller"> Thriller</label>
+                                            <label><input type="checkbox" value="Animation"> Animation</label>
+                                            <label><input type="checkbox" value="Crime"> Crime</label>
+                                            <label><input type="checkbox" value="Adventure"> Adventure</label>
+                                        </div>
+                                        <input type="hidden" name="genres" id="selectedGenres">
+                                    </div>
+                                    <input type = "text" name = "year" id = "yearRelease" placeholder = "Year">
+                                    <div id="typeSelector">
+                                        <label><input type="radio" name="type" value="movie" checked> Movie</label>
+                                        <label><input type="radio" name="type" value="tv"> TV Show</label> </div>
+                                    <br><br>
+                                </div>
+                                <input type = "submit" id = "submit" value = "Search">
+                            </form>
                             <br><br>
                         </div>
-                        <input type = "submit" id = "submit" value = "Search">
-                    </form>
-                    <br><br>
-                </div>
-                <!--
-                <div id="chatbot-container">
-                    <div id="chatbot-header">
-                        <h2 id="heading">Chat Bot</h2>
-                        <button id="chatbot-button">▲</button>
-                    </div>
-                    <div id="chatbot-body">
-                        ON TESTING PHASE
-                    </div>
-                </div>
-                -->
+
+                        <div id="chatbot-container">
+                            <div id="chatbot-header">
+                                <h2 id="heading">Movie Bot</h2>
+                                <button id="chatbot-button">▲</button>
+                            </div>
+                            <div id="chatbot-body">
+                               <div id="chat-messages"></div>
+                               <div id="user-input">
+                                 <input type="text" id="chat-input" contenteditable="true" placeholder="Ask about movies...">
+                                 <button id="clear-btn">🗑️</button>
+                                 <button id="send-btn">Send</button>
+                               </div>
+                            </div>
+                        </div>
+                        
+                    </main>
+               </div>
             </body>
         </html>
         `);
@@ -188,6 +203,9 @@ app.use("/favorites",redirectLogin, favoritesRouter);
 
 const mediaRouter = require("./routes/media");
 app.use("/media", mediaRouter);
+
+const chatRouter = require("./routes/chatbot");
+app.use("/chatbot", chatRouter);
 
 app.get("/results", async (req,res) => {
     const isGuest = !(req.session && req.session.userId);
@@ -342,7 +360,7 @@ app.get("/results", async (req,res) => {
 
                     const isActive = btn.classList.toggle('active');
                     
-                    // Send ALL data that your schema expects
+                    // Send all data that the schema expects
                     await fetch("/favorites/add", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -559,6 +577,111 @@ app.get("/discover", async(req, res) => {
         res.status(500).send("Error reading data.");
     }
 });
+
+app.get("/top", async (req, res)=>{
+    const isGuest = !(req.session && req.session.userId);
+    const authAction = isGuest 
+        ? `<a href="/users/login" class="nav-item" id="login-link">Log In</a>`
+        : `<form action="/users/logout" method="post" style="display: inline;">
+             <button type="submit" id="logout-link-btn">Sign Out</button>
+           </form>`;
+    let html = `
+    <!DOCTYPE html>
+    <html> 
+        <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Top 250 movies - SearchMovie</title>
+            <meta name="description" content="Search, discover, and track your favorite movies and TV shows. Find reviews and streaming providers with SearchMovie.">
+            
+            <meta property="og:title" content="SearchMovie - Movie & TV Discovery">
+            <meta property="og:description" content="Discover, search, and track your favorite movies and TV shows with real-time Rotten Tomatoes scores.">
+            <meta property="og:image" content="https://searchmovie.win/images/icon.png">
+            <meta property="og:url" content="https://searchmovie.win">
+            <meta property="og:type" content="website">
+
+            <meta name="twitter:card" content="summary_large_image">
+            <meta name="twitter:title" content="SearchMovie - Movie & TV Discovery">
+            <meta name="twitter:description" content="Discover, search, and track your favorite movies and TV shows.">
+            <meta name="twitter:image" content="https://searchmovie.win/images/icon.png">
+            
+            <link rel="icon" type="image/png" href="https://searchmovie.win/images/icon.png">
+            <link rel="apple-touch-icon" href="https://searchmovie.win/images/icon.png">
+            <link rel="icon" type="image/x-icon" href="/images/icon.png">
+            <link rel = "stylesheet" href= "/css/style.css">
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+        </head>
+        <body>
+            <div id = "movieBody">
+                <nav class="navbar">
+                    <span class="nav-title">SearchMovie</span>
+                    <button class="hamburger" id="hamburger">☰</button>
+
+                    <div class="nav-links" id="navLinks">
+                        <a href="/" class="nav-item">Home</a>
+                        <a href="/favorites" class="nav-item">Favorite List</a>
+                        ${authAction}
+                    </div>
+                </nav>
+                <div id="main-container">
+                    <h1>Top 250 Movies</h1>
+                     <div class="movie-grid">
+                </div>`;
+
+    const api_key = process.env.TMDB_API_KEY;
+    const page = Number(req.query.page) || 1;
+    const bearer_tok = process.env.TMDB_BEARER_TOKEN; 
+    const allMovies = apiData.results || [];
+
+    try{
+        const apiUrl = `https://api.themoviedb.org/3/movie/top_rated?api_key=${api_key}&language=en-US&page=${page}`;
+        const apiRes = await fetch(apiUrl, { method: 'GET', headers: { accept: 'application/json', Authorization: `Bearer ${bearer_tok}`} });
+        const apiData = await apiRes.json()
+        
+        console.log(apiData);
+
+
+    } catch(err){
+        console.log("API ERROR: ", err);
+    }
+
+    html+=`
+
+    `;
+
+
+
+    html +=  `
+            </div>
+             <script>
+                async function addFavorite(btn, title, year, imdbId, genres, rating, image, certification) {
+                    const isGuest = ${isGuest};
+        
+                    if (isGuest) {
+                        alert("Please log in to add favorites!");
+                        window.location.href = "/users/login";
+                        return;
+                    }
+
+                    const isActive = btn.classList.toggle('active');
+                    
+                    await fetch("/favorites/add", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ 
+                            title, year, imdbId, genres, rating, image, certification 
+                        })
+                    });
+
+                    if (isActive) {
+                        console.log(title + " toggled (added/removed) in favorites!");
+                    }
+                }
+            </script>
+        </body>
+    </html>`;
+
+    res.send(html);
+})
 
 app.listen(port, (err) => {
     if(err) {
