@@ -138,7 +138,16 @@ document.addEventListener("DOMContentLoaded", () => {
             const message = chatInput.value.trim();
             if (!message) return;
 
-            chatMessages.innerHTML += `<p style="text-align: right; color: #4ade80;">You: ${message}</p>`;
+            chatMessages.innerHTML += `<p 
+            style="max-width: 80%;
+            background-color: rgb(47 52 68 / 64%);
+            text-align: right;
+            color: #4ade80;
+            word-wrap: break-word;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 15px 8px;
+            align-self: flex-end;">You: ${message}</p>`;
             chatInput.value = '';
 
             try {
@@ -150,7 +159,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 const data = await res.json();
                 
                 const formattedReply = parseMarkdown(data.reply);
-                chatMessages.innerHTML += `<p style="text-align: left; color: #d38282;">Bot: ${formattedReply}</p>`;
+                chatMessages.innerHTML += `<p 
+                style="max-width: 80%;
+                background-color: rgb(47 52 68 / 64%);
+                text-align: left;
+                color: #d38282;
+                margin: 5px 0;
+                padding: 10px;
+                border-radius: 15px 8px;
+                word-wrap: break-word;
+                align-self: flex-start;">Bot: ${formattedReply}</p>`;
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             } catch (err) {
                 chatMessages.innerHTML += `<p style="color: red;">Error: Bot is offline.</p>`;

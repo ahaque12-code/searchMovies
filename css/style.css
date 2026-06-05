@@ -605,11 +605,18 @@ button{
 
 #chatbot-body {
   padding: 15px;
-  background-color: white;
+  background-color: #232323;
   color: lightblue;
   color: black;
   flex-grow: 1;
   overflow-y: auto;  
+}
+
+#chat-messages{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
 }
 
 #user-input{
@@ -654,16 +661,27 @@ button{
 }
 
 .user-msg {
+  max-width: 80%;
+  background-color: rgb(47 52 68 / 64%);
   text-align: right;
-  color: #4ade80; /* Green for user */
+  color: #4ade80;
+  word-wrap: break-word;
   margin: 5px 0;
+  padding: 10px;
+  border-radius: 15px 8px;
+  align-self: flex-end;
 }
 
 .bot-msg {
+  max-width: 80%;
+  background-color: rgb(47 52 68 / 64%);
   text-align: left;
   color: #d38282;
   margin: 5px 0;
-  padding-left: 10px;
+  padding: 10px;
+  border-radius: 15px 8px;
+  word-wrap: break-word;
+  align-self: flex-start;
 }
 
 .bot-msg strong {

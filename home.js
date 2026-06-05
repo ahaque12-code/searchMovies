@@ -183,11 +183,11 @@ app.get('/', (req,res) => {
                             </div>
                             <div id="chatbot-body">
                                <div id="chat-messages"></div>
-                               <div id="user-input">
-                                 <input type="text" id="chat-input" contenteditable="true" placeholder="Ask about movies...">
-                                 <button id="clear-btn">🗑️</button>
-                                 <button id="send-btn">Send</button>
-                               </div>
+                                <div id="user-input">
+                                    <input type="text" id="chat-input" contenteditable="true" placeholder="Ask about movies...">
+                                    <button id="clear-btn">🗑️</button>
+                                    <button id="send-btn">Send</button>
+                                </div>
                             </div>
                         </div>
                         
