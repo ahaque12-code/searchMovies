@@ -104,6 +104,14 @@ app.get('/', (req,res) => {
                 <link rel="icon" type="image/x-icon" href="/images/icon.png">
                 <link rel = "stylesheet" href= "/css/style.css">
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+                <script type="application/ld+json">
+                    {
+                    "@context": "https://schema.org",
+                    "@type": "WebSite",
+                    "name": "SearchMovie",
+                    "url": "https://searchmovie.win/"
+                    }
+                </script>
                 <script src = "misc/genreFunc.js" defer></script>
             </head>
             <body>
