@@ -99,6 +99,8 @@ app.get('/', (req,res) => {
                 <meta name="twitter:description" content="Discover, search, and track your favorite movies and TV shows.">
                 <meta name="twitter:image" content="https://searchmovie.win/images/icon.png">
 
+                <link rel="icon" type="image/png" href="https://searchmovie.win/images/icon.png">
+                <link rel="apple-touch-icon" href="https://searchmovie.win/images/icon.png">
                 <link rel="icon" type="image/x-icon" href="/images/icon.png">
                 <link rel = "stylesheet" href= "/css/style.css">
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
@@ -226,9 +228,11 @@ app.get("/results", async (req,res) => {
                 <meta name="twitter:description" content="Discover, search, and track your favorite movies and TV shows.">
                 <meta name="twitter:image" content="https://searchmovie.win/images/icon.png">
 
-                <link rel="icon" type="image/x-icon" href="/images/icon.png">
+                <link rel="icon" type="image/png" href="https://searchmovie.win/images/icon.png">
+                <link rel="apple-touch-icon" href="https://searchmovie.win/images/icon.png">
                 <link rel = "stylesheet" href= "/css/style.css">
-                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+                <link rel="icon" type="image/x-icon" href="/images/icon.png">
+                <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
             </head>
             <body>
                 <nav class="navbar2">
@@ -444,7 +448,9 @@ app.get("/discover", async(req, res) => {
                 <meta name="twitter:title" content="SearchMovie - Movie & TV Discovery">
                 <meta name="twitter:description" content="Discover, search, and track your favorite movies and TV shows.">
                 <meta name="twitter:image" content="https://searchmovie.win/images/icon.png">
-
+                
+                <link rel="icon" type="image/png" href="https://searchmovie.win/images/icon.png">
+                <link rel="apple-touch-icon" href="https://searchmovie.win/images/icon.png">
                 <link rel="icon" type="image/x-icon" href="/images/icon.png">
                 <link rel = "stylesheet" href= "/css/style.css">
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
