@@ -356,7 +356,7 @@ body{
 }
 
 .secret-link-list li:nth-child(3) a:hover {
-    background-color: purple; 
+    background-color: rgb(110, 118, 4); 
 }
 
 .secret-link-list li:nth-child(4) a:hover {
