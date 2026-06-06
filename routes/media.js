@@ -99,18 +99,16 @@ router.get("/:type/:id", async (req,res)=>{
     const api_key = process.env.TMDB_API_KEY;
     const isGuest = !(req.session && req.session.userId);
     
-    function getXPrimeUrl(imdbId) {
+    function getBingeBoxUrl(imdbId) {
         if (!imdbId) return [];
         
-        const cleanId = imdbId.startsWith('tt') ? imdbId : `tt${imdbId}`;
-        
-        const patternWithT = `https://xprime.su/title/t${imdbId.replace('tt', '')}`;
-        
-        const patternStandard = `https://xprime.su/title/${id}`;
-
+        let urlType = type;
+        if(urlType === "tv"){
+            urlType = "show";
+        }
+        const patternStandard = `https://bingebox.to//${urlType}/${id}`;
         return [
-            { name: "X Prime (Type A)", url: patternWithT },
-            { name: "X Prime (Type B)", url: patternStandard }
+            { name: "BingeBox", url: patternStandard }
         ];
     }
 
@@ -219,11 +217,11 @@ router.get("/:type/:id", async (req,res)=>{
         const mediaType = type === 'tv' ? 'tvshows' : 'movies';
 
         const imdbId = data.external_ids?.imdb_id;
-        const xPrimeLinks = getXPrimeUrl(imdbId);
+        const bingeboxLink = getBingeBoxUrl(imdbId);
         let links = [
             { name: "123 Chill", url: `https://123chill.in/${mediaType}/${searchSlug}/` },
-            {name: "Cineby", url: `https://www.cineby.sc/${type}/${id}`},
-            ...xPrimeLinks
+            {name: "CoreFlix", url: `https://www.coreflix.tv/${type}/${id}`},
+            ...bingeboxLink
         ];
 
         const isHindi = data.spoken_languages?.some(lang => lang.iso_639_1 === "hi");
