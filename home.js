@@ -116,15 +116,6 @@ app.get('/', (req,res) => {
             </head>
             <body>
                <div class="app-container">
-               <!--
-                    <aside class="sidebar">
-                        <h1>Sidebar</h1>
-                        <div id="sidebar-content">
-                            <a id="sidebar-item" href="/discover">Popular Movies</a>
-                            <a id="sidebar-item" href="/top">Top 250 movies</a>
-                        </div>
-                    </aside>
-                -->
                     <main class="main-content">
                         <div id = "movieBody">
                             <nav class="navbar">
@@ -177,22 +168,6 @@ app.get('/', (req,res) => {
                             </form>
                             <br><br>
                         </div>
-                        <!--
-                        <div id="chatbot-container">
-                            <div id="chatbot-header">
-                                <h2 id="heading">Movie Bot</h2>
-                                <button id="chatbot-button">▲</button>
-                            </div>
-                            <div id="chatbot-body">
-                               <div id="chat-messages"></div>
-                                <div id="user-input">
-                                    <input type="text" id="chat-input" contenteditable="true" placeholder="Ask about movies...">
-                                    <button id="clear-btn">🗑️</button>
-                                    <button id="send-btn">Send</button>
-                                </div>
-                            </div>
-                        </div>
-                        -->
                     </main>
                </div>
             </body>
