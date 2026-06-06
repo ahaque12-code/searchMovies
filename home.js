@@ -116,6 +116,7 @@ app.get('/', (req,res) => {
             </head>
             <body>
                <div class="app-container">
+               <!--
                     <aside class="sidebar">
                         <h1>Sidebar</h1>
                         <div id="sidebar-content">
@@ -123,6 +124,7 @@ app.get('/', (req,res) => {
                             <a id="sidebar-item" href="/top">Top 250 movies</a>
                         </div>
                     </aside>
+                -->
                     <main class="main-content">
                         <div id = "movieBody">
                             <nav class="navbar">
@@ -175,7 +177,7 @@ app.get('/', (req,res) => {
                             </form>
                             <br><br>
                         </div>
-
+                        <!--
                         <div id="chatbot-container">
                             <div id="chatbot-header">
                                 <h2 id="heading">Movie Bot</h2>
@@ -190,7 +192,7 @@ app.get('/', (req,res) => {
                                 </div>
                             </div>
                         </div>
-                        
+                        -->
                     </main>
                </div>
             </body>
