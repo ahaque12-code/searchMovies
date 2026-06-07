@@ -359,8 +359,8 @@ body{
 }
 
 .popular-movie-card:hover .play-overlay {
-    opacity: 1;
-    width: 160px;
+  opacity: 1;
+  width: 160px;
     
 }
 
@@ -405,6 +405,17 @@ body{
   color: grey;
   opacity: 0.7;
   flex-shrink: 0;
+}
+
+#air-td-link{
+  text-decoration: none;
+}
+
+.airtdHead:hover{
+  text-decoration: underline;
+  text-underline-offset: 10px;
+  text-decoration-thickness: 2px;
+  cursor:pointer;
 }
 
 .movie-grid {

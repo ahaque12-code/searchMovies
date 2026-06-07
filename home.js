@@ -352,6 +352,66 @@ app.get('/', async (req,res) => {
         console.log("API ERROR FOR POPULAR MOVIES: ", err);
     }  
 
+     try {
+        const api_key = process.env.TMDB_API_KEY;
+        const page = Number(req.query.page) || 1;
+        const apiUrl = `https://api.themoviedb.org/3/tv/airing_today?api_key=${api_key}`;
+        const apiRes = await fetch(apiUrl, { method: 'GET', headers: { accept: 'application/json' } });
+        
+        if (!apiRes.ok) {
+            return res.status(apiRes.status).send(`<h2>API Error: Status ${apiRes.status}</h2>`);
+        }
+
+        html+= ` <div id="popular-movie">
+                            <div id="show-section" class="slider-container">
+                                <h2 class="airtdHead">| Airing Today</h2>
+                                <button type="button" class="slide-btn left" onclick="scrollGrid('airtd-grid', -300)">❮</button>
+                            <div id="airtd-grid" class="popular-movie-grid">`;
+        
+        const apiData = await apiRes.json();
+        const airingTd = apiData.results;
+
+        for (const air of airingTd) {
+            const mediaTypeTD = air.media_type;
+            const seriesTitle = air.name;
+            const posterPath = air.poster_path ? `https://image.tmdb.org/t/p/w500${air.poster_path}` : 'images/icon.png';
+            const dateString = air.first_air_date;
+            const releaseYear = dateString ? dateString.substring(0, 4) : "N/A";
+            const rating = air.vote_average ? Number(air.vote_average).toFixed(1) : "N/A";
+
+
+            html += `
+                    <div class="popular-movie-card" onclick="window.location.href='/media/tv/${air.id}'">
+                        <div class="popular-poster-container"> 
+                            <img class="popular-movie-img" src="${posterPath}" alt="${seriesTitle} poster">
+                            <div class="play-overlay">
+                                <div class="play-icon">▶</div>
+                            </div>
+                        </div>
+                        <div class="movieInfo">
+                            <p class="movieTitleText">${seriesTitle}</p>
+                            <p class="movieReleaseYear">${releaseYear}</p>
+                            <div class="starrt-container">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="star">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                    <span class="star-rating">${rating}</span>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+            `;
+        }
+
+        html+= `
+                    <button type="button" class="slide-btn right" onclick="scrollGrid('airtd-grid', 300)">❯</button>
+                </div>
+            </div>`
+
+    } catch (err) {
+        console.log("API ERROR FOR POPULAR MOVIES: ", err);
+    }  
+
+
 
    html+= `
             </div>
@@ -745,109 +805,8 @@ app.get("/discover", async(req, res) => {
     }
 });
 
-app.get("/top", async (req, res)=>{
-    const isGuest = !(req.session && req.session.userId);
-    const authAction = isGuest 
-        ? `<a href="/users/login" class="nav-item" id="login-link">Log In</a>`
-        : `<form action="/users/logout" method="post" style="display: inline;">
-             <button type="submit" id="logout-link-btn">Sign Out</button>
-           </form>`;
-    let html = `
-    <!DOCTYPE html>
-    <html> 
-        <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Top 250 movies - SearchMovie</title>
-            <meta name="description" content="Search, discover, and track your favorite movies and TV shows. Find reviews and streaming providers with SearchMovie.">
-            
-            <meta property="og:title" content="SearchMovie - Movie & TV Discovery">
-            <meta property="og:description" content="Discover, search, and track your favorite movies and TV shows with real-time Rotten Tomatoes scores.">
-            <meta property="og:image" content="https://searchmovie.win/images/icon.png">
-            <meta property="og:url" content="https://searchmovie.win">
-            <meta property="og:type" content="website">
-
-            <meta name="twitter:card" content="summary_large_image">
-            <meta name="twitter:title" content="SearchMovie - Movie & TV Discovery">
-            <meta name="twitter:description" content="Discover, search, and track your favorite movies and TV shows.">
-            <meta name="twitter:image" content="https://searchmovie.win/images/icon.png">
-            
-            <link rel="icon" type="image/png" href="https://searchmovie.win/images/icon.png">
-            <link rel="apple-touch-icon" href="https://searchmovie.win/images/icon.png">
-            <link rel="icon" type="image/x-icon" href="/images/icon.png">
-            <link rel = "stylesheet" href= "/css/style.css">
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-        </head>
-        <body>
-            <div id = "movieBody">
-                <nav class="navbar">
-                    <span class="nav-title">SearchMovie</span>
-                    <button class="hamburger" id="hamburger">☰</button>
-
-                    <div class="nav-links" id="navLinks">
-                        <a href="/" class="nav-item">Home</a>
-                        <a href="/favorites" class="nav-item">Favorite List</a>
-                        ${authAction}
-                    </div>
-                </nav>
-                <div id="main-container">
-                    <h1>Top 250 Movies</h1>
-                     <div class="movie-grid">
-                </div>`;
-
-    const api_key = process.env.TMDB_API_KEY;
-    const page = Number(req.query.page) || 1;
-    const bearer_tok = process.env.TMDB_BEARER_TOKEN; 
-    const allMovies = apiData.results || [];
-
-    try{
-        const apiUrl = `https://api.themoviedb.org/3/movie/top_rated?api_key=${api_key}&language=en-US&page=${page}`;
-        const apiRes = await fetch(apiUrl, { method: 'GET', headers: { accept: 'application/json', Authorization: `Bearer ${bearer_tok}`} });
-        const apiData = await apiRes.json()
-        
-        console.log(apiData);
-
-
-    } catch(err){
-        console.log("API ERROR: ", err);
-    }
-
-    html+=`
-
-    `;
-
-
-
-    html +=  `
-            </div>
-             <script>
-                async function addFavorite(btn, title, year, imdbId, genres, rating, image, certification) {
-                    const isGuest = ${isGuest};
-        
-                    if (isGuest) {
-                        alert("Please log in to add favorites!");
-                        window.location.href = "/users/login";
-                        return;
-                    }
-
-                    const isActive = btn.classList.toggle('active');
-                    
-                    await fetch("/favorites/add", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ 
-                            title, year, imdbId, genres, rating, image, certification 
-                        })
-                    });
-
-                    if (isActive) {
-                        console.log(title + " toggled (added/removed) in favorites!");
-                    }
-                }
-            </script>
-        </body>
-    </html>`;
-
-    res.send(html);
+app.get("/air_today", (req,res)=>{
+    res.send("Testing");
 })
 
 app.listen(port, (err) => {
