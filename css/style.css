@@ -7,6 +7,8 @@ body{
 .app-container{
   display: flex;
   min-height: 100vh;
+  width: 100%; 
+  overflow-x: hidden;
 }
 
 .sidebar {
@@ -39,6 +41,8 @@ body{
 .main-content {
   flex: 1;
   padding: 20px;
+  min-width: 0;
+  width: 100%;
 }
 
 .navbar {
@@ -231,6 +235,143 @@ body{
   box-sizing: border-box;
 }
 
+#popular-movie {
+  position: relative;
+  width: 100%;
+  max-width: 1200px; /* Adjust based on your preference */
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+#popular-movie h2{
+  margin-left: 22px;
+}
+
+
+.popular-movie-grid{
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  gap: 14px;
+  padding: 10px 20px;
+  transition: transform 0.3s ease;
+  width: 100%;
+}
+
+.popular-movie-grid::-webkit-scrollbar {
+  display: none; 
+}
+
+#popular-movie-grid::-webkit-scrollbar {
+  display: none; /* Hides scrollbar for Chrome/Safari */
+}
+.popular-poster-container{
+  position: relative;
+}
+
+.popular-poster-container:hover{
+  transform: scale(1.05);
+  cursor: pointer;
+}
+
+.slider-container {
+  position: relative;
+  width: 100%;
+  padding: 20px 0;
+}
+.slide-btn {
+  position: absolute;
+  transform: translateY(230%);
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  padding: 15px;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.slide-btn.left { left: 0; }
+.slide-btn.right { right: 0; }
+
+.popular-movie-card{
+  width: 160px;
+  color: inherit;
+  z-index: 1;
+  flex-shrink: 0;
+  flex: 0 0 160px;
+  text-decoration: none;
+  transition: transform .25s, filter .25s;
+  position: relative;
+}
+
+.popular-movie-img{
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+
+.play-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  border-radius: 10px;
+  height: 99%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.popular-movie-card:hover .play-overlay {
+    opacity: 1;
+    width: 160px;
+    
+}
+
+.play-icon {
+  font-size: 17px;
+  color: white;
+  background: rgb(215 251 180 / 73%);
+  padding: 12px;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.movieInfo{
+  display: flex;
+  flex-direction: column; 
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 0 4px;
+}
+
+.movieInfo p {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.movieTitleText {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.movieReleaseYear{
+  font-size: 12px;
+  color: grey;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
 .movie-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 200px));
@@ -354,6 +495,10 @@ button{
 .suggestion-item:hover {
   background: #21d07a;
   color: black;
+}
+
+.rec-box{
+  margin-top:50px;
 }
 
 .rec-container{
@@ -727,6 +872,23 @@ button{
     font-size: 0.95rem;
     opacity: 0.9;
   }
+
+  .slide-btn {
+    display: none;
+  }
+
+
+  .popular-movie-grid{
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    gap: 14px;
+    padding: 10px 20px;
+    transition: transform 0.3s ease;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+}
 
   .navbar .nav-item, 
   .navbar #logout-link-btn {

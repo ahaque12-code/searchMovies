@@ -67,7 +67,7 @@ const globalGenreMap = {
     10768: "War & Politics"
 };
 
-app.get('/', (req,res) => {
+app.get('/', async (req,res) => {
     const isGuest = !(req.session && req.session.userId);
     const username = isGuest ? "Guest" : req.session.username;
     let displayName = (username !== "Guest" && username.includes('@')) 
@@ -81,7 +81,8 @@ app.get('/', (req,res) => {
              <button type="submit" id="logout-link-btn">Sign Out</button>
            </form>`;
 
-    res.send(`<!DOCTYPE html>
+    let html = ` 
+    <!DOCTYPE html>
         <html>
             <head>
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -102,7 +103,7 @@ app.get('/', (req,res) => {
                 <link rel="icon" type="image/png" href="https://searchmovie.win/images/icon.png">
                 <link rel="apple-touch-icon" href="https://searchmovie.win/images/icon.png">
                 <link rel="icon" type="image/x-icon" href="/images/icon.png">
-                <link rel = "stylesheet" href= "/css/style.css">
+                <link rel="stylesheet" href="/css/style.css">
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
                 <script type="application/ld+json">
                     {
@@ -112,12 +113,12 @@ app.get('/', (req,res) => {
                     "url": "https://searchmovie.win/"
                     }
                 </script>
-                <script src = "misc/genreFunc.js" defer></script>
+                <script src="misc/genreFunc.js" defer></script>
             </head>
             <body>
-               <div class="app-container">
+            <div class="app-container">
                     <main class="main-content">
-                        <div id = "movieBody">
+                        <div id="movieBody">
                             <nav class="navbar">
                                 <span class="nav-title">SearchMovie</span>
                                 <button class="hamburger" id="hamburger">☰</button>
@@ -129,7 +130,7 @@ app.get('/', (req,res) => {
                                 </div>
                             </nav>
                             <h2>Making searching movies easier</h2> 
-                            <form id = "movieForm" action = "/results" method = "get">
+                            <form id="movieForm" action="/results" method="get">
                                 <div class="search-container" style="position: relative; display: inline-block;">
                                     <input type="text" name="q" id="movieName" placeholder="Search movies...">
                                     <button id="searchBtn"><img id="srchImg" src="images/search-symbol-wbg.png" alt="Search"></button>
@@ -137,42 +138,152 @@ app.get('/', (req,res) => {
                                 </div>
 
                                 <br><br>
+                                
+                                <div class = "rec-box">
+                                    <h3>Not sure what to search? Just fill up these and get recommendations!</h3>
 
-                                <h3>Not sure what to search? Just fill up these and get recommendations!</h3>
-
-                                <div class = "rec-container">
-                                    <input type = "number" name="rating" id = "movieRating" max = 10 min = 0 step = 0.1 placeholder = "Minimum Rating" >
-                                    <div class="genre-wrapper">
-                                        <button type="button" id="genreBtn">Select Genre</button>
-                                        <div id="genreBox" class="genre-box hidden">
-                                            <label><input type="checkbox" value="Action"> Action</label>
-                                            <label><input type="checkbox" value="Comedy"> Comedy</label>
-                                            <label><input type="checkbox" value="Drama"> Drama</label>
-                                            <label><input type="checkbox" value="Horror"> Horror</label>
-                                            <label><input type="checkbox" value="Romance"> Romance</label>
-                                            <label><input type="checkbox" value="Sci-Fi"> Sci-Fi</label>
-                                            <label><input type="checkbox" value="Thriller"> Thriller</label>
-                                            <label><input type="checkbox" value="Animation"> Animation</label>
-                                            <label><input type="checkbox" value="Crime"> Crime</label>
-                                            <label><input type="checkbox" value="Adventure"> Adventure</label>
+                                    <div class="rec-container">
+                                        <input type="number" name="rating" id="movieRating" max="10" min="0" step="0.1" placeholder="Minimum Rating">
+                                        <div class="genre-wrapper">
+                                            <button type="button" id="genreBtn">Select Genre</button>
+                                            <div id="genreBox" class="genre-box hidden">
+                                                <label><input type="checkbox" value="Action"> Action</label>
+                                                <label><input type="checkbox" value="Comedy"> Comedy</label>
+                                                <label><input type="checkbox" value="Drama"> Drama</label>
+                                                <label><input type="checkbox" value="Horror"> Horror</label>
+                                                <label><input type="checkbox" value="Romance"> Romance</label>
+                                                <label><input type="checkbox" value="Sci-Fi"> Sci-Fi</label>
+                                                <label><input type="checkbox" value="Thriller"> Thriller</label>
+                                                <label><input type="checkbox" value="Animation"> Animation</label>
+                                                <label><input type="checkbox" value="Crime"> Crime</label>
+                                                <label><input type="checkbox" value="Adventure"> Adventure</label>
+                                            </div>
+                                            <input type="hidden" name="genres" id="selectedGenres">
                                         </div>
-                                        <input type="hidden" name="genres" id="selectedGenres">
+                                        <input type="text" name="year" id="yearRelease" placeholder="Year">
+                                        <div id="typeSelector">
+                                            <label><input type="radio" name="type" value="movie" checked> Movie</label>
+                                            <label><input type="radio" name="type" value="tv"> TV Show</label> 
+                                        </div>
+                                        <br><br>
                                     </div>
-                                    <input type = "text" name = "year" id = "yearRelease" placeholder = "Year">
-                                    <div id="typeSelector">
-                                        <label><input type="radio" name="type" value="movie" checked> Movie</label>
-                                        <label><input type="radio" name="type" value="tv"> TV Show</label> </div>
-                                    <br><br>
+                                    <input type="submit" id="submit" value="Search">
                                 </div>
-                                <input type = "submit" id = "submit" value = "Search">
                             </form>
                             <br><br>
                         </div>
-                    </main>
-               </div>
-            </body>
-        </html>
-        `);
+                        <br><br>
+                        <div id="popular-movie">
+                            <div id="movie-section" class="slider-container">
+                                <h2>Trending Movies</h2>
+                                <button type="button" class="slide-btn left" onclick="scrollGrid('movie-grid', -300)">❮</button>
+                            <div id="movie-grid" class="popular-movie-grid">
+
+    `;
+
+    try {
+        const api_key = process.env.TMDB_API_KEY;
+        const page = Number(req.query.page) || 1;
+        const apiUrl = `https://api.themoviedb.org/3/movie/popular?api_key=${api_key}&language=en-US&page=${page}`;
+        const apiRes = await fetch(apiUrl, { method: 'GET', headers: { accept: 'application/json' } });
+        
+        if (!apiRes.ok) {
+            return res.status(apiRes.status).send(`<h2>API Error: Status ${apiRes.status}</h2>`);
+        }
+        
+        const apiData = await apiRes.json();
+        const popularMovies = apiData.results;
+
+        for (const movie of popularMovies) {
+            const movieTitle = movie.title;
+            const posterPath = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'images/icon.png';
+            const dateString = movie.release_date || ""
+            const releaseYear = dateString ? dateString.substring(0, 4) : "N/A";
+
+            html += `
+                    <div class="popular-movie-card" onclick="window.location.href='/media/movie/${movie.id}'">
+                        <div class="popular-poster-container"> 
+                            <img class="popular-movie-img" src="${posterPath}" alt="${movieTitle} poster">
+                            <div class="play-overlay">
+                                <div class="play-icon">▶</div>
+                            </div>
+                        </div>
+                        <div class="movieInfo">
+                            <p class="movieTitleText">${movieTitle}</p>
+                            <p class="movieReleaseYear">${releaseYear}</p>
+                        </div>
+                    </div>
+            `;
+        }
+        html += `
+                    <button type="button" class="slide-btn right" onclick="scrollGrid('movie-grid', 300)">❯</button>
+                </div>
+            </div>`;
+
+    } catch (err) {
+        console.log("API ERROR FOR POPULAR MOVIES: ", err);
+    }  
+
+
+    try {
+        const api_key = process.env.TMDB_API_KEY;
+        const page = Number(req.query.page) || 1;
+        const apiUrl = `https://api.themoviedb.org/3/tv/popular?api_key=${api_key}&language=en-US&page=${page}`;
+        const apiRes = await fetch(apiUrl, { method: 'GET', headers: { accept: 'application/json' } });
+        
+        if (!apiRes.ok) {
+            return res.status(apiRes.status).send(`<h2>API Error: Status ${apiRes.status}</h2>`);
+        }
+
+        html+= ` <div id="popular-movie">
+                            <div id="show-section" class="slider-container">
+                                <h2>Trending Shows</h2>
+                                <button type="button" class="slide-btn left" onclick="scrollGrid('show-grid', -300)">❮</button>
+                            <div id="show-grid" class="popular-movie-grid">`;
+        
+        const apiData = await apiRes.json();
+        const popularSeries = apiData.results;
+
+        for (const series of popularSeries) {
+            const seriesTitle = series.name;
+            const posterPath = series.poster_path ? `https://image.tmdb.org/t/p/w500${series.poster_path}` : 'images/icon.png';
+            const dateString = series.first_air_date || ""
+            const releaseYear = dateString ? dateString.substring(0, 4) : "N/A";
+
+            html += `
+                    <div class="popular-movie-card" onclick="window.location.href='/media/tv/${series.id}'">
+                        <div class="popular-poster-container"> 
+                            <img class="popular-movie-img" src="${posterPath}" alt="${seriesTitle} poster">
+                            <div class="play-overlay">
+                                <div class="play-icon">▶</div>
+                            </div>
+                        </div>
+                        <div class="movieInfo">
+                            <p class="movieTitleText">${seriesTitle}</p>
+                            <p class="movieReleaseYear">${releaseYear}</p>
+                        </div>
+                    </div>
+            `;
+        }
+
+        html+= `
+                    <button type="button" class="slide-btn right" onclick="scrollGrid('show-grid', 300)">❯</button>
+                </div>
+            </div>`
+
+    } catch (err) {
+        console.log("API ERROR FOR POPULAR MOVIES: ", err);
+    }  
+
+   html+= `
+            </div>
+         </main>
+        </div>
+     </body>
+    </html>`;
+
+
+return res.send(html);
 });
 
 const favoritesRouter = require("./routes/favorites");
@@ -298,7 +409,7 @@ app.get("/results", async (req,res) => {
                     <div class="poster-container"> 
                         <span class="cert-badge ${certClass}">${ageCertificate}</span>
                         <img src="${posterPath}" alt="movie poster">
-                        </div>
+                    </div>
                     
                     <h3>${movieTitle}</h3>
                     <p>Year: ${releaseYear || "N/A"}</p>
@@ -503,7 +614,7 @@ app.get("/discover", async(req, res) => {
                         <div class="poster-container"> 
                             <span class="cert-badge ${certClass}">${ageCertificate}</span>
                             <img src="${posterPath}" alt="movie poster">
-                            </div>
+                        </div>
                         
                         <h3>${movieTitle}</h3>
                         <p>Year: ${releaseYear || "N/A"}</p>

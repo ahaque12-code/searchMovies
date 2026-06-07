@@ -32,6 +32,13 @@ async function loadChatHistory() {
         }
 }
 
+function scrollGrid(gridId, amount) {
+    const grid = document.getElementById(gridId);
+    if (grid) {
+        grid.scrollBy({ left: amount, behavior: 'smooth' });
+    }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     // 1. Typewriter Logic
     const input = document.getElementById("movieName");
@@ -113,88 +120,89 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // 4. Chat Bot Body
-    const chatbotBtn = document.getElementById('chatbot-button');
-    const chatbotBody = document.getElementById('chatbot-body');
+    // const chatbotBtn = document.getElementById('chatbot-button');
+    // const chatbotBody = document.getElementById('chatbot-body');
    
 
-    chatbotBtn.addEventListener("click",  () =>{
-        const isCurrentlyHidden = window.getComputedStyle(chatbotBody).display === "none";
-        if(isCurrentlyHidden){
-            chatbotBody.style.display = "block";
-            chatbotBtn.textContent = "▼";
-            isChatOpen = false;
-        } else{
-            chatbotBody.style.display = "none";
-            chatbotBtn.textContent = "▲";
-        }
-    });
+    // chatbotBtn.addEventListener("click",  () =>{
+    //     const isCurrentlyHidden = window.getComputedStyle(chatbotBody).display === "none";
+    //     if(isCurrentlyHidden){
+    //         chatbotBody.style.display = "block";
+    //         chatbotBtn.textContent = "▼";
+    //         isChatOpen = false;
+    //     } else{
+    //         chatbotBody.style.display = "none";
+    //         chatbotBtn.textContent = "▲";
+    //     }
+    // });
 
-    const chatBtn = document.getElementById('send-btn'); // Make sure your button has this ID
-    const chatInput = document.getElementById('chat-input');
-    const chatMessages = document.getElementById('chat-messages');
+    // const chatBtn = document.getElementById('send-btn'); // Make sure your button has this ID
+    // const chatInput = document.getElementById('chat-input');
+    // const chatMessages = document.getElementById('chat-messages');
 
-    if (chatBtn && chatInput) {
-        chatBtn.addEventListener('click', async () => {
-            const message = chatInput.value.trim();
-            if (!message) return;
+    // if (chatBtn && chatInput) {
+    //     chatBtn.addEventListener('click', async () => {
+    //         const message = chatInput.value.trim();
+    //         if (!message) return;
 
-            chatMessages.innerHTML += `<p 
-            style="max-width: 80%;
-            background-color: rgb(47 52 68 / 64%);
-            text-align: right;
-            color: #4ade80;
-            word-wrap: break-word;
-            margin: 5px 0;
-            padding: 10px;
-            border-radius: 15px 8px;
-            align-self: flex-end;">You: ${message}</p>`;
-            chatInput.value = '';
+    //         chatMessages.innerHTML += `<p 
+    //         style="max-width: 80%;
+    //         background-color: rgb(47 52 68 / 64%);
+    //         text-align: right;
+    //         color: #4ade80;
+    //         word-wrap: break-word;
+    //         margin: 5px 0;
+    //         padding: 10px;
+    //         border-radius: 15px 8px;
+    //         align-self: flex-end;">You: ${message}</p>`;
+    //         chatInput.value = '';
 
-            try {
-                const res = await fetch('/chatbot/message', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message })
-                });
-                const data = await res.json();
+    //         try {
+    //             const res = await fetch('/chatbot/message', {
+    //                 method: 'POST',
+    //                 headers: { 'Content-Type': 'application/json' },
+    //                 body: JSON.stringify({ message })
+    //             });
+    //             const data = await res.json();
                 
-                const formattedReply = parseMarkdown(data.reply);
-                chatMessages.innerHTML += `<p 
-                style="max-width: 80%;
-                background-color: rgb(47 52 68 / 64%);
-                text-align: left;
-                color: #d38282;
-                margin: 5px 0;
-                padding: 10px;
-                border-radius: 15px 8px;
-                word-wrap: break-word;
-                align-self: flex-start;">Bot: ${formattedReply}</p>`;
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            } catch (err) {
-                chatMessages.innerHTML += `<p style="color: red;">Error: Bot is offline.</p>`;
-            }
-        });
-    }
+    //             const formattedReply = parseMarkdown(data.reply);
+    //             chatMessages.innerHTML += `<p 
+    //             style="max-width: 80%;
+    //             background-color: rgb(47 52 68 / 64%);
+    //             text-align: left;
+    //             color: #d38282;
+    //             margin: 5px 0;
+    //             padding: 10px;
+    //             border-radius: 15px 8px;
+    //             word-wrap: break-word;
+    //             align-self: flex-start;">Bot: ${formattedReply}</p>`;
+    //             chatMessages.scrollTop = chatMessages.scrollHeight;
+    //         } catch (err) {
+    //             chatMessages.innerHTML += `<p style="color: red;">Error: Bot is offline.</p>`;
+    //         }
+    //     });
+    // }
 
-    const clearBtn = document.getElementById('clear-btn');
+    // const clearBtn = document.getElementById('clear-btn');
 
-    if (clearBtn) {
-        clearBtn.addEventListener('click', async () => {
-            if (!confirm("Are you sure you want to clear your chat history?")) return;
+    // if (clearBtn) {
+    //     clearBtn.addEventListener('click', async () => {
+    //         if (!confirm("Are you sure you want to clear your chat history?")) return;
 
-            try {
-                const res = await fetch('/chatbot/clear', { method: 'DELETE' });
-                const data = await res.json();
+    //         try {
+    //             const res = await fetch('/chatbot/clear', { method: 'DELETE' });
+    //             const data = await res.json();
                 
-                if (data.success) {
-                    // Clear the UI immediately
-                    document.getElementById('chat-messages').innerHTML = '';
-                }
-            } catch (err) {
-                console.error("Failed to clear chat:", err);
-            }
-        });
-    }
+    //             if (data.success) {
+    //                 // Clear the UI immediately
+    //                 document.getElementById('chat-messages').innerHTML = '';
+    //             }
+    //         } catch (err) {
+    //             console.error("Failed to clear chat:", err);
+    //         }
+    //     });
+    // }
+
 
 });
 
