@@ -245,6 +245,7 @@ body{
 
 #popular-movie h2{
   margin-left: 22px;
+  color: rgba(49, 232, 162, 0.94);
 }
 
 
@@ -260,6 +261,19 @@ body{
   padding: 10px 20px;
   transition: transform 0.3s ease;
   width: 100%;
+}
+
+.starrt-container{
+  display: flex;
+  gap: 5px;
+}
+
+.star{
+  fill:gold;
+}
+
+.star-rating{
+  font-size: 10px;
 }
 
 .popular-movie-grid::-webkit-scrollbar {
@@ -366,6 +380,13 @@ body{
 }
 
 .movieReleaseYear{
+  font-size: 12px;
+  color: grey;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.mediaTypeInfo{
   font-size: 12px;
   color: grey;
   opacity: 0.7;

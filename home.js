@@ -175,7 +175,7 @@ app.get('/', async (req,res) => {
                         <br><br>
                         <div id="popular-movie">
                             <div id="movie-section" class="slider-container">
-                                <h2>Trending Movies</h2>
+                                <h2>| Trending Movies</h2>
                                 <button type="button" class="slide-btn left" onclick="scrollGrid('movie-grid', -300)">❮</button>
                             <div id="movie-grid" class="popular-movie-grid">
 
@@ -199,6 +199,8 @@ app.get('/', async (req,res) => {
             const posterPath = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'images/icon.png';
             const dateString = movie.release_date || ""
             const releaseYear = dateString ? dateString.substring(0, 4) : "N/A";
+            const rating = movie.vote_average ? Number(movie.vote_average).toFixed(1) : "N/A";
+
 
             html += `
                     <div class="popular-movie-card" onclick="window.location.href='/media/movie/${movie.id}'">
@@ -211,6 +213,12 @@ app.get('/', async (req,res) => {
                         <div class="movieInfo">
                             <p class="movieTitleText">${movieTitle}</p>
                             <p class="movieReleaseYear">${releaseYear}</p>
+                            <div class="starrt-container">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="star">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                    <span class="star-rating">${rating}</span>
+                                </svg>
+                            </div>
                         </div>
                     </div>
             `;
@@ -237,7 +245,7 @@ app.get('/', async (req,res) => {
 
         html+= ` <div id="popular-movie">
                             <div id="show-section" class="slider-container">
-                                <h2>Trending Shows</h2>
+                                <h2>| Trending Shows</h2>
                                 <button type="button" class="slide-btn left" onclick="scrollGrid('show-grid', -300)">❮</button>
                             <div id="show-grid" class="popular-movie-grid">`;
         
@@ -249,6 +257,8 @@ app.get('/', async (req,res) => {
             const posterPath = series.poster_path ? `https://image.tmdb.org/t/p/w500${series.poster_path}` : 'images/icon.png';
             const dateString = series.first_air_date || ""
             const releaseYear = dateString ? dateString.substring(0, 4) : "N/A";
+            const rating = series.vote_average ? Number(series.vote_average).toFixed(1) : "N/A";
+
 
             html += `
                     <div class="popular-movie-card" onclick="window.location.href='/media/tv/${series.id}'">
@@ -261,6 +271,12 @@ app.get('/', async (req,res) => {
                         <div class="movieInfo">
                             <p class="movieTitleText">${seriesTitle}</p>
                             <p class="movieReleaseYear">${releaseYear}</p>
+                            <div class="starrt-container">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="star">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                    <span class="star-rating">${rating}</span>
+                                </svg>
+                            </div>
                         </div>
                     </div>
             `;
@@ -274,6 +290,68 @@ app.get('/', async (req,res) => {
     } catch (err) {
         console.log("API ERROR FOR POPULAR MOVIES: ", err);
     }  
+
+    try {
+        const api_key = process.env.TMDB_API_KEY;
+        const page = Number(req.query.page) || 1;
+        const apiUrl = `https://api.themoviedb.org/3/trending/all/day?api_key=${api_key}&language=en-US&page=${page}`;
+        const apiRes = await fetch(apiUrl, { method: 'GET', headers: { accept: 'application/json' } });
+        
+        if (!apiRes.ok) {
+            return res.status(apiRes.status).send(`<h2>API Error: Status ${apiRes.status}</h2>`);
+        }
+
+        html+= ` <div id="popular-movie">
+                            <div id="show-section" class="slider-container">
+                                <h2>| Trending Today</h2>
+                                <button type="button" class="slide-btn left" onclick="scrollGrid('td-grid', -300)">❮</button>
+                            <div id="td-grid" class="popular-movie-grid">`;
+        
+        const apiData = await apiRes.json();
+        const ttToday = apiData.results;
+
+        for (const trendingM of ttToday) {
+            const mediaTypeTD = trendingM.media_type;
+            const seriesTitle = mediaTypeTD == "movie" ? trendingM.title : trendingM.name;
+            const posterPath = trendingM.poster_path ? `https://image.tmdb.org/t/p/w500${trendingM.poster_path}` : 'images/icon.png';
+            const dateString = mediaTypeTD == "movie" ? trendingM.release_date : trendingM.first_air_date;
+            const releaseYear = dateString ? dateString.substring(0, 4) : "N/A";
+            const rating = trendingM.vote_average ? Number(trendingM.vote_average).toFixed(1) : "N/A";
+
+
+            html += `
+                    <div class="popular-movie-card" onclick="window.location.href='/media/tv/${trendingM.id}'">
+                        <div class="popular-poster-container"> 
+                            <img class="popular-movie-img" src="${posterPath}" alt="${seriesTitle} poster">
+                            <div class="play-overlay">
+                                <div class="play-icon">▶</div>
+                            </div>
+                        </div>
+                        <div class="movieInfo">
+                            <p class="movieTitleText">${seriesTitle}</p>
+                            <p class="movieReleaseYear">${releaseYear}</p>
+                            <p class="mediaTypeInfo">${mediaTypeTD == "movie" ? "Movie" : "TV"}</p>
+                            <div class="starrt-container">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="star">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                    <span class="star-rating">${rating}</span>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+            `;
+        }
+
+        html+= `
+                    <button type="button" class="slide-btn right" onclick="scrollGrid('td-grid', 300)">❯</button>
+                </div>
+            </div>`
+
+    } catch (err) {
+        console.log("API ERROR FOR POPULAR MOVIES: ", err);
+    }  
+
+
 
    html+= `
             </div>

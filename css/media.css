@@ -363,6 +363,10 @@ body{
     background-color: #ffa502; 
 }
 
+.secret-link-list li:nth-child(5) a:hover {
+    background-color: #027cff; 
+}
+
 .heart-btn {
   position: static; 
   width: auto;

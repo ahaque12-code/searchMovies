@@ -222,6 +222,7 @@ router.get("/:type/:id", async (req,res)=>{
             { name: "123 Chill", url: `https://123chill.in/${mediaType}/${searchSlug}/` },
             {name: "CoreFlix", url: `https://www.coreflix.tv/${type}/${id}`},
             {name: "Lunara", url: `https://lunara.watch/${type}/${id}`},
+            {name: "CineBy", url: `https://www.cineby.at/${type}/${id}?`},
             ...bingeboxLink
         ];
 
