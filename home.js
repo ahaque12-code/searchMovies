@@ -805,8 +805,91 @@ app.get("/discover", async(req, res) => {
     }
 });
 
-app.get("/air_today", (req,res)=>{
-    res.send("Testing");
+app.get("/air_today", async (req,res)=>{
+    let html = `
+    <!DOCTYPE html>
+    <html>
+        <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Airing Today</title>
+            <meta name="description" content="What's airing today">
+            
+            <meta property="og:title" content="SearchMovie - Airing Today">
+            <meta property="og:description" content="Find out whats airing today">
+            <meta property="og:image" content="https://searchmovie.win/images/icon.png">
+            <meta property="og:url" content="https://searchmovie.win">
+            <meta property="og:type" content="website">
+
+            <meta name="twitter:card" content="summary_large_image">
+            <meta name="twitter:title" content="SearchMovie - Movie & TV Discovery">
+            <meta name="twitter:description" content="Discover, search, and track your favorite movies and TV shows.">
+            <meta name="twitter:image" content="https://searchmovie.win/images/icon.png">
+            
+            <link rel="icon" type="image/png" href="https://searchmovie.win/images/icon.png">
+            <link rel="apple-touch-icon" href="https://searchmovie.win/images/icon.png">
+            <link rel="icon" type="image/x-icon" href="/images/icon.png">
+            <link rel = "stylesheet" href= "/css/style.css">
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+        </head>
+        <body class="air-td-body">
+            <nav class="navbar2">
+                <span class="nav-title2">Discovery Results</span>
+                <div class="nav-links2">
+                    <a href="/" class="nav-item">Home</a>
+                    <a href="/favorites" class="nav-item">Favorites</a>
+                </div>
+            </nav>
+            <div class="main-cont-td">
+                <div id="airDate">
+                    <h1 style="text-align: center; color: red;  animation: dropIn 0.4s ease-out forwards;">Airing Today</h1>
+                    <div id="air-controls">
+                        <button id="prev"> < </button>
+                        <h2 id="day-display"></h2>
+                        <button id="next"> > </button>
+                    </div>
+                </div>
+                <div class="airInfo">
+
+    `
+
+    const apiUrl = `https://api.tvmaze.com/schedule/?country=US&date=2026-06-07`;
+    const apiRes = await fetch(apiUrl);
+    const data = await apiRes.json();
+
+       
+    html+=`
+                </div>
+            </div>
+        <script>
+            let weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            let offset = 0;
+
+            function updateDisplay() {
+                const d = new Date();
+                d.setDate(d.getDate() + offset);
+                const label = offset === 0 
+                ? 'Today' 
+                : weekdays[d.getDay()] + ' ' + d.getDate();
+                document.getElementById('day-display').textContent = label;
+            }
+
+            document.getElementById('prev').addEventListener('click', () => {
+                offset--;
+                updateDisplay();
+            });
+
+            document.getElementById('next').addEventListener('click', () => {
+                offset++;
+                updateDisplay();
+            });
+
+            updateDisplay();
+
+        </script>
+        </body>
+    </html>`;
+
+    res.send(html);
 })
 
 app.listen(port, (err) => {

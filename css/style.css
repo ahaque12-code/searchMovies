@@ -360,8 +360,7 @@ body{
 
 .popular-movie-card:hover .play-overlay {
   opacity: 1;
-  width: 160px;
-    
+  width: 160px;    
 }
 
 .play-icon {
@@ -880,8 +879,71 @@ button{
 }
 
 .bot-msg li {
-    margin-left: 15px;
-    list-style-type: disc;
+  margin-left: 15px;
+  list-style-type: disc;
+}
+
+
+.air-td-body{
+  background-color: black;
+}
+
+.main-cont-td{
+  flex: 1;
+  padding-top:45px;
+  min-width: 0;
+  width: 100%;
+  
+}
+
+#airDate{
+  display: flex;
+  flex-direction: column;
+  text-align: center;  
+  animation: dropIn 0.4s ease-out forwards;
+}
+
+#air-controls{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+#prev{
+  background :none; 
+  border:none;
+  font-size: 20px;
+}
+
+#prev:hover{
+  cursor: pointer;
+}
+
+#day-display{
+  text-align: center;  
+  animation: dropIn 0.4s ease-out forwards;
+}
+
+#next{
+  background :none; 
+  border:none;
+  font-size: 20px;
+}
+
+#next:hover{
+  cursor: pointer;
+}
+
+@keyframes dropIn {
+  from {
+    opacity: 0;
+    transform: translateY(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* For Smaller devices, more work will come around */
@@ -956,6 +1018,12 @@ button{
     text-decoration: none;
     transition: transform .25s, filter .25s;
     position: relative;
+  }
+
+  .popular-movie-card:hover .play-overlay {
+    opacity: 1;
+    width: 88px;
+    height: 133px;
   }
 
   .navbar .nav-item, 
