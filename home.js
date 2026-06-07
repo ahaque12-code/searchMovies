@@ -282,6 +282,7 @@ app.get('/', async (req,res) => {
             `;
         }
 
+
         html+= `
                     <button type="button" class="slide-btn right" onclick="scrollGrid('show-grid', 300)">❯</button>
                 </div>
@@ -352,11 +353,11 @@ app.get('/', async (req,res) => {
     }  
 
 
-
    html+= `
             </div>
          </main>
         </div>
+        </script>
      </body>
     </html>`;
 
