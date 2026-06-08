@@ -379,7 +379,7 @@ app.get('/', async (req,res) => {
 
         html+= ` <div id="popular-movie">
                             <div id="show-section" class="slider-container">
-                                <a id="air-td-link" href="/air_today"><h2 class="airtdHead">| Airing Today ↗</h2></a>
+                                <h2 class="airtdHead">| Airing Today</h2>
                                 <button type="button" class="slide-btn left" onclick="scrollGrid('airtd-grid', -300)">❮</button>
                             <div id="airtd-grid" class="popular-movie-grid">`;
         
