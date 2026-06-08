@@ -161,10 +161,20 @@ app.get('/', async (req,res) => {
                                             <input type="hidden" name="genres" id="selectedGenres">
                                         </div>
                                         <input type="text" name="year" id="yearRelease" placeholder="Year">
-                                        <div id="typeSelector">
-                                            <label><input type="radio" name="type" value="movie" checked> Movie</label>
-                                            <label><input type="radio" name="type" value="tv"> TV Show</label> 
-                                        </div>
+                                        <select name="media" id="mediaSelect">
+                                            <option value="multi">Type</option>
+                                            <option value="movie">Movie</option>
+                                            <option value="tv">TV</option>
+                                        </select>
+                                        <select name="language" id="langSelect">
+                                            <option value="">All Languages</option>
+                                            <option value="en">English</option>
+                                            <option value="hi">Hindi</option>
+                                            <option value="kn">Kannada</option>
+                                            <option value="es">Spanish</option>
+                                            <option value="fr">French</option>
+                                            <option value="bn">Bangla</option>
+                                        </select>
                                         <br><br>
                                     </div>
                                     <input type="submit" id="submit" value="Search">
@@ -439,6 +449,7 @@ app.get("/results", async (req,res) => {
     const searchMovie = req.query.q ? req.query.q.trim(): "";
     const api_key = process.env.TMDB_API_KEY;
     const page = Number(req.query.page) || 1;
+    const searchLang = req.query.language || "";
     let html;
 
     if (!searchMovie) {
@@ -447,17 +458,36 @@ app.get("/results", async (req,res) => {
     }
 
     try{
-        const apiUrl = `https://api.themoviedb.org/3/search/multi?api_key=${api_key}&query=${encodeURIComponent(searchMovie)}&include_adult=false&language=en-US&page=${page}`;
-        const apiRes = await fetch(apiUrl, { method: 'GET', headers: { accept: 'application/json' } });
+        let movies = [];
+        let totalPages = 1;
 
-        if (!apiRes.ok) {
-            return res.status(apiRes.status).send(`<h2>API Error: Status ${apiRes.status}</h2>`);
+       if (searchLang) {
+            const movieUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${api_key}&with_original_language=${searchLang}&with_text_query=${encodeURIComponent(searchMovie)}&page=${page}&sort_by=popularity.desc`;
+            const tvUrl = `https://api.themoviedb.org/3/discover/tv?api_key=${api_key}&with_original_language=${searchLang}&with_text_query=${encodeURIComponent(searchMovie)}&page=${page}&sort_by=popularity.desc`;
+
+            const [movieRes, tvRes] = await Promise.all([
+                fetch(movieUrl, { method: 'GET', headers: { accept: 'application/json' } }),
+                fetch(tvUrl, { method: 'GET', headers: { accept: 'application/json' } })
+            ]);
+
+            const [movieData, tvData] = await Promise.all([movieRes.json(), tvRes.json()]);
+
+            totalPages = Math.max(movieData.total_pages || 1, tvData.total_pages || 1);
+            movies = [
+                ...(movieData.results || []).map(m => ({ ...m, media_type: 'movie' })),
+                ...(tvData.results || []).map(m => ({ ...m, media_type: 'tv' }))
+            ];
         }
-    
-        const apiData = await apiRes.json();
-        const allMovies = apiData.results || [];
-        const movies = allMovies.filter(item => item.media_type === "movie" || item.media_type === "tv");
-        const totalPages = apiData.total_pages || 1;
+        else {
+            const apiUrl = `https://api.themoviedb.org/3/search/multi?api_key=${api_key}&query=${encodeURIComponent(searchMovie)}&include_adult=false&page=${page}`;
+            const apiRes = await fetch(apiUrl, { method: 'GET', headers: { accept: 'application/json' } });
+            if (!apiRes.ok) return res.status(apiRes.status).send(`<h2>API Error: Status ${apiRes.status}</h2>`);
+
+            const apiData = await apiRes.json();
+            totalPages = apiData.total_pages || 1;
+            movies = (apiData.results || []).filter(item => item.media_type === "movie" || item.media_type === "tv");
+        }
+
 
         const favorites = await fetchFavoritesFromDB(req.session.userId);
         const favoriteIds = favorites.map(f => String(f.imdbId).trim());
@@ -642,10 +672,11 @@ app.get("/discover", async(req, res) => {
     const api_key = process.env.TMDB_API_KEY;
     const ratingSearch = req.query.rating ? req.query.rating.trim() : "";
     const yearSearch = req.query.year ? req.query.year.trim() : "";
-    const typeSearch = req.query.type || "movie";
+    const typeSearch = req.query.media || "movie";
     const normalizedType = (typeSearch === "tvSeries" || typeSearch === "tv") ? "tv" : "movie";
     const page = Number(req.query.page) || 1;
     const genreSearch = req.query.genres ? req.query.genres.split(",").map(g => g.trim()) : [];
+    const langFilter = req.query.language || "en";
 
     const textToGenreId = normalizedType === "tv" ? {
     "Action": 10759,  "Adventure": 10759,  "Animation": 16, 
@@ -664,7 +695,7 @@ app.get("/discover", async(req, res) => {
     };
 
     try {
-        let apiUrl = `https://api.themoviedb.org/3/discover/${normalizedType}?api_key=${api_key}&page=${page}&include_adult=false&sort_by=popularity.desc&language=en-US`;
+        let apiUrl = `https://api.themoviedb.org/3/discover/${normalizedType}?api_key=${api_key}&page=${page}&include_adult=false&sort_by=popularity.desc&with_original_language=${encodeURIComponent(langFilter)}`;
 
         if (ratingSearch) apiUrl += `&vote_average.gte=${parseFloat(ratingSearch)}`;
         if (yearSearch) apiUrl += normalizedType === "movie" ? `&primary_release_date.gte=${yearSearch}-01-01&primary_release_date.lte=${yearSearch}-12-31` : `&first_air_date_year=${yearSearch}`;
@@ -843,20 +874,26 @@ app.get("/air_today", async (req,res)=>{
                 <div id="airDate">
                     <h1 style="text-align: center; color: red;  animation: dropIn 0.4s ease-out forwards;">Airing Today</h1>
                     <div id="air-controls">
-                        <button id="prev"> < </button>
+                        <button id="prev"><</button>
                         <h2 id="day-display"></h2>
-                        <button id="next"> > </button>
+                        <button id="next">></button>
                     </div>
                 </div>
                 <div class="airInfo">
 
     `
 
-    const apiUrl = `https://api.tvmaze.com/schedule/?country=US&date=2026-06-07`;
-    const apiRes = await fetch(apiUrl);
-    const data = await apiRes.json();
+    const [network, web] = await Promise.all([
+        fetch(`https://api.tvmaze.com/schedule?country=US&date=2026-06-07`).then(r => r.json()),
+        fetch(`https://api.tvmaze.com/schedule/web?country=US&date=2026-06-07`).then(r => r.json()),
+    ]);
 
-       
+    const data = [...network, ...web];
+    const shows = data.filter(entry => {
+        const show = entry._embedded?.show != null ? entry._embedded.show : entry.show;
+        return show?.type === 'Scripted' || show?.type === 'Animation';
+    });
+    console.log('total:', data.length, 'filtered:', shows.length);
     html+=`
                 </div>
             </div>

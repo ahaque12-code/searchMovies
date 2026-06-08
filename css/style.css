@@ -204,7 +204,7 @@ body{
 #genreBtn{
   background-color:rgba(49, 232, 162, 0.94);
   border-radius: 10px;;
-  padding: 10px;
+  padding: 12px;
   border:none;
 }
 
@@ -339,6 +339,7 @@ body{
 
 .popular-movie-img{
   width: 100%;
+  max-height: 240px;
   height: auto;
   border-radius: 10px;
 }
@@ -556,6 +557,18 @@ button{
   background: rgba(255, 255, 255, 0.05); 
   border-radius: 15px;
   margin-bottom: 10px;
+}
+
+.rec-container select{
+  background-color: rgba(49, 232, 162, 0.94);
+  border: none;
+  padding: 8px;
+  text-align: center;
+  border-radius: 15px;
+}
+
+.rec-container select:hover{
+  filter: brightness(0.5);
 }
 
 .navbar2 {
