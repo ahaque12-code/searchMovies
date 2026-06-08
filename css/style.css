@@ -1,7 +1,7 @@
 body{
   background-color: rgb(35, 35, 35);
   font-family: Inter, sans-serif;
-  color:white
+  color:white;
 }
 
 .app-container{
@@ -51,7 +51,7 @@ body{
   align-items: center;            
   background-color: rgba(0, 0, 0, 0.2); 
   padding: 15px 30px;             
-  margin-bottom: 40px;
+  margin-bottom: 10px;
   margin-top: -24px;
   font-family: Inter, sans-serif;
 }
@@ -118,8 +118,58 @@ body{
   text-align: center;
 }
 
+.content-bg{
+  position: relative;
+  overflow: hidden;
+  padding: 200px;
+}
+
+#backdrop-slider {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  transition: background-image 1s ease-in-out;
+}
+
+#backdrop-slider .slide {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 1.5s ease-in-out;
+}
+
+#backdrop-slider .slide.active {
+  opacity: 1;
+}
+
+#backdrop-slider .slide-title {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: bold;
+  text-shadow: 0 0 8px rgba(0,0,0,0.8);
+}
+
+.content-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 1;
+}
+
+.content-overlay {
+  position: relative;
+  z-index: 2;
+}
+
 #movieBody{
   text-align: center;
+  animation: dropIn 0.4s ease-out forwards;
 }
 
 #movieForm {
@@ -296,6 +346,7 @@ body{
   position: relative;
   width: 100%;
   padding: 20px 0;
+  animation: dropIn 0.4s ease-out forwards;
 }
 
 
@@ -554,7 +605,7 @@ button{
   gap: 20px;                 
   padding: 20px;             
   margin-top: 20px;
-  background: rgba(255, 255, 255, 0.05); 
+  background: rgba(255, 255, 255, 0.15); 
   border-radius: 15px;
   margin-bottom: 10px;
 }
@@ -913,7 +964,6 @@ button{
   display: flex;
   flex-direction: column;
   text-align: center;  
-  animation: dropIn 0.4s ease-out forwards;
 }
 
 #air-controls{
@@ -1002,6 +1052,31 @@ button{
 
   .slide-btn {
     display: none;
+  }
+
+  .content-bg {
+    padding: 40px 20px;
+  }
+
+  #movieForm {
+    width: 100%;
+  }
+
+  #movieForm #movieName {
+    width: 100%;
+  }
+
+  .search-container {
+    width: 100%;
+  }
+
+  .rec-container {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .rec-box h3 {
+    font-size: 0.9rem;
   }
 
   #popular-movie h2{

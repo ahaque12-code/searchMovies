@@ -129,57 +129,62 @@ app.get('/', async (req,res) => {
                                     ${authAction}
                                 </div>
                             </nav>
-                            <h2>Making searching movies easier</h2> 
-                            <form id="movieForm" action="/results" method="get">
-                                <div class="search-container" style="position: relative; display: inline-block;">
-                                    <input type="text" name="q" id="movieName" placeholder="Search movies...">
-                                    <button id="searchBtn"><img id="srchImg" src="images/search-symbol-wbg.png" alt="Search"></button>
-                                    <div id="suggestionsBox"></div>
-                                </div>
-
-                                <br><br>
-                                
-                                <div class = "rec-box">
-                                    <h3>Not sure what to search? Just fill up these and get recommendations!</h3>
-
-                                    <div class="rec-container">
-                                        <input type="number" name="rating" id="movieRating" max="10" min="0" step="0.1" placeholder="Minimum Rating">
-                                        <div class="genre-wrapper">
-                                            <button type="button" id="genreBtn">Select Genre</button>
-                                            <div id="genreBox" class="genre-box hidden">
-                                                <label><input type="checkbox" value="Action"> Action</label>
-                                                <label><input type="checkbox" value="Comedy"> Comedy</label>
-                                                <label><input type="checkbox" value="Drama"> Drama</label>
-                                                <label><input type="checkbox" value="Horror"> Horror</label>
-                                                <label><input type="checkbox" value="Romance"> Romance</label>
-                                                <label><input type="checkbox" value="Sci-Fi"> Sci-Fi</label>
-                                                <label><input type="checkbox" value="Thriller"> Thriller</label>
-                                                <label><input type="checkbox" value="Animation"> Animation</label>
-                                                <label><input type="checkbox" value="Crime"> Crime</label>
-                                                <label><input type="checkbox" value="Adventure"> Adventure</label>
-                                            </div>
-                                            <input type="hidden" name="genres" id="selectedGenres">
+                            <div class="content-bg">
+                                <div id="backdrop-slider"></div>
+                                <div class="content-overlay">
+                                    <h2>Making searching movies easier</h2> 
+                                    <form id="movieForm" action="/results" method="get">
+                                        <div class="search-container" style="position: relative; display: inline-block;">
+                                            <input type="text" name="q" id="movieName" placeholder="Search movies...">
+                                            <button id="searchBtn"><img id="srchImg" src="images/search-symbol-wbg.png" alt="Search"></button>
+                                            <div id="suggestionsBox"></div>
                                         </div>
-                                        <input type="text" name="year" id="yearRelease" placeholder="Year">
-                                        <select name="media" id="mediaSelect">
-                                            <option value="multi">Type</option>
-                                            <option value="movie">Movie</option>
-                                            <option value="tv">TV</option>
-                                        </select>
-                                        <select name="language" id="langSelect">
-                                            <option value="">All Languages</option>
-                                            <option value="en">English</option>
-                                            <option value="hi">Hindi</option>
-                                            <option value="kn">Kannada</option>
-                                            <option value="es">Spanish</option>
-                                            <option value="fr">French</option>
-                                            <option value="bn">Bangla</option>
-                                        </select>
+
                                         <br><br>
-                                    </div>
-                                    <input type="submit" id="submit" value="Search">
+                                        
+                                        <div class = "rec-box">
+                                            <h3>Not sure what to search? Just fill up these and get recommendations!</h3>
+
+                                            <div class="rec-container">
+                                                <input type="number" name="rating" id="movieRating" max="10" min="0" step="0.1" placeholder="Minimum Rating">
+                                                <div class="genre-wrapper">
+                                                    <button type="button" id="genreBtn">Select Genre</button>
+                                                    <div id="genreBox" class="genre-box hidden">
+                                                        <label><input type="checkbox" value="Action"> Action</label>
+                                                        <label><input type="checkbox" value="Comedy"> Comedy</label>
+                                                        <label><input type="checkbox" value="Drama"> Drama</label>
+                                                        <label><input type="checkbox" value="Horror"> Horror</label>
+                                                        <label><input type="checkbox" value="Romance"> Romance</label>
+                                                        <label><input type="checkbox" value="Sci-Fi"> Sci-Fi</label>
+                                                        <label><input type="checkbox" value="Thriller"> Thriller</label>
+                                                        <label><input type="checkbox" value="Animation"> Animation</label>
+                                                        <label><input type="checkbox" value="Crime"> Crime</label>
+                                                        <label><input type="checkbox" value="Adventure"> Adventure</label>
+                                                    </div>
+                                                    <input type="hidden" name="genres" id="selectedGenres">
+                                                </div>
+                                                <input type="text" name="year" id="yearRelease" placeholder="Year">
+                                                <select name="media" id="mediaSelect">
+                                                    <option value="multi">Type</option>
+                                                    <option value="movie">Movie</option>
+                                                    <option value="tv">TV</option>
+                                                </select>
+                                                <select name="language" id="langSelect">
+                                                    <option value="">All Languages</option>
+                                                    <option value="en">English</option>
+                                                    <option value="hi">Hindi</option>
+                                                    <option value="kn">Kannada</option>
+                                                    <option value="es">Spanish</option>
+                                                    <option value="fr">French</option>
+                                                    <option value="bn">Bangla</option>
+                                                </select>
+                                                <br><br>
+                                            </div>
+                                            <input type="submit" id="submit" value="Search">
+                                        </div>
+                                    </form>
                                 </div>
-                            </form>
+                            </div>
                             <br><br>
                         </div>
                         <br><br>
@@ -374,7 +379,7 @@ app.get('/', async (req,res) => {
 
         html+= ` <div id="popular-movie">
                             <div id="show-section" class="slider-container">
-                                <h2 class="airtdHead">| Airing Today</h2>
+                                <a id="air-td-link" href="/air_today"><h2 class="airtdHead">| Airing Today ↗</h2></a>
                                 <button type="button" class="slide-btn left" onclick="scrollGrid('airtd-grid', -300)">❮</button>
                             <div id="airtd-grid" class="popular-movie-grid">`;
         
@@ -427,6 +432,33 @@ app.get('/', async (req,res) => {
             </div>
          </main>
         </div>
+        <script>
+            async function initBackdropSlider() {
+                try {
+                    const res = await fetch('/api/backdrops');
+                    const movies = await res.json();
+                    const slider = document.getElementById('backdrop-slider');
+
+                    movies.forEach(function(movie, i) {
+                        const slide = document.createElement('div');
+                        slide.className = 'slide' + (i === 0 ? ' active' : '');
+                        slide.style.backgroundImage = 'url(https://image.tmdb.org/t/p/w1280' + movie.backdrop + ')';
+                        slide.innerHTML = '<span class="slide-title">' + movie.title + '</span>';
+                        slider.appendChild(slide);
+                    });
+
+                    let current = 0;
+                    setInterval(function() {
+                        const slides = slider.querySelectorAll('.slide');
+                        slides[current].classList.remove('active');
+                        current = (current + 1) % slides.length;
+                        slides[current].classList.add('active');
+                    }, 4000);
+                } catch(err) {
+                    console.error('Backdrop slider error:', err);
+                }
+            }
+            initBackdropSlider();
         </script>
      </body>
     </html>`;
@@ -488,6 +520,7 @@ app.get("/results", async (req,res) => {
             movies = (apiData.results || []).filter(item => item.media_type === "movie" || item.media_type === "tv");
         }
 
+        console.log(movies);
 
         const favorites = await fetchFavoritesFromDB(req.session.userId);
         const favoriteIds = favorites.map(f => String(f.imdbId).trim());
@@ -894,6 +927,7 @@ app.get("/air_today", async (req,res)=>{
         return show?.type === 'Scripted' || show?.type === 'Animation';
     });
     console.log('total:', data.length, 'filtered:', shows.length);
+    console.log(shows);
     html+=`
                 </div>
             </div>
@@ -928,6 +962,17 @@ app.get("/air_today", async (req,res)=>{
 
     res.send(html);
 })
+
+app.get('/api/backdrops', async (req, res) => {
+    const api_key = process.env.TMDB_API_KEY;
+    const apiRes = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${api_key}&language=en-US&page=1`);
+    const data = await apiRes.json();
+    const backdrops = data.results
+        .filter(m => m.backdrop_path)
+        .slice(0, 8)
+        .map(m => ({ title: m.title, backdrop: m.backdrop_path }));
+    res.json(backdrops);
+});
 
 app.listen(port, (err) => {
     if(err) {
