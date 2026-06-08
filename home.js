@@ -453,7 +453,7 @@ app.get('/', async (req,res) => {
                         slides[current].classList.remove('active');
                         current = (current + 1) % slides.length;
                         slides[current].classList.add('active');
-                    }, 4000);
+                    }, 5000);
                 } catch(err) {
                     console.error('Backdrop slider error:', err);
                 }
@@ -969,7 +969,7 @@ app.get('/api/backdrops', async (req, res) => {
     const data = await apiRes.json();
     const backdrops = data.results
         .filter(m => m.backdrop_path)
-        .slice(0, 8)
+        .slice(0, 10)
         .map(m => ({ title: m.title, backdrop: m.backdrop_path }));
     res.json(backdrops);
 });

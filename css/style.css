@@ -121,7 +121,8 @@ body{
 .content-bg{
   position: relative;
   overflow: hidden;
-  padding: 200px;
+  padding: 150px;
+  border-radius: 15px;
 }
 
 #backdrop-slider {
@@ -146,10 +147,10 @@ body{
 
 #backdrop-slider .slide-title {
   position: absolute;
-  bottom: 20px;
+  top: 10px;
   left: 20px;
   color: white;
-  font-size: 1.1rem;
+  font-size: 1.5rem;
   font-weight: bold;
   text-shadow: 0 0 8px rgba(0,0,0,0.8);
 }
@@ -275,6 +276,10 @@ body{
   border-radius: 10px;;
   padding: 10px;
   margin-left:5px;
+}
+
+#movieForm #submit{
+  margin-top: 24px;
 }
 
 #movieForm #submit:hover{
