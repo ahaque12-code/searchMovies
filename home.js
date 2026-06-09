@@ -379,7 +379,7 @@ app.get('/', async (req,res) => {
 
         html+= ` <div id="popular-movie">
                             <div id="show-section" class="slider-container">
-                                <h2 class="airtdHead">| Airing Today</h2>
+                                <a href="/air_today" id="air-td-link"<h2 class="airtdHead">| Airing Today ⬈</h2></a>
                                 <button type="button" class="slide-btn left" onclick="scrollGrid('airtd-grid', -300)">❮</button>
                             <div id="airtd-grid" class="popular-movie-grid">`;
         
@@ -518,7 +518,6 @@ app.get("/results", async (req,res) => {
             movies = (apiData.results || []).filter(item => item.media_type === "movie" || item.media_type === "tv");
         }
 
-        console.log(movies);
 
         const favorites = await fetchFavoritesFromDB(req.session.userId);
         const favoriteIds = favorites.map(f => String(f.imdbId).trim());
@@ -868,6 +867,10 @@ app.get("/discover", async(req, res) => {
 });
 
 app.get("/air_today", async (req,res)=>{
+    const today = new Date();
+    const offsetDays = parseInt(req.query.offset) || 0;
+    today.setDate(today.getDate() + offsetDays);
+    const dateStr = today.toISOString().split('T')[0];
     let html = `
     <!DOCTYPE html>
     <html>
@@ -904,6 +907,7 @@ app.get("/air_today", async (req,res)=>{
             <div class="main-cont-td">
                 <div id="airDate">
                     <h1 style="text-align: center; color: red;  animation: dropIn 0.4s ease-out forwards;">Airing Today</h1>
+                    <h2><i>Check TBA section for other shows located all the way down</i></h2>
                     <div id="air-controls">
                         <button id="prev"><</button>
                         <h2 id="day-display"></h2>
@@ -914,24 +918,93 @@ app.get("/air_today", async (req,res)=>{
 
     `
 
-    const [network, web] = await Promise.all([
-        fetch(`https://api.tvmaze.com/schedule?country=US&date=2026-06-07`).then(r => r.json()),
-        fetch(`https://api.tvmaze.com/schedule/web?country=US&date=2026-06-07`).then(r => r.json()),
+    const [network, web, tmdbAiring] = await Promise.all([
+        fetch(`https://api.tvmaze.com/schedule?country=US&date=${dateStr}`).then(r => r.json()),
+        fetch(`https://api.tvmaze.com/schedule/web?country=US&date=${dateStr}`).then(r => r.json()),
+        fetch(`https://api.themoviedb.org/3/tv/airing_today?api_key=${process.env.TMDB_API_KEY}&language=en-US&page=1`).then(r => r.json()),
+
     ]);
 
     const data = [...network, ...web];
+
+    const seen = new Set();
+    const ALLOWED_TYPES = ['Scripted', 'Animation', 'Reality', 'Documentary', 'Miniseries'];
+
     const shows = data.filter(entry => {
-        const show = entry._embedded?.show != null ? entry._embedded.show : entry.show;
-        return show?.type === 'Scripted' || show?.type === 'Animation';
+        const show = entry._embedded?.show ?? entry.show;
+        if (!show || !ALLOWED_TYPES.includes(show.type)) return false;
+        if (seen.has(show.id)) return false;
+        seen.add(show.id);
+        return true;
     });
-    console.log('total:', data.length, 'filtered:', shows.length);
-    console.log(shows);
+
+    const tvmazeNames = new Set(shows.map(e => {
+        const s = e._embedded?.show ?? e.show;
+        return s?.name?.toLowerCase();
+    }));
+
+    const tmdbShows = (tmdbAiring.results || [])
+    .filter(s => !tvmazeNames.has(s.name?.toLowerCase()))
+    .map(s => ({
+        airtime: "",
+        _isTMDB: true,
+        show: {
+            id: `tmdb-${s.id}`,
+            name: s.name,
+            type: 'Scripted',
+            genres: (s.genre_ids || []).map(id => globalGenreMap[id]).filter(Boolean),
+            image: { medium: s.poster_path ? `https://image.tmdb.org/t/p/w185${s.poster_path}` : null },
+            network: { name: "Unknown" },
+            summary: s.overview || "",
+            _tmdbId: s.id
+        }
+    }));
+    const allShows = [...shows, ...tmdbShows];
+
+    const timeSlots = {};
+    for (const entry of allShows) {
+        const time = entry.airtime || "TBA";
+        if (!timeSlots[time]) timeSlots[time] = [];
+        timeSlots[time].push(entry);
+    }
+
+    const sortedTimes = Object.keys(timeSlots).sort();
+    for (const time of sortedTimes) {
+        html += `<div class="time-slot">
+            <div class="time-label">${time || "TBA"}</div>
+            <div class="time-slot-cards">`;
+
+        for (const entry of timeSlots[time]) {
+            const show = entry._embedded?.show ?? entry.show;
+            const title = show?.name ?? "Unknown";
+            const network = show?.network?.name ?? show?.webChannel?.name ?? "Unknown";
+            const image = show?.image?.medium ?? '/images/icon.png';
+            const genre = show?.genres?.join(", ") || "N/A";
+            const summary = show?.summary?.replace(/<[^>]*>/g, "").slice(0, 80) ?? "";
+            const tmdbId = show?._tmdbId;
+            const href = tmdbId ? `/media/tv/${tmdbId}` : `/results?q=${encodeURIComponent(title)}`;
+
+            html += `
+            <div class="air-card" onclick="window.location.href='${href}'">
+                <img src="${image}" alt="${title}">
+                <div class="air-card-info">
+                    <h3>${title}</h3>
+                    <p>📺 ${network}</p>
+                    <p><strong>Genre: </strong>${genre}</p>
+                    <p class="air-summary"><strong>Summary:  </strong>${summary}...</p>
+                </div>
+            </div>`;
+        }
+
+        html += `</div></div>`;
+    }
+
     html+=`
                 </div>
             </div>
         <script>
             let weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            let offset = 0;
+            let offset = ${offsetDays}; ;
 
             function updateDisplay() {
                 const d = new Date();
@@ -944,15 +1017,16 @@ app.get("/air_today", async (req,res)=>{
 
             document.getElementById('prev').addEventListener('click', () => {
                 offset--;
-                updateDisplay();
+                window.location.href = '/air_today?offset=' + offset;
             });
 
             document.getElementById('next').addEventListener('click', () => {
                 offset++;
-                updateDisplay();
+               window.location.href = '/air_today?offset=' + offset;
             });
 
             updateDisplay();
+
 
         </script>
         </body>

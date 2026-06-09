@@ -316,6 +316,7 @@ body{
   padding: 10px 20px;
   transition: transform 0.3s ease;
   width: 100%;
+  margin-top: 10px;
 }
 
 .starrt-container{
@@ -467,7 +468,15 @@ body{
   text-decoration: none;
 }
 
-.airtdHead:hover{
+.airtdHead{
+  margin-left: 22px;
+  color: rgba(49, 232, 162, 0.94);
+  font-size: 26px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+#air-td-link:hover{
   text-decoration: underline;
   text-underline-offset: 10px;
   text-decoration-thickness: 2px;
@@ -481,6 +490,7 @@ body{
   row-gap: 35px;
   justify-content: center;
   padding: 40px;
+  margin-top: 30px;
 }
 
 .movie-card {
@@ -965,14 +975,21 @@ button{
   
 }
 
+/* air_today page css*/
+
 #airDate{
   display: flex;
   flex-direction: column;
   text-align: center;  
 }
 
+.airInfo{
+  margin-top: 76px;
+}
+
 #air-controls{
   display: flex;
+  font-weight: bold;
   align-items: center;
   justify-content: center;
   gap: 20px;
@@ -981,7 +998,8 @@ button{
 #prev{
   background :none; 
   border:none;
-  font-size: 20px;
+  font-size: 26px;
+  font-weight: bold;
 }
 
 #prev:hover{
@@ -996,11 +1014,77 @@ button{
 #next{
   background :none; 
   border:none;
-  font-size: 20px;
+  font-size: 26px;
+  font-weight: bold;
 }
 
 #next:hover{
   cursor: pointer;
+}
+
+
+.time-slot {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.time-label {
+  min-width: 70px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: red;
+  padding-top: 8px;
+  position: sticky;
+  top: 60px;
+}
+
+.time-slot-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.air-card {
+  display: flex;
+  gap: 10px;
+  background: #1a1a1a;
+  border-radius: 8px;
+  padding: 10px;
+  width: 337px;
+}
+
+.air-card:hover{
+  cursor: pointer;
+  transform: scale(1.05);
+}
+
+.air-card img {
+  width: 150px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.air-card-info{
+  display: flex;
+  flex-direction: column;
+}
+
+.air-card-info h3 {
+  font-size: 0.9rem;
+  margin: 0 0 4px;
+}
+
+.air-card-info p {
+  font-size: 0.75rem;
+  color: #aaa;
+  margin: 2px 0;
+}
+
+.air-summary {
+  font-style: italic;
 }
 
 @keyframes dropIn {
@@ -1100,6 +1184,7 @@ button{
     transition: transform 0.3s ease;
     -webkit-overflow-scrolling: touch;
     width: 100%;
+    margin-top: 10px;
   }
 
   .popular-movie-card{
