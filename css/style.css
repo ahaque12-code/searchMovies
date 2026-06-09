@@ -1209,6 +1209,10 @@ button{
     margin-top: 10px;
   }
 
+  #backdrop-slider .slide-title {
+    font-size: 1rem;
+  }
+
   .popular-movie-card{
     width: 160px;
     color: inherit;
