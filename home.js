@@ -119,17 +119,17 @@ app.get('/', async (req,res) => {
             <div class="app-container">
                     <main class="main-content">
                         <div id="movieBody">
-                            <nav class="navbar">
-                                <span class="nav-title">SearchMovie</span>
-                                <button class="hamburger" id="hamburger">☰</button>
-
-                                <div class="nav-links" id="navLinks">
-                                    <span class="nav-greeting">Hello, ${displayName}!</span>
-                                    <a href="/favorites" class="nav-item">Favorite List</a>
-                                    ${authAction}
-                                </div>
-                            </nav>
                             <div class="content-bg">
+                                <nav class="navbar-main">
+                                    <span class="nav-title">SearchMovie</span>
+                                    <button class="hamburger" id="hamburger">☰</button>
+
+                                    <div class="nav-links" id="navLinks">
+                                        <span class="nav-greeting">Hello, ${displayName}!</span>
+                                        <a href="/favorites" class="nav-item">Favorite List</a>
+                                        ${authAction}
+                                    </div>
+                                </nav>
                                 <div id="backdrop-slider"></div>
                                 <div class="content-overlay">
                                     <h2>Making searching movies easier</h2> 
