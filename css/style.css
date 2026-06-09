@@ -295,6 +295,7 @@ body{
 
 #movieForm #submit{
   margin-top: 24px;
+  border:none;
 }
 
 #movieForm #submit:hover{
@@ -997,12 +998,16 @@ button{
   
 }
 
-/* air_today page css*/
+/* /airing page css*/
 
 #airDate{
   display: flex;
   flex-direction: column;
   text-align: center;  
+}
+
+.airHeaders{
+  
 }
 
 .airInfo{

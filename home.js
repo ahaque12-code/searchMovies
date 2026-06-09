@@ -6,6 +6,9 @@ const path = require("path");
 const port = process.env.PORT || 3001;
 const app = express();
 const mongoose = require("mongoose");
+const geoip = require('geoip-lite');
+const geoTz = require('geo-tz');
+const { DateTime } = require('luxon')
 
 mongoose.connect(process.env.MONGO_CONNECTION_STRING,{dbName: "CMSC335DB"}).then(() => console.log("Connected To MongoDB")).catch((err) => {
     console.log("MongoDB error: ", err);
@@ -867,10 +870,14 @@ app.get("/discover", async(req, res) => {
 });
 
 app.get("/airing", async (req,res)=>{
-    const today = new Date();
     const offsetDays = parseInt(req.query.offset) || 0;
-    today.setDate(today.getDate() + offsetDays);
-    const dateStr = today.toISOString().split('T')[0];
+    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress;
+    const geo = geoip.lookup(ip);
+    const country = geo?.country || 'US';
+    const timezone = geo?.timezone || 'America/New_York'
+
+    const localDate = DateTime.now().setZone(timezone).plus({ days: offsetDays });
+    const dateStr = localDate.toFormat('yyyy-MM-dd');
     let html = `
     <!DOCTYPE html>
     <html>
@@ -906,7 +913,12 @@ app.get("/airing", async (req,res)=>{
             </nav>
             <div class="main-cont-td">
                 <div id="airDate">
-                    <h1 style="text-align: center; color: red;  animation: dropIn 0.4s ease-out forwards;">Airing Today</h1>
+                    <div class="airHeaders">
+                        <h1 style="text-align: center; color: red;  animation: dropIn 0.4s ease-out forwards;">Airing Today</h1>
+                        <h2 style="color: grey; font-size: 0.8rem; text-align:center">
+                        Showing schedule for ${country}
+                        </h2>
+                    </div>
                     <h2><i>Check TBA section for other shows located all the way down</i></h2>
                     <div id="air-controls">
                         <button id="prev"><</button>
@@ -919,8 +931,8 @@ app.get("/airing", async (req,res)=>{
     `
 
     const [network, web, tmdbAiring] = await Promise.all([
-        fetch(`https://api.tvmaze.com/schedule?country=US&date=${dateStr}`).then(r => r.json()),
-        fetch(`https://api.tvmaze.com/schedule/web?country=US&date=${dateStr}`).then(r => r.json()),
+        fetch(`https://api.tvmaze.com/schedule?country=${country}&date=${dateStr}`).then(r => r.json()),
+        fetch(`https://api.tvmaze.com/schedule/web?country=${country}&date=${dateStr}`).then(r => r.json()),
         fetch(`https://api.themoviedb.org/3/tv/airing_today?api_key=${process.env.TMDB_API_KEY}&language=en-US&page=1`).then(r => r.json()),
 
     ]);
