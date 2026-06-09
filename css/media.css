@@ -216,6 +216,7 @@ body{
     color: #000;
     transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(33, 208, 122, 0.4);
+    cursor: pointer;
 }
 
 .modal {
@@ -361,6 +362,10 @@ body{
 
 .secret-link-list li:nth-child(4) a:hover {
     background-color: #ffa502; 
+}
+
+.secret-link-list li:nth-child(5) a:hover {
+    background-color: #027cff; 
 }
 
 .heart-btn {
