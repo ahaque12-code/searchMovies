@@ -963,9 +963,9 @@ app.get("/air_today", async (req,res)=>{
 
 app.get('/api/backdrops', async (req, res) => {
     const api_key = process.env.TMDB_API_KEY;
-    let apiRes = await fetch(`https://api.themfoviedb.org/3/movie/popular?api_key=${api_key}&language=en-US&page=1`);
-    let data = await apiRes.json();
-    let backdrops = data.results
+    const apiRes = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${api_key}&language=en-US&page=1`);
+    const data = await apiRes.json();
+    const backdrops = data.results
         .filter(m => m.backdrop_path)
         .slice(0, 10)
         .map(m => ({ title: m.title, backdrop: m.backdrop_path }));
