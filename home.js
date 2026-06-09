@@ -473,8 +473,6 @@ app.use("/favorites",redirectLogin, favoritesRouter);
 const mediaRouter = require("./routes/media");
 app.use("/media", mediaRouter);
 
-const chatRouter = require("./routes/chatbot");
-app.use("/chatbot", chatRouter);
 
 app.get("/results", async (req,res) => {
     const isGuest = !(req.session && req.session.userId);
