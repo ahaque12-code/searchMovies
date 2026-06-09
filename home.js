@@ -379,7 +379,7 @@ app.get('/', async (req,res) => {
 
         html+= ` <div id="popular-movie">
                             <div id="show-section" class="slider-container">
-                                <a href="/air_today" id="air-td-link"<h2 class="airtdHead">| Airing Today ⬈</h2></a>
+                                <a href="/airing" id="air-td-link"<h2 class="airtdHead">| Airing Today ⬈</h2></a>
                                 <button type="button" class="slide-btn left" onclick="scrollGrid('airtd-grid', -300)">❮</button>
                             <div id="airtd-grid" class="popular-movie-grid">`;
         
@@ -866,7 +866,7 @@ app.get("/discover", async(req, res) => {
     }
 });
 
-app.get("/air_today", async (req,res)=>{
+app.get("/airing", async (req,res)=>{
     const today = new Date();
     const offsetDays = parseInt(req.query.offset) || 0;
     today.setDate(today.getDate() + offsetDays);
@@ -898,7 +898,7 @@ app.get("/air_today", async (req,res)=>{
         </head>
         <body class="air-td-body">
             <nav class="navbar2">
-                <span class="nav-title2">Discovery Results</span>
+                <span class="nav-title2">Shows Airing</span>
                 <div class="nav-links2">
                     <a href="/" class="nav-item">Home</a>
                     <a href="/favorites" class="nav-item">Favorites</a>
@@ -1017,12 +1017,12 @@ app.get("/air_today", async (req,res)=>{
 
             document.getElementById('prev').addEventListener('click', () => {
                 offset--;
-                window.location.href = '/air_today?offset=' + offset;
+                window.location.href = '/airing?offset=' + offset;
             });
 
             document.getElementById('next').addEventListener('click', () => {
                 offset++;
-               window.location.href = '/air_today?offset=' + offset;
+               window.location.href = '/airing?offset=' + offset;
             });
 
             updateDisplay();

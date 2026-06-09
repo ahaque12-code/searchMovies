@@ -985,6 +985,7 @@ button{
 
 .airInfo{
   margin-top: 76px;
+  animation: dropIn 0.4s ease-out forwards;
 }
 
 #air-controls{
@@ -1021,7 +1022,6 @@ button{
 #next:hover{
   cursor: pointer;
 }
-
 
 .time-slot {
   display: flex;
