@@ -317,7 +317,7 @@ router.get("/:type/:id", async (req,res)=>{
                             position: relative;
                             width: 100%;
                             min-height: calc(100vh - 70px);
-                            background: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url('${backdropPath}');
+                            background: linear-gradient(rgba(0, 0, 0, 0.85), rgb(24 20 20 / 85%)), url('${backdropPath}');
                             background-size: cover;
                             background-position: center;
                             display: flex;

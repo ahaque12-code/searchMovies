@@ -336,7 +336,7 @@ app.get('/', async (req,res) => {
 
 
             html += `
-                    <div class="popular-movie-card" onclick="window.location.href='/media/tv/${trendingM.id}'">
+                    <div class="popular-movie-card" onclick="window.location.href='/media/${mediaTypeTD}/${trendingM.id}'">
                         <div class="popular-poster-container"> 
                             <img class="popular-movie-img" src="${posterPath}" alt="${seriesTitle} poster">
                             <div class="play-overlay">
@@ -963,12 +963,13 @@ app.get("/air_today", async (req,res)=>{
 
 app.get('/api/backdrops', async (req, res) => {
     const api_key = process.env.TMDB_API_KEY;
-    const apiRes = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${api_key}&language=en-US&page=1`);
-    const data = await apiRes.json();
-    const backdrops = data.results
+    let apiRes = await fetch(`https://api.themfoviedb.org/3/movie/popular?api_key=${api_key}&language=en-US&page=1`);
+    let data = await apiRes.json();
+    let backdrops = data.results
         .filter(m => m.backdrop_path)
         .slice(0, 10)
         .map(m => ({ title: m.title, backdrop: m.backdrop_path }));
+
     res.json(backdrops);
 });
 
