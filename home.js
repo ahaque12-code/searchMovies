@@ -130,16 +130,17 @@ app.get('/', async (req,res) => {
                                     <div class="nav-links" id="navLinks">
                                         <span class="nav-greeting">Hello, ${displayName}!</span>
                                         <a href="/favorites" class="nav-item">Favorite List</a>
+                                         <!-- <button id="browseBtn" class="nav-item"><p>Browse v</p></button> -->
                                         ${authAction}
                                     </div>
                                 </nav>
                                 <div id="backdrop-slider"></div>
                                 <div class="content-overlay">
-                                    <h2>Making searching movies easier</h2> 
+                                    <h2 id="main-header">Making searching movies easier</h2> 
                                     <form id="movieForm" action="/results" method="get">
                                         <div class="search-container" style="position: relative; display: inline-block;">
                                             <input type="text" name="q" id="movieName" placeholder="Search movies...">
-                                            <button id="searchBtn"><img id="srchImg" src="images/search-symbol-wbg.png" alt="Search"></button>
+                                            <button id="searchBtn"><img id="srchImg" src="images/clipart2603165.png" alt="Search"></button>
                                             <div id="suggestionsBox"></div>
                                         </div>
 
@@ -929,12 +930,16 @@ app.get("/airing", async (req,res)=>{
                 <div class="airInfo">
 
     `
+    const fetchTMDB = offsetDays === 0
+    ? Promise.all([1, 2, 3].map(page =>
+        fetch(`https://api.themoviedb.org/3/tv/airing_today?api_key=${process.env.TMDB_API_KEY}&language=en-US&page=${page}`).then(r => r.json())
+      )).then(pages => ({ results: pages.flatMap(p => p.results || []) }))
+    : Promise.resolve({ results: [] });
 
     const [network, web, tmdbAiring] = await Promise.all([
         fetch(`https://api.tvmaze.com/schedule?country=${country}&date=${dateStr}`).then(r => r.json()),
         fetch(`https://api.tvmaze.com/schedule/web?country=${country}&date=${dateStr}`).then(r => r.json()),
-        fetch(`https://api.themoviedb.org/3/tv/airing_today?api_key=${process.env.TMDB_API_KEY}&language=en-US&page=1`).then(r => r.json()),
-
+        fetchTMDB
     ]);
 
     const data = [...network, ...web];
@@ -955,22 +960,34 @@ app.get("/airing", async (req,res)=>{
         return s?.name?.toLowerCase();
     }));
 
-    const tmdbShows = (tmdbAiring.results || [])
-    .filter(s => !tvmazeNames.has(s.name?.toLowerCase()))
-    .map(s => ({
-        airtime: "",
-        _isTMDB: true,
-        show: {
-            id: `tmdb-${s.id}`,
-            name: s.name,
-            type: 'Scripted',
-            genres: (s.genre_ids || []).map(id => globalGenreMap[id]).filter(Boolean),
-            image: { medium: s.poster_path ? `https://image.tmdb.org/t/p/w185${s.poster_path}` : null },
-            network: { name: "Unknown" },
-            summary: s.overview || "",
-            _tmdbId: s.id
-        }
-    }));
+    const tmdbShows = await Promise.all(
+        (tmdbAiring.results || [])
+            .filter(s => !tvmazeNames.has(s.name?.toLowerCase()))
+            .map(async s => {
+                let airtime = "";
+                try {
+                    // Try to find it on TVmaze to get airtime
+                    const mazeRes = await fetch(`https://api.tvmaze.com/singlesearch/shows?q=${encodeURIComponent(s.name)}&embed=nextepisode`);
+                    const mazeData = await mazeRes.json();
+                    airtime = mazeData?._embedded?.nextepisode?.airtime || "";
+                } catch (_) {}
+
+                return {
+                    airtime,
+                    _isTMDB: true,
+                    show: {
+                        id: `tmdb-${s.id}`,
+                        name: s.name,
+                        type: 'Scripted',
+                        genres: (s.genre_ids || []).map(id => globalGenreMap[id]).filter(Boolean),
+                        image: { medium: s.poster_path ? `https://image.tmdb.org/t/p/w185${s.poster_path}` : null },
+                        network: { name: "Unknown" },
+                        summary: s.overview || "",
+                        _tmdbId: s.id
+                    }
+                };
+            })
+    );
     const allShows = [...shows, ...tmdbShows];
 
     const timeSlots = {};

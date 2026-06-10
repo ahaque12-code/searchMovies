@@ -96,6 +96,27 @@ body{
   transition: all 0.2s ease-in-out;
 }
 
+#main-header{
+  letter-spacing: 3px;
+}
+
+#browseBtn{
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+#browseBtn:hover{
+  background-color: rgba(255, 255, 255, 0.15); 
+  border-radius: 5px;
+  padding: 0;
+  color: rgb(223, 211, 39);
+}
+
+#browseBtn p{
+  margin: 10px;
+}
+
 .nav-item:hover {
   background-color: rgba(255, 255, 255, 0.15); 
   border-radius: 5px;
@@ -135,7 +156,7 @@ body{
 .content-bg{
   position: relative;
   overflow: hidden;
-  padding: 150px;
+  padding: 200px;
   border-radius: 5px;
  
 }
@@ -195,7 +216,8 @@ body{
 }
 
 #movieForm input{
-  background-color:rgba(49, 232, 162, 0.94);
+  background: transparent;
+  background-color: black;
   border-radius: 16px;;
   padding: 10px;
   outline: none;
@@ -207,16 +229,21 @@ body{
 }
 
 #movieForm #movieName{
+  background: transparent;
+  background-color: black;
   position: relative;
   width: 400px;
   font-size: medium;
   border-width: 2px;
   color:white;
   transition:  0.3s ease;
+  padding: 20px;
 }
 
-#movieForm #movieName:hover{
-  border-color: rgb(249, 129, 1);
+#movieName:focus{
+  outline: none;
+  border-color: rgb(60, 205, 12);
+  box-shadow: inset 0 1px 4px #18580e, 0 3px 20px 2px #104e08;
 }
 
 #srchImg{
@@ -226,7 +253,8 @@ body{
 
 #searchBtn {
   position: absolute;
-  right: -3px;
+  right: 6px;
+  top:2px;
   height: 100%;
   width: 43px;
   border-radius: 50%;
@@ -237,6 +265,7 @@ body{
 
 #movieForm #movieRating{
   text-align: center;
+  color:white;
   width: 140px;
   border:none;
     
@@ -248,19 +277,38 @@ body{
 }
 
 .genre-box {
+  display: flex;
+  flex-direction: row;
+  gap: 36px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
   position: absolute;
+  text-align: center;
   background: rgb(35, 31, 31);
   color:white;
   border: 1px solid #ccc;
   padding: 10px;
-  width: 180px;
+  width: 280px;
   z-index: 10;
   border-radius: 5px;
 }
 
 .genre-box label {
   display: block;
-  margin: 6px 0;
+  border-radius: 25px;
+  cursor: pointer;
+  padding: 4px 10px 4px;
+}
+
+.genre-box input[type="checkbox"]  {
+  display: none;
+}
+
+.genre-box label:has(input:checked) {
+  background-color:rgb(32, 115, 130);
+  border-color: rgb(38, 138, 197);
+  box-shadow: inset 0 1px 4px #22b3b0, 0 0 20px 2px #12bb83;
 }
 
 .hidden {
@@ -268,7 +316,8 @@ body{
 }
 
 #genreBtn{
-  background-color:rgba(49, 232, 162, 0.94);
+  background: transparent;
+  background-color: black;
   border-radius: 10px;;
   padding: 12px;
   border:none;
@@ -279,6 +328,7 @@ body{
 }
 
 #movieForm #yearRelease{
+  color:white;
   width: 55px;
   border:none;
 }
@@ -294,7 +344,11 @@ body{
 }
 
 #movieForm #submit{
+  background: transparent;
+  background-color: black;
+  color: white;
   margin-top: 24px;
+  padding: 15px;
   border:none;
 }
 
@@ -649,7 +703,9 @@ button{
 }
 
 .rec-container select{
-  background-color: rgba(49, 232, 162, 0.94);
+  background: transparent;
+  background-color: black;
+  color:white;
   border: none;
   padding: 8px;
   text-align: center;
@@ -1141,6 +1197,10 @@ button{
     width: 100%;
   }
 
+  .navbar-main{
+    width: 100%;
+  }
+
   .nav-links { 
     display: none; 
     flex-direction: column; 
@@ -1166,6 +1226,11 @@ button{
     opacity: 0.9;
   }
 
+  #main-header{
+    letter-spacing: 1px;
+    margin-top: 80px;
+  }
+
   .slide-btn {
     display: none;
   }
@@ -1184,6 +1249,7 @@ button{
 
   .search-container {
     width: 100%;
+    max-width: 340px;
   }
 
   .rec-container {
@@ -1195,6 +1261,26 @@ button{
     font-size: 0.9rem;
   }
 
+  .genre-box {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    text-align: center;
+    background: rgb(35, 31, 31);
+    color:white;
+    border: 1px solid #ccc;
+    padding: 10px;
+    width: 280px;
+    z-index: 10;
+    border-radius: 5px;
+}
+  .hidden{
+    display: none;
+  }
   #popular-movie h2{
     font-size: 20px;
     margin-left: 22px;
