@@ -277,16 +277,12 @@ body{
 }
 
 .genre-box {
-  display: flex;
-  flex-direction: row;
-  gap: 36px;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
   position: absolute;
-  text-align: center;
   background: rgb(35, 31, 31);
-  color:white;
+  color: white;
   border: 1px solid #ccc;
   padding: 10px;
   width: 280px;
@@ -296,9 +292,11 @@ body{
 
 .genre-box label {
   display: block;
-  border-radius: 25px;
+  border-radius: 15px;
   cursor: pointer;
-  padding: 4px 10px 4px;
+  padding: 5px;
+  width: 100px;
+  text-align: center;
 }
 
 .genre-box input[type="checkbox"]  {

@@ -130,7 +130,7 @@ app.get('/', async (req,res) => {
                                     <div class="nav-links" id="navLinks">
                                         <span class="nav-greeting">Hello, ${displayName}!</span>
                                         <a href="/favorites" class="nav-item">Favorite List</a>
-                                         <!-- <button id="browseBtn" class="nav-item"><p>Browse v</p></button> -->
+                                         <button id="browseBtn" class="nav-item"><p>Browse v</p></button>
                                         ${authAction}
                                     </div>
                                 </nav>
