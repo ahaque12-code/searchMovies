@@ -6,8 +6,6 @@ function parseMarkdown(text) {
         .replace(/\n/g, '<br>');
 }
 
-
-
 function scrollGrid(gridId, amount) {
     const grid = document.getElementById(gridId);
     if (grid) {
@@ -16,7 +14,46 @@ function scrollGrid(gridId, amount) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Typewriter Logic
+    // 1.Genre Box
+    const genreBtn = document.getElementById("genreBtn");
+    const genreBox = document.getElementById("genreBox");
+    const checkboxes = document.querySelectorAll("#genreBox input[type='checkbox']");
+    const selectedGenresInput = document.getElementById("selectedGenres");
+
+    // Toggle visibility 
+    if (genreBtn && genreBox) {
+        genreBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            genreBox.classList.toggle("hidden");
+        });
+        
+        document.addEventListener("click", (e) => {
+            if (!genreBox.contains(e.target) && e.target !== genreBtn) {
+                genreBox.classList.add("hidden");
+            }
+        });
+    }
+
+    // Sync checkboxes, hidden input, and button text
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener("change", () => {
+            const selected = Array.from(checkboxes)
+                .filter(i => i.checked)
+                .map(i => i.value);
+            
+            // Update the hidden input for the form submission
+            selectedGenresInput.value = selected.join(",");
+            
+            // Update the button text
+            if (selected.length > 0) {
+                genreBtn.textContent = selected.join(", ");
+            } else {
+                genreBtn.textContent = "Select Genre";
+            }
+        });
+    });
+
+    // 2. Typewriter Logic
     const input = document.getElementById("movieName");
     if (input) {
         const phrases = ["Search movies...", "Search TV shows..."];
@@ -47,7 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
         type();
     }
 
-    // 2. Autocomplete Logic
+    // 3. Autocomplete Logic
     const suggestionsBox = document.getElementById('suggestionsBox');
     function debounce(func, delay) {
         let timeout;
@@ -86,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // 3. Hamburger Menu Logic
+    // 4. Hamburger Menu Logic
     const hamburger = document.getElementById('hamburger');
     const navLinks = document.getElementById('navLinks');
     if (hamburger && navLinks) {
@@ -95,46 +132,5 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-});
-
-
-document.addEventListener("DOMContentLoaded", () => {
-    const genreBtn = document.getElementById("genreBtn");
-    const genreBox = document.getElementById("genreBox");
-    const checkboxes = document.querySelectorAll("#genreBox input[type='checkbox']");
-    const selectedGenresInput = document.getElementById("selectedGenres");
-
-    // 1. Toggle visibility (keep existing)
-    if (genreBtn && genreBox) {
-        genreBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            genreBox.classList.toggle("hidden");
-        });
-        
-        document.addEventListener("click", (e) => {
-            if (!genreBox.contains(e.target) && e.target !== genreBtn) {
-                genreBox.classList.add("hidden");
-            }
-        });
-    }
-
-    // 2. UPDATED: Sync checkboxes, hidden input, AND button text
-    checkboxes.forEach(checkbox => {
-        checkbox.addEventListener("change", () => {
-            const selected = Array.from(checkboxes)
-                .filter(i => i.checked)
-                .map(i => i.value);
-            
-            // Update the hidden input for the form submission
-            selectedGenresInput.value = selected.join(",");
-            
-            // Update the button text
-            if (selected.length > 0) {
-                genreBtn.textContent = selected.join(", ");
-            } else {
-                genreBtn.textContent = "Select Genre";
-            }
-        });
-    });
 });
 
