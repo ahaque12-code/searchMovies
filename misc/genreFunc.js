@@ -132,6 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    //5. Browse Box Logic
     const browseBtn = document.getElementById('browseBtn');
     const browseBox = document.getElementById('browseBox');
 
