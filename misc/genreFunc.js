@@ -132,5 +132,18 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    const browseBtn = document.getElementById('browseBtn');
+    const browseBox = document.getElementById('browseBox');
+
+    browseBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        browseBox.classList.toggle('hidden');
+        document.getElementById('genreBox')?.classList.add('hidden');
+    });
+
+    document.addEventListener('click', () => {
+        browseBox.classList.add('hidden');
+    });
+
 });
 
