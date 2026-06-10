@@ -96,27 +96,6 @@ body{
   transition: all 0.2s ease-in-out;
 }
 
-#main-header{
-  letter-spacing: 3px;
-}
-
-#browseBtn{
-  background: none;
-  border: none;
-  padding: 0;
-}
-
-#browseBtn:hover{
-  background-color: rgba(255, 255, 255, 0.15); 
-  border-radius: 5px;
-  padding: 0;
-  color: rgb(223, 211, 39);
-}
-
-#browseBtn p{
-  margin: 10px;
-}
-
 .nav-item:hover {
   background-color: rgba(255, 255, 255, 0.15); 
   border-radius: 5px;
@@ -151,6 +130,62 @@ body{
 
 #msg{
   text-align: center;
+}
+
+#main-header{
+  letter-spacing: 3px;
+}
+
+#browseBtn {
+  background: none;
+  border-radius: 10px;
+  padding: 2px;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+#browseBtn:hover {
+  background-color: rgba(255, 255, 255, 0.15); 
+  border-radius: 5px;
+  color: rgb(223, 211, 39);
+}
+
+#browseBtn p{
+  margin: 10px;
+  font-size: 16px;
+}
+
+.browse-box {
+  position: absolute;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  background: rgb(35, 31, 31);
+  border: 1px solid #ccc;
+  padding: 5px;
+  width: 280px;
+  z-index: 10;
+  border-radius: 5px;
+  top: 125%;
+  left: auto;
+  right: -100%;
+}
+
+.browse-box a {
+  display: block;
+  color: white;
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: 25px;
+  text-align: center;
+  font-size: 0.85rem;
+  width: 126px;
+}
+
+.browse-box a:hover {
+  background-color: rgb(32, 115, 130);
+  box-shadow: inset 0 1px 4px #22b3b0, 0 0 20px 2px #12bb83;
 }
 
 .content-bg{
@@ -1222,6 +1257,10 @@ button{
     margin-bottom: 5px;
     font-size: 0.95rem;
     opacity: 0.9;
+  }
+
+  #fav-list{
+    margin-top: 10px;
   }
 
   #main-header{

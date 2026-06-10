@@ -129,8 +129,20 @@ app.get('/', async (req,res) => {
 
                                     <div class="nav-links" id="navLinks">
                                         <span class="nav-greeting">Hello, ${displayName}!</span>
-                                        <a href="/favorites" class="nav-item">Favorite List</a>
-                                         <button id="browseBtn" class="nav-item"><p>Browse v</p></button>
+                                        <a href="/favorites" id="fav-list" class="nav-item">Favorite List</a>
+                                        <div class="genre-wrapper">
+                                            <button type="button" class="nav-item" id="browseBtn"><p>Browse</p></button>
+                                            <div id="browseBox" class="browse-box hidden">
+                                                <a href="/airing">📺 Airing Today</a>
+                                                <a href="/discover?media=movie">🎬 Movies</a>
+                                                <a href="/discover?media=tv">📡 TV Shows</a>
+                                                <a href="/discover?genres=Action">💥 Action</a>
+                                                <a href="/discover?genres=Comedy">😂 Comedy</a>
+                                                <a href="/discover?genres=Horror">👻 Horror</a>
+                                                <a href="/discover?genres=Animation">🎨 Animation</a>
+                                                <a href="/discover?genres=Documentary">🎙️ Documentary</a>
+                                            </div>
+                                        </div>
                                         ${authAction}
                                     </div>
                                 </nav>
