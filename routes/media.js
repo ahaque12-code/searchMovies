@@ -84,6 +84,19 @@ async function getRottenTomatoesScore(title, type) {
     return await tryOMDB(title);
 }
 
+router.get("/api/season", async (req, res) => {
+    const { id, season } = req.query;
+    const api_key = process.env.TMDB_API_KEY;
+    try {
+        const r = await fetch(`https://api.themoviedb.org/3/tv/${id}/season/${season}?api_key=${api_key}`,
+            { headers: { 'Authorization': `Bearer ${process.env.TMDB_BEARER_TOKEN}` } });
+        const data = await r.json();
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch season" });
+    }
+});
+
 router.get("/api/score", async (req, res) => {
     const { title, type } = req.query;
     try {
@@ -392,12 +405,38 @@ router.get("/:type/:id", async (req,res)=>{
                                     : `<p>No trailer available.</p>`
                                 }
 
+                                <button class="trailer-btn" onclick="openPlayer()">▶ Watch</button>
+                                
                                 <div id="trailerModal" class="modal">
                                     <div class="modal-content">
                                         <span class="close" onclick="closeTrailer()">&times;</span>
                                         <div id="player"></div>
                                     </div>
                                 </div>
+
+
+                                <div id="playerModal" class="modal">
+                                    <div class="modal-content" style="width:90%; max-width:950px; max-height:90vh; overflow-y:auto; background:#1a1a1a; border-radius:12px; padding:24px; box-sizing:border-box;">
+                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                                            <h3 style="color:white; margin:0; font-size:16px;" id="player-title">Now Playing</h3>
+                                            <span class="close" onclick="closePlayer()" style="font-size:28px; cursor:pointer; color:white; line-height:1;">&times;</span>
+                                        </div>
+
+                                        <div id="vidlink-player" style="margin-bottom:20px; border-radius:8px; overflow:hidden;"></div>
+
+                                        <div id="season-episode-picker" style="display:none;">
+                                            <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+                                                <select id="season-select" onchange="handleSeasonChange(this.value)"
+                                                    style="background:#2a2a2a; color:white; border:1px solid #555; padding:8px 14px; border-radius:8px; font-size:14px; cursor:pointer;">
+                                                </select>
+                                                <span style="color:#aaa; font-size:13px;" id="episode-count"></span>
+                                            </div>
+                                            <div id="episode-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(155px,1fr)); gap:12px; max-height:340px; overflow-y:auto; padding-right:4px;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 
                                 <h3 class="overview-heading">Where to Watch</h3>
                                 <div class="watch-providers">
@@ -499,8 +538,108 @@ router.get("/:type/:id", async (req,res)=>{
                         }
                     });
 
-                </script>
-            </html>`);
+                    let currentShowId = '${id}';
+                    let currentType = '${type}';
+
+                    function openPlayer() {
+                        const modal = document.getElementById('playerModal');
+                        modal.style.display = "flex";
+
+                        if (currentType === 'movie') {
+                            document.getElementById('player-title').innerText = '${escapedTitle}';
+                            document.getElementById('season-episode-picker').style.display = 'none';
+                            document.getElementById('vidlink-player').innerHTML =
+                                \`<iframe width="100%" height="450" src="https://vidlink.pro/movie/\${currentShowId}" frameborder="0" allowfullscreen referrerpolicy="origin"></iframe>\`;
+                        } else {
+                            document.getElementById('season-episode-picker').style.display = 'block';
+                            document.getElementById('vidlink-player').innerHTML =
+                                \`<div style="height:180px; display:flex; align-items:center; justify-content:center; color:#777; background:#111; border-radius:8px; font-size:14px;">
+                                    Select an episode below to start watching
+                                </div>\`;
+                            loadSeasons();
+                        }
+                    }
+
+                    async function loadSeasons() {
+                        const seasons = ${JSON.stringify((data.seasons || []).filter(s => s.season_number > 0))};
+                        const select = document.getElementById('season-select');
+                        select.innerHTML = seasons.map(s =>
+                            \`<option value="\${s.season_number}">Season \${s.season_number} (\${s.episode_count} eps)</option>\`
+                        ).join('');
+                        if (seasons.length > 0) handleSeasonChange(seasons[0].season_number);
+                    }
+
+                    async function handleSeasonChange(seasonNum) {
+                        document.getElementById('episode-count').innerText = '';
+                        document.getElementById('episode-grid').innerHTML =
+                            \`<div style="color:#aaa; grid-column:1/-1; text-align:center; padding:30px;">Loading...</div>\`;
+
+                        const res = await fetch(\`/media/api/season?id=\${currentShowId}&season=\${seasonNum}\`);
+                        const data = await res.json();
+                        renderEpisodes(data.episodes || [], seasonNum);
+                    }
+
+                    function renderEpisodes(episodes, seasonNum) {
+                        document.getElementById('episode-count').innerText = \`\${episodes.length} episodes\`;
+                        document.getElementById('episode-grid').innerHTML = episodes.map(ep => {
+                            const thumb = ep.still_path
+                                ? \`https://image.tmdb.org/t/p/w300\${ep.still_path}\`
+                                : '/images/icon.png';
+                            const name = ep.name || \`Episode \${ep.episode_number}\`;
+                            const overview = ep.overview
+                                ? ep.overview.substring(0, 75) + (ep.overview.length > 75 ? '...' : '')
+                                : 'No description.';
+                            const rating = ep.vote_average ? Number(ep.vote_average).toFixed(1) : 'N/A';
+                            const airDate = ep.air_date ? ep.air_date.substring(0, 7) : '';
+
+                            return \`
+                                <div onclick="playEpisode(\${seasonNum}, \${ep.episode_number})"
+                                    style="background:#222; border-radius:10px; overflow:hidden; cursor:pointer;
+                                        border:2px solid transparent; transition:border 0.15s, transform 0.15s;"
+                                    onmouseover="this.style.borderColor='#e50914'; this.style.transform='scale(1.02)'"
+                                    onmouseout="this.style.borderColor='transparent'; this.style.transform='scale(1)'">
+                                    <div style="position:relative;">
+                                        <img src="\${thumb}" alt="\${name}"
+                                            style="width:100%; height:88px; object-fit:cover; display:block;">
+                                        <div style="position:absolute; inset:0; background:rgba(0,0,0,0.45); 
+                                                    display:flex; align-items:center; justify-content:center;
+                                                    opacity:0; transition:opacity 0.15s;"
+                                            onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">
+                                            <span style="font-size:26px;">▶</span>
+                                        </div>
+                                        <span style="position:absolute; top:5px; left:5px; background:rgba(0,0,0,0.75);
+                                                    color:white; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:600;">
+                                            E\${ep.episode_number}
+                                        </span>
+                                        <span style="position:absolute; top:5px; right:5px; background:rgba(0,0,0,0.75);
+                                                    color:#f5c518; font-size:10px; padding:2px 6px; border-radius:4px;">
+                                            ⭐ \${rating}
+                                        </span>
+                                    </div>
+                                    <div style="padding:8px 10px;">
+                                        <p style="color:white; font-size:11px; font-weight:600; margin:0 0 3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">\${name}</p>
+                                        \${airDate ? \`<p style="color:#666; font-size:10px; margin:0 0 4px;">\${airDate}</p>\` : ''}
+                                        <p style="color:#888; font-size:10px; margin:0; line-height:1.4;">\${overview}</p>
+                                    </div>
+                                </div>\`;
+                        }).join('');
+                    }
+
+                   function playEpisode(season, episode) {
+                        document.getElementById('player-title').innerText = \`${escapedTitle} — S\${String(season).padStart(2,'0')}E\${String(episode).padStart(2,'0')}\`;
+                        document.getElementById('vidlink-player').innerHTML =
+                            \`<iframe width="100%" height="450" src="https://vidlink.pro/tv/\${currentShowId}/\${season}/\${episode}"
+                            frameborder="0" allowfullscreen referrerpolicy="origin"></iframe>\`;
+                        document.getElementById('playerModal').querySelector('.modal-content').scrollTop = 0;
+                    }
+
+                    function closePlayer() {
+                        document.getElementById('playerModal').style.display = "none";
+                        document.getElementById('vidlink-player').innerHTML = "";
+                    }
+
+        </script>
+         </html>`);
 
 
     } catch(err){

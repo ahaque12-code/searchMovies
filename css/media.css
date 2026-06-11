@@ -250,6 +250,11 @@ body{
     color: white; font-size: 30px; cursor: pointer; float: right;
 }
 
+.close:hover {
+    color: #e50914 !important;
+    transition: color 0.15s;
+}
+
 .watch-providers {
     display: flex;
     gap: 15px;
