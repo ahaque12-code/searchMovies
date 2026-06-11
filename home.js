@@ -15,12 +15,20 @@ mongoose.connect(process.env.MONGO_CONNECTION_STRING,{dbName: "CMSC335DB"}).then
 });
 
 const Favorite = require("./models/Favorite"); 
-
 async function fetchFavoritesFromDB(userId) {
     try {
         return await Favorite.find({ user: userId });
     } catch (err) {
         console.error("Database Fetch Error:", err);
+        return [];
+    }
+}
+
+const Watchlist = require("./models/Watchlist");
+async function fetchWatchlistFromDB(userId) {
+    try {
+        return await Watchlist.find({ user: userId });
+    } catch (err) {
         return [];
     }
 }
@@ -48,6 +56,9 @@ app.use(session({
 
 const usersRouter = require("./routes/users");
 app.use("/users",  usersRouter);
+
+const watchlistRouter = require('./routes/watchlist');
+app.use('/watchlist', redirectLogin, watchlistRouter);
 
 app.use(express.static(__dirname));
 
@@ -108,6 +119,8 @@ app.get('/', async (req,res) => {
                 <link rel="icon" type="image/x-icon" href="/images/icon.png">
                 <link rel="stylesheet" href="/css/style.css">
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+                <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
                 <script type="application/ld+json">
                     {
                     "@context": "https://schema.org",
@@ -124,7 +137,10 @@ app.get('/', async (req,res) => {
                         <div id="movieBody">
                             <div class="content-bg">
                                 <nav class="navbar-main">
-                                    <span class="nav-title">SearchMovie</span>
+                                    <div id="item-left">
+                                        <img id="logo" src="/images/logo2.png" alt="logo"></img>
+                                        <span class="nav-title">SearchMovie</span>
+                                    </div>
                                     <button class="hamburger" id="hamburger">☰</button>
 
                                     <div class="nav-links" id="navLinks">
@@ -133,14 +149,15 @@ app.get('/', async (req,res) => {
                                         <div class="genre-wrapper">
                                             <button type="button" class="nav-item" id="browseBtn"><p>Browse</p></button>
                                             <div id="browseBox" class="browse-box hidden">
-                                                <a href="/airing">📺 Airing Today</a>
-                                                <a href="/discover?media=movie">🎬 Movies</a>
-                                                <a href="/discover?media=tv">📡 TV Shows</a>
-                                                <a href="/discover?genres=Action">💥 Action</a>
-                                                <a href="/discover?genres=Comedy">😂 Comedy</a>
-                                                <a href="/discover?genres=Horror">👻 Horror</a>
-                                                <a href="/discover?genres=Animation">🎨 Animation</a>
-                                                <a href="/discover?genres=Documentary">🎙️ Documentary</a>
+                                                <a href="/my-watchlist"><i class="fa-solid fa-bookmark"></i> My Watchlist</a>
+                                                <a href="/airing"><i class="fa-solid fa-tv"></i> Airing Today</a>
+                                                <a href="/discover?media=movie"><i class="fa-solid fa-film"></i> Movies</a>
+                                                <a href="/discover?media=tv"><i class="fa-solid fa-satellite-dish"></i> TV Shows</a>
+                                                <a href="/discover?genres=Action"><i class="fa-solid fa-explosion"></i> Action</a>
+                                                <a href="/discover?genres=Comedy"><i class="fa-solid fa-face-laugh"></i> Comedy</a>
+                                                <a href="/discover?genres=Horror"><i class="fa-solid fa-skull"></i> Horror</a>
+                                                <a href="/discover?genres=Animation"><i class="fa-solid fa-wand-magic-sparkles"></i> Animation</a>
+                                                <a href="/discover?genres=Documentary"><i class="fa-solid fa-microphone"></i> Documentary</a>
                                             </div>
                                         </div>
                                         ${authAction}
@@ -535,8 +552,13 @@ app.get("/results", async (req,res) => {
         }
 
 
-        const favorites = await fetchFavoritesFromDB(req.session.userId);
+        const [favorites, watchlist] = await Promise.all([
+            fetchFavoritesFromDB(req.session.userId),
+            fetchWatchlistFromDB(req.session.userId)
+        ]);
+
         const favoriteIds = favorites.map(f => String(f.imdbId).trim());
+        const watchlistIds = watchlist.map(w => String(w.imdbId).trim());
 
         html = `
         <!DOCTYPE html> 
@@ -562,6 +584,7 @@ app.get("/results", async (req,res) => {
                 <link rel = "stylesheet" href= "/css/style.css">
                 <link rel="icon" type="image/x-icon" href="/images/icon.png">
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
             </head>
             <body>
                 <nav class="navbar2">
@@ -579,7 +602,11 @@ app.get("/results", async (req,res) => {
         `;
 
         if (movies.length === 0) {
-            html += `<h2 style="color:white; text-align: center; width: 100%;">No results found for "${searchMovie}".</h2>`;
+            html += ` 
+            </div> <!-- close movie-grid -->
+            <div style="display:flex; justify-content:center; align-items:center; height:60vh;">
+                <h2 style="color:white; text-align:center;">No matches found for your filter criteria.</h2>
+            </div>`;
         } else {
             for (const movie of movies) {
                 const movieTitle = movie.media_type === "movie" ? (movie.title || "Unknown Movie") : (movie.name || "Unknown Show");
@@ -614,10 +641,11 @@ app.get("/results", async (req,res) => {
                     ageCertificate = "PG-13";
                 }
                 const certClass = ageCertificate.replace(/[^a-zA-Z0-9]/g, '-');
-                const escapedTitle = encodeURIComponent(movieTitle.replace(/'/g, "\\'"));
+                const escapedTitle = movieTitle.replace(/'/g, "\\'");
                 const escapedGenres = genreText.replace(/'/g, "\\'");
                 const isFav = favoriteIds.includes(String(movie.id).trim()) ? 'active' : '';
                 const displayType = (movie.media_type === "tv") ? "TV Series" : "Movie";
+                const isWatchlisted = watchlistIds.includes(String(movie.id).trim()) ? 'active' : '';
 
                 html += `
                 <div class="movie-card" onclick="window.location.href='/media/${movie.media_type || normalizedType}/${movie.id}'">
@@ -633,9 +661,14 @@ app.get("/results", async (req,res) => {
                     
                     <div class="movie-card-bottom-bar">
                         <p><strong>Type:</strong> ${displayType}</p>
-                        <button class="heart-btn ${isFav}" onclick="event.stopPropagation(); addFavorite(this, '${escapedTitle}', '${releaseYear}', '${movie.id}', '${escapedGenres}', '${rating}', '${posterPath}', '${ageCertificate}')">
-                            <span class="heart-icon"></span>
-                        </button>
+                        <div id="int-btns">
+                            <button class="watchlist-btn ${isWatchlisted}" onclick="event.stopPropagation(); addWatchlist(this, '${escapedTitle}', '${releaseYear}', '${movie.id}', '${escapedGenres}', '${rating}', '${posterPath}', '${ageCertificate}', '${movie.media_type || normalizedType}')">
+                                <span class="eye-icon"></span>
+                            </button>
+                            <button class="heart-btn ${isFav}" onclick="event.stopPropagation(); addFavorite(this, '${escapedTitle}', '${releaseYear}', '${movie.id}', '${escapedGenres}', '${rating}', '${posterPath}', '${ageCertificate}')">
+                                <span class="heart-icon"></span>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 `;
@@ -652,8 +685,9 @@ app.get("/results", async (req,res) => {
                 ${page < totalPages ? `<a href="/results?q=${encodeURIComponent(searchMovie)}&page=${page + 1}" id="showMore">Next</a>` : ''}
             </div>
             <script>
+                const isGuest = ${isGuest};
+
                 async function addFavorite(btn, title, year, imdbId, genres, rating, image, certification) {
-                    const isGuest = ${isGuest};
         
                     if (isGuest) {
                         alert("Please log in to add favorites!");
@@ -676,6 +710,26 @@ app.get("/results", async (req,res) => {
                         console.log(title + " toggled (added/removed) in favorites!");
                     }
                 }
+                
+                async function addWatchlist(btn, title, year, imdbId, genres, rating, image, certification, mediaType) {
+                    if (isGuest) {
+                        alert("Please log in to use watchlist!");
+                        window.location.href = "/users/login";
+                        return;
+                    }
+                    btn.classList.toggle('active');
+                    await fetch("/watchlist/add", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ title, year, imdbId, genres, rating, image, certification, mediaType})
+                    });
+                }
+
+                window.addEventListener('pageshow', function(event) {
+                    if (event.persisted) {
+                        window.location.reload();
+                    }
+                });
             </script>
             </body>
             </html>
@@ -750,15 +804,17 @@ app.get("/discover", async(req, res) => {
             if (structuralIds.length > 0) apiUrl += `&with_genres=${structuralIds.join(",")}`;
         }
 
-        const [apiRes, favorites] = await Promise.all([
+        const [apiRes, favorites, watchlist] = await Promise.all([
             fetch(apiUrl, { method: 'GET', headers: { accept: 'application/json', Authorization: `Bearer ${process.env.TMDB_BEARER_TOKEN}` } }),
-            fetchFavoritesFromDB(req.session.userId)
+            fetchFavoritesFromDB(req.session.userId),
+            fetchWatchlistFromDB(req.session.userId)
         ]);
 
         const apiData = await apiRes.json();
         const movies = apiData.results || [];
         const totalPages = Math.min(apiData.total_pages || 1, 500);
         const favoriteIds = favorites.map(f => String(f.imdbId).trim());
+        const watchlistIds = watchlist.map(w => String(w.imdbId).trim());
 
         let html = `
         <!DOCTYPE html>
@@ -784,6 +840,8 @@ app.get("/discover", async(req, res) => {
                 <link rel="icon" type="image/x-icon" href="/images/icon.png">
                 <link rel = "stylesheet" href= "/css/style.css">
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
             </head>
             <body>
                 <nav class="navbar2">
@@ -796,7 +854,11 @@ app.get("/discover", async(req, res) => {
                 <div class="movie-grid">`;
 
             if (movies.length === 0) {
-                html += `<h2 style="color:white; text-align: center; width: 100%;">No matches found for your filter criteria.</h2>`;
+                html += ` 
+                </div> <!-- close movie-grid -->
+                <div style="display:flex; justify-content:center; align-items:center; height:60vh;">
+                    <h2 style="color:white; text-align:center;">No matches found for your filter criteria.</h2>
+                </div>`;
             } else{
                 for (const movie of movies) {
                     const movieTitle = movie.title || movie.name || "Unknown";
@@ -822,6 +884,7 @@ app.get("/discover", async(req, res) => {
                     const escapedTitle = movieTitle.replace(/'/g, "\\'");
                     const escapedGenres = genreText.replace(/'/g, "\\'");
                     const isFav = favoriteIds.includes(movie.id.toString()) ? 'active' : '';
+                    const isWatchlisted = watchlistIds.includes(movie.id.toString()) ? 'active' : '';
                     const displayType = (normalizedType === 'tv') ? "TV Series" : "Movie";
                     
                     const certClass = ageCertificate.replace(/[^a-zA-Z0-9]/g, '-');
@@ -837,11 +900,16 @@ app.get("/discover", async(req, res) => {
                         <p><strong>Genre:</strong> ${genreText}</p>
                         <p><strong>Rating:</strong> ${rating}</p>
                 
-                        <div class="movie-card-bottom-bar">
+                       <div class="movie-card-bottom-bar">
                             <p><strong>Type:</strong> ${displayType}</p>
-                            <button class="heart-btn ${isFav}" onclick="event.stopPropagation(); addFavorite(this, '${escapedTitle}', '${releaseYear}', '${movie.id}', '${escapedGenres}', '${rating}', '${posterPath}', '${ageCertificate}')">
-                                <span class="heart-icon"></span>
-                            </button>
+                            <div id="int-btns">
+                                <button class="watchlist-btn ${isWatchlisted}" onclick="event.stopPropagation(); addWatchlist(this, '${escapedTitle}', '${releaseYear}', '${movie.id}', '${escapedGenres}', '${rating}', '${posterPath}', '${ageCertificate}', '${movie.media_type || normalizedType}')">
+                                    <span class="eye-icon"></span>
+                                </button>
+                                <button class="heart-btn ${isFav}" onclick="event.stopPropagation(); addFavorite(this, '${escapedTitle}', '${releaseYear}', '${movie.id}', '${escapedGenres}', '${rating}', '${posterPath}', '${ageCertificate}')">
+                                    <span class="heart-icon"></span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     `;
@@ -856,9 +924,10 @@ app.get("/discover", async(req, res) => {
             ${page < totalPages ? `<button id="showMore" onclick="window.location.href='/discover?type=${typeSearch}&genres=${encodeURIComponent(req.query.genres || "")}&rating=${encodeURIComponent(ratingSearch)}&year=${encodeURIComponent(yearSearch)}&page=${page + 1}'">Next Page</button>` : ''}
         </div>
         <script>
+            const isGuest = ${isGuest};
+
             async function addFavorite(btn, title, year, imdbId, genres, rating, image, certification) {
-                 const isGuest = ${isGuest};
-        
+    
                 if (isGuest) {
                     alert("Please log in to add favorites!");
                     window.location.href = "/users/login";
@@ -866,14 +935,43 @@ app.get("/discover", async(req, res) => {
                 }
 
                 const isActive = btn.classList.toggle('active');
+                
+                // Send all data that the schema expects
                 await fetch("/favorites/add", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ title, year, imdbId, genres, rating, image, certification })
+                    body: JSON.stringify({ 
+                        title, year, imdbId, genres, rating, image, certification 
+                    })
+                });
+
+                if (isActive) {
+                    console.log(title + " toggled (added/removed) in favorites!");
+                }
+            }
+            
+            async function addWatchlist(btn, title, year, imdbId, genres, rating, image, certification, mediaType) {
+                if (isGuest) {
+                    alert("Please log in to use watchlist!");
+                    window.location.href = "/users/login";
+                    return;
+                }
+                btn.classList.toggle('active');
+                await fetch("/watchlist/add", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ title, year, imdbId, genres, rating, image, certification, mediaType })
                 });
             }
-        </script>
-        </body></html>`;
+
+            window.addEventListener('pageshow', function(event) {
+                if (event.persisted) {
+                    window.location.reload();
+                }
+            });
+         </script>
+        </body>
+        </html>`;
 
         res.send(html);
     } catch (err) {
@@ -915,6 +1013,7 @@ app.get("/airing", async (req,res)=>{
             <link rel="icon" type="image/x-icon" href="/images/icon.png">
             <link rel = "stylesheet" href= "/css/style.css">
             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         </head>
         <body class="air-td-body">
             <nav class="navbar2">
@@ -1030,7 +1129,7 @@ app.get("/airing", async (req,res)=>{
                 <img src="${image}" alt="${title}">
                 <div class="air-card-info">
                     <h3>${title}</h3>
-                    <p>📺 ${network}</p>
+                    <p><i class="fa-solid fa-satellite-dish"></i> ${network}</p>
                     <p><strong>Genre: </strong>${genre}</p>
                     <p class="air-summary"><strong>Summary:  </strong>${summary}...</p>
                 </div>
@@ -1075,6 +1174,89 @@ app.get("/airing", async (req,res)=>{
 
     res.send(html);
 })
+
+app.get("/my-watchlist", redirectLogin, async (req, res) => {
+    const watchlist = await fetchWatchlistFromDB(req.session.userId);
+
+    let html = `
+    <!DOCTYPE html>
+    <html>
+        <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>My Watchlist</title>
+            <link rel="stylesheet" href="/css/style.css">
+            <link rel="icon" type="image/x-icon" href="/images/icon.png">
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+        </head>
+        <body>
+            <nav class="navbar2">
+                <span class="nav-title2">My Watchlist</span>
+                <div class="nav-links2">
+                    <a href="/" class="nav-item">Home</a>
+                    <a href="/favorites" class="nav-item">Favorites</a>
+                </div>
+            </nav>
+            <div class="movie-grid">`;
+
+    if (watchlist.length === 0) {
+       html += `
+        </div> <!-- -->
+        <div style="display:flex; justify-content:center; align-items:center; height:60vh;">
+            <h2 style="color:white; text-align:center;">Your watchlist is empty. Start adding shows and movies!</h2>
+        </div>`;
+    } else {
+        for (const item of watchlist) {
+            const certClass = (item.certification || "PG-13").replace(/[^a-zA-Z0-9]/g, '-');
+            html += `
+            <div class="movie-card" onclick="window.location.href='/media/${item.mediaType || 'movie'}/${item.imdbId}'">
+                <div class="poster-container">
+                    <span class="cert-badge ${certClass}">${item.certification || "PG-13"}</span>
+                    <img src="${item.image}" alt="${item.title}">
+                    ${item.watched ? `<span class="watched-badge">✓ Watched</span>` : ''}
+                </div>
+                <h3>${item.title}</h3>
+                <p>Year: ${item.year || "N/A"}</p>
+                <p><strong>Genre:</strong> ${item.genres || "N/A"}</p>
+                <p><strong>Rating:</strong> ${item.rating || "N/A"}</p>
+                <div class="movie-card-bottom-bar-watch-page">
+                    <button class="watched-btn ${item.watched ? 'active' : ''}" onclick="event.stopPropagation(); markWatched(this, '${item.imdbId}')">
+                        ${item.watched ? '✓ Watched' : 'Mark Watched'}
+                    </button>
+                    <button class="remove-btn" onclick="event.stopPropagation(); removeFromWatchlist(this, '${item.imdbId}')">✕</button>
+                </div>
+            </div>`;
+        }
+    }
+
+    html += `</div>
+        <script>
+            async function markWatched(btn, imdbId) {
+                const res = await fetch('/watchlist/watched/' + imdbId, { method: 'POST' });
+                const data = await res.json();
+                if (data.watched) {
+                    btn.classList.add('active');
+                    btn.textContent = '✓ Watched';
+                } else {
+                    btn.classList.remove('active');
+                    btn.textContent = '👁 Mark Watched';
+                }
+            }
+
+            async function removeFromWatchlist(btn, imdbId) {
+                await fetch('/watchlist/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ imdbId })
+                });
+                btn.closest('.movie-card').remove();
+            }
+        </script>
+        </body>
+    </html>`;
+
+    res.send(html);
+});
 
 app.get('/api/backdrops', async (req, res) => {
     const api_key = process.env.TMDB_API_KEY;

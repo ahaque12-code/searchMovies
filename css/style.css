@@ -70,8 +70,19 @@ body{
   font-family: Inter, sans-serif;
 }
 
+#item-left{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 #titleLink{
   text-decoration: none;
+}
+
+#logo{
+  height: 80px;
+  width: 100px;
 }
 
 .nav-links{
@@ -85,6 +96,7 @@ body{
   font-weight: 700;
   color: #ffffff;
   letter-spacing: -0.5px;
+  margin-left: -15px;
 }
 
 .nav-item {
@@ -953,6 +965,31 @@ button{
   opacity: 1;
 }
 
+#int-btns{
+  display: flex;
+}
+
+.watchlist-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+}
+
+.eye-icon {
+  background-color: rgba(255, 255, 255, 0.6);
+  width: 25px;
+  aspect-ratio: 1;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-eye-icon lucide-eye'%3E%3Cpath d='M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E") no-repeat center;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-eye-icon lucide-eye'%3E%3Cpath d='M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E") no-repeat center;
+  transition: background-color 0.3s;
+}
+
+.watchlist-btn.active .eye-icon {
+  background-color: #1895f5;
+}
+
 #chatbot-container{
   display: none;
   position: fixed; 
@@ -1203,6 +1240,57 @@ button{
   font-style: italic;
 }
 
+.watched-badge {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  background: rgba(33, 208, 122, 0.85);
+  color: black;
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 4px 0;
+}
+
+.watched-btn {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 5px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  color: white;
+}
+
+.watched-btn.active {
+  background: rgba(33, 208, 122, 0.3);
+  border-color: #21d07a;
+  color: #21d07a;
+}
+
+.remove-btn {
+  background: rgba(255, 0, 0, 0.2);
+  border: 1px solid rgba(255, 0, 0, 0.4);
+  border-radius: 5px;
+  padding: 4px 8px;
+  color: #ff6b6b;
+  cursor: pointer;
+}
+
+.movie-card-bottom-bar-watch-page {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 0 12px;
+  margin-top: 10px;
+}
+
+
+.remove-btn:hover {
+  background: rgba(255, 0, 0, 0.4);
+}
+
 @keyframes dropIn {
   from {
     opacity: 0;
@@ -1422,6 +1510,7 @@ button{
     padding: 2px 8px;
     margin: 0;
     width: 100vw;
+    row-gap:46px;
   }
 
   .movie-card {

@@ -8,3 +8,15 @@ async function fetchFavoritesFromDB(userId) {
     }
 }
 module.exports = { fetchFavoritesFromDB };
+
+const Watchlist = require("../models/Watchlist");
+
+async function fetchWatchlistFromDB(userId) {
+    try {
+        return await Watchlist.find({ user: userId });
+    } catch (err) {
+        return [];
+    }
+}
+
+module.exports = { fetchFavoritesFromDB, fetchWatchlistFromDB };

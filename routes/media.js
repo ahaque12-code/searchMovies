@@ -3,7 +3,7 @@ const axios = require("axios");
 const cheerio = require("cheerio");
 const puppeteer = require('puppeteer');
 const router = express.Router();
-const { fetchFavoritesFromDB } = require("../misc/db.js");
+const { fetchFavoritesFromDB, fetchWatchlistFromDB } = require("../misc/db.js");
 
 const detailGenreMap = {
     28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy",
@@ -171,8 +171,12 @@ router.get("/:type/:id", async (req,res)=>{
         const videoData = await videoRes.json();
         const trailer = videoData.results.find(v => v.type === "Trailer" && v.site === "YouTube");
 
-        const favorites = await fetchFavoritesFromDB(req.session.userId);
+        const [favorites, watchlist] = await Promise.all([
+            fetchFavoritesFromDB(req.session.userId),
+            fetchWatchlistFromDB(req.session.userId)
+        ]);
         const isFav = favorites.some(f => String(f.imdbId).trim() === String(id).trim()) ? 'active' : '';
+        const isWatchlisted = watchlist.some(w => String(w.imdbId).trim() === String(id).trim()) ? 'active' : '';
 
         const title = data.title || data.name || "Unknown";
         const escapedTitle = title.replace(/'/g, "\\'");
@@ -352,9 +356,14 @@ router.get("/:type/:id", async (req,res)=>{
                             <div class="details-right">
                                <div style="display: flex; align-items: center; gap: 15px;">
                                     <h1 class="details-title">${title} <span class="details-year">(${year})</span></h1>
-                                    <button class="heart-btn ${isFav}" onclick="addFavorite(this, '${escapedTitle}', '${year}', '${id}', '${genresText.replace(/'/g, "\\'")}', '${rating}', '${posterPath}', 'PG')">
-                                        <span class="heart-icon"></span>
-                                    </button>
+                                    <div id="int-btns">
+                                        <button class="watchlist-btn ${isWatchlisted}" onclick="addWatchlist(this, '${escapedTitle}', '${year}', '${id}', '${genresText.replace(/'/g, "\\'")}', '${rating}', '${posterPath}', 'PG')">
+                                            <span class="eye-icon"></span>
+                                        </button>
+                                        <button class="heart-btn ${isFav}" onclick="addFavorite(this, '${escapedTitle}', '${year}', '${id}', '${genresText.replace(/'/g, "\\'")}', '${rating}', '${posterPath}', 'PG')">
+                                            <span class="heart-icon"></span>
+                                        </button>
+                                    </div>
                                 </div>
                                 
                                 <div class="details-meta">
@@ -366,9 +375,10 @@ router.get("/:type/:id", async (req,res)=>{
                                 </div>
 
                                 <div class="score-container">
-                                    <div class="score-circle">⭐ ${rating}</div>
+                                    <div class="score-circle"><img src="/images/star.png" id="star-icon">${rating}</div>
                                     <span class="score-label">User Score</span>
-                                    <span class="score-label">🍅 RT:</span>
+                                    <span class="score-label"><svg height="50px" width="30px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 65.636 65.636" xml:space="preserve" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <g> <path style="fill:#008218;" d="M33.487,26.488c0,0,2.424-16.17-12.936-20.617C20.553,5.871,18.127,21.636,33.487,26.488z"></path> </g> <g> <path style="fill:#008218;" d="M32.797,26.488c0,0-2.425-16.17,12.936-20.617C45.731,5.871,48.158,21.636,32.797,26.488z"></path> </g> <g> <path style="fill:#008218;" d="M33.307,24.332c0,0-10.406-12.61,0.47-24.332C33.777,0,43.976,12.264,33.307,24.332z"></path> </g> <g> <path style="fill:#FF4A44;" d="M62.433,38.623c0,14.919-13.26,27.013-29.616,27.013c-16.358,0-29.615-12.094-29.615-27.013 c0-11.921,7.154-21.461,19.236-23.671c5.822-1.064,10.379,3.492,10.379,3.492s4.197-4.353,9.762-3.58 C54.296,16.491,62.433,25.568,62.433,38.623z"></path> </g> </g> </g></svg>
+                                     RT:</span>
                                     <span class="score-circle" id="rt-score-display">${rtScore}</span>
                                 </div>
 
@@ -442,6 +452,21 @@ router.get("/:type/:id", async (req,res)=>{
                         console.log("Favorite status updated: " + isActive);
                     }
 
+                    async function addWatchlist(btn, title, year, imdbId, genres, rating, image, certification) {
+                        const isGuest = ${isGuest};
+                        if (isGuest) {
+                            alert("Please log in to use watchlist!");
+                            window.location.href = "/users/login";
+                            return;
+                        }
+                        btn.classList.toggle('active');
+                        await fetch("/watchlist/add", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ title, year, imdbId, genres, rating, image, certification })
+                        });
+                    }
+
                     function openTrailer(key) {
                         const modal = document.getElementById('trailerModal');
                         const player = document.getElementById('player');
@@ -467,6 +492,13 @@ router.get("/:type/:id", async (req,res)=>{
                                 document.getElementById('rt-score-display').innerText = "N/A";
                             });
                     });
+
+                    window.addEventListener('pageshow', function(event) {
+                        if (event.persisted || performance.getEntriesByType('navigation')[0]?.type === 'back_forward') {
+                            window.location.reload();
+                        }
+                    });
+
                 </script>
             </html>`);
 
