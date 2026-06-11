@@ -138,7 +138,6 @@ app.get('/', async (req,res) => {
                             <div class="content-bg">
                                 <nav class="navbar-main">
                                     <div id="item-left">
-                                        <img id="logo" src="/images/logo2.png" alt="logo"></img>
                                         <span class="nav-title">SearchMovie</span>
                                     </div>
                                     <button class="hamburger" id="hamburger">☰</button>
