@@ -94,7 +94,17 @@ app.get('/', async (req,res) => {
         : `<form action="/users/logout" method="post" style="display: inline;">
              <button type="submit" id="logout-link-btn">Sign Out</button>
            </form>`;
-
+    
+    const api_key = process.env.TMDB_API_KEY;
+    const page = Number(req.query.page) || 1;
+    const [moviesData, seriesData, trendingData, airingData] = await Promise.all([
+        fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${api_key}&language=en-US&page=1`).then(r => r.json()),
+        fetch(`https://api.themoviedb.org/3/tv/popular?api_key=${api_key}&language=en-US&page=1`).then(r => r.json()),
+        fetch(`https://api.themoviedb.org/3/trending/all/day?api_key=${api_key}&language=en-US&page=1`).then(r => r.json()),
+        fetch(`https://api.themoviedb.org/3/tv/airing_today?api_key=${api_key}`).then(r => r.json()),
+    ]);
+    const firstBackdrop = moviesData.results?.find(m => m.backdrop_path)?.backdrop_path;
+        
     let html = ` 
     <!DOCTYPE html>
         <html>
@@ -113,14 +123,17 @@ app.get('/', async (req,res) => {
                 <meta name="twitter:title" content="SearchMovie - Movie & TV Discovery">
                 <meta name="twitter:description" content="Discover, search, and track your favorite movies and TV shows.">
                 <meta name="twitter:image" content="https://searchmovie.win/images/icon.png">
-
+                
+                ${firstBackdrop ? `<link rel="preload" as="image" href="https://image.tmdb.org/t/p/w1280${firstBackdrop}" fetchpriority="high">` : ''}
                 <link rel="icon" type="image/png" href="https://searchmovie.win/images/icon.png">
                 <link rel="apple-touch-icon" href="https://searchmovie.win/images/icon.png">
                 <link rel="icon" type="image/x-icon" href="/images/icon.png">
                 <link rel="stylesheet" href="/css/style.css">
+                <link rel="preconnect" href="https://image.tmdb.org">
+                <link rel="preconnect" href="https://fonts.googleapis.com">
+                <link rel="preconnect" href="https://cdnjs.cloudflare.com">
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
                 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-                <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
                 <script type="application/ld+json">
                     {
                     "@context": "https://schema.org",
@@ -225,240 +238,179 @@ app.get('/', async (req,res) => {
                                 <h2>| Trending Movies</h2>
                                 <button type="button" class="slide-btn left" onclick="scrollGrid('movie-grid', -300)">❮</button>
                             <div id="movie-grid" class="popular-movie-grid">
-
     `;
 
-    try {
-        const api_key = process.env.TMDB_API_KEY;
-        const page = Number(req.query.page) || 1;
-        const apiUrl = `https://api.themoviedb.org/3/movie/popular?api_key=${api_key}&language=en-US&page=${page}`;
-        const apiRes = await fetch(apiUrl, { method: 'GET', headers: { accept: 'application/json' } });
-        
-        if (!apiRes.ok) {
-            return res.status(apiRes.status).send(`<h2>API Error: Status ${apiRes.status}</h2>`);
-        }
-        
-        const apiData = await apiRes.json();
-        const popularMovies = apiData.results;
-
-        for (const movie of popularMovies) {
-            const movieTitle = movie.title;
-            const posterPath = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'images/icon.png';
-            const dateString = movie.release_date || ""
-            const releaseYear = dateString ? dateString.substring(0, 4) : "N/A";
-            const rating = movie.vote_average ? Number(movie.vote_average).toFixed(1) : "N/A";
+    // Trending Movies Section
+    for (const movie of moviesData.results || []) {
+        const movieTitle = movie.title;
+        const posterPath = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'images/icon.png';
+        const dateString = movie.release_date || ""
+        const releaseYear = dateString ? dateString.substring(0, 4) : "N/A";
+        const rating = movie.vote_average ? Number(movie.vote_average).toFixed(1) : "N/A";
 
 
-            html += `
-                    <div class="popular-movie-card" onclick="window.location.href='/media/movie/${movie.id}'">
-                        <div class="popular-poster-container"> 
-                            <img class="popular-movie-img" src="${posterPath}" alt="${movieTitle} poster">
-                            <div class="play-overlay">
-                                <div class="play-icon">▶</div>
-                            </div>
-                        </div>
-                        <div class="movieInfo">
-                            <p class="movieTitleText">${movieTitle}</p>
-                            <p class="movieReleaseYear">${releaseYear}</p>
-                            <div class="starrt-container">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="star">
-                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                                    <span class="star-rating">${rating}</span>
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-            `;
-        }
         html += `
-                    <button type="button" class="slide-btn right" onclick="scrollGrid('movie-grid', 300)">❯</button>
-                </div>
-            </div>`;
-
-    } catch (err) {
-        console.log("API ERROR FOR POPULAR MOVIES: ", err);
-    }  
-
-
-    try {
-        const api_key = process.env.TMDB_API_KEY;
-        const page = Number(req.query.page) || 1;
-        const apiUrl = `https://api.themoviedb.org/3/tv/popular?api_key=${api_key}&language=en-US&page=${page}`;
-        const apiRes = await fetch(apiUrl, { method: 'GET', headers: { accept: 'application/json' } });
-        
-        if (!apiRes.ok) {
-            return res.status(apiRes.status).send(`<h2>API Error: Status ${apiRes.status}</h2>`);
-        }
-
-        html+= ` <div id="popular-movie">
-                            <div id="show-section" class="slider-container">
-                                <h2>| Trending Shows</h2>
-                                <button type="button" class="slide-btn left" onclick="scrollGrid('show-grid', -300)">❮</button>
-                            <div id="show-grid" class="popular-movie-grid">`;
-        
-        const apiData = await apiRes.json();
-        const popularSeries = apiData.results;
-
-        for (const series of popularSeries) {
-            const seriesTitle = series.name;
-            const posterPath = series.poster_path ? `https://image.tmdb.org/t/p/w500${series.poster_path}` : 'images/icon.png';
-            const dateString = series.first_air_date || ""
-            const releaseYear = dateString ? dateString.substring(0, 4) : "N/A";
-            const rating = series.vote_average ? Number(series.vote_average).toFixed(1) : "N/A";
-
-
-            html += `
-                    <div class="popular-movie-card" onclick="window.location.href='/media/tv/${series.id}'">
-                        <div class="popular-poster-container"> 
-                            <img class="popular-movie-img" src="${posterPath}" alt="${seriesTitle} poster">
-                            <div class="play-overlay">
-                                <div class="play-icon">▶</div>
-                            </div>
-                        </div>
-                        <div class="movieInfo">
-                            <p class="movieTitleText">${seriesTitle}</p>
-                            <p class="movieReleaseYear">${releaseYear}</p>
-                            <div class="starrt-container">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="star">
-                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                                    <span class="star-rating">${rating}</span>
-                                </svg>
-                            </div>
+                <div class="popular-movie-card" onclick="window.location.href='/media/movie/${movie.id}'">
+                    <div class="popular-poster-container"> 
+                        <img class="popular-movie-img" src="${posterPath}" alt="${movieTitle} poster">
+                        <div class="play-overlay">
+                            <div class="play-icon">▶</div>
                         </div>
                     </div>
-            `;
-        }
-
-
-        html+= `
-                    <button type="button" class="slide-btn right" onclick="scrollGrid('show-grid', 300)">❯</button>
-                </div>
-            </div>`
-
-    } catch (err) {
-        console.log("API ERROR FOR POPULAR MOVIES: ", err);
-    }  
-
-    try {
-        const api_key = process.env.TMDB_API_KEY;
-        const page = Number(req.query.page) || 1;
-        const apiUrl = `https://api.themoviedb.org/3/trending/all/day?api_key=${api_key}&language=en-US&page=${page}`;
-        const apiRes = await fetch(apiUrl, { method: 'GET', headers: { accept: 'application/json' } });
-        
-        if (!apiRes.ok) {
-            return res.status(apiRes.status).send(`<h2>API Error: Status ${apiRes.status}</h2>`);
-        }
-
-        html+= ` <div id="popular-movie">
-                            <div id="show-section" class="slider-container">
-                                <h2>| Trending Today</h2>
-                                <button type="button" class="slide-btn left" onclick="scrollGrid('td-grid', -300)">❮</button>
-                            <div id="td-grid" class="popular-movie-grid">`;
-        
-        const apiData = await apiRes.json();
-        const ttToday = apiData.results;
-
-        for (const trendingM of ttToday) {
-            const mediaTypeTD = trendingM.media_type;
-            const seriesTitle = mediaTypeTD == "movie" ? trendingM.title : trendingM.name;
-            const posterPath = trendingM.poster_path ? `https://image.tmdb.org/t/p/w500${trendingM.poster_path}` : 'images/icon.png';
-            const dateString = mediaTypeTD == "movie" ? trendingM.release_date : trendingM.first_air_date;
-            const releaseYear = dateString ? dateString.substring(0, 4) : "N/A";
-            const rating = trendingM.vote_average ? Number(trendingM.vote_average).toFixed(1) : "N/A";
-
-
-            html += `
-                    <div class="popular-movie-card" onclick="window.location.href='/media/${mediaTypeTD}/${trendingM.id}'">
-                        <div class="popular-poster-container"> 
-                            <img class="popular-movie-img" src="${posterPath}" alt="${seriesTitle} poster">
-                            <div class="play-overlay">
-                                <div class="play-icon">▶</div>
-                            </div>
-                        </div>
-                        <div class="movieInfo">
-                            <p class="movieTitleText">${seriesTitle}</p>
-                            <p class="movieReleaseYear">${releaseYear}</p>
-                            <p class="mediaTypeInfo">${mediaTypeTD == "movie" ? "Movie" : "TV"}</p>
-                            <div class="starrt-container">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="star">
-                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                                    <span class="star-rating">${rating}</span>
-                                </svg>
-                            </div>
+                    <div class="movieInfo">
+                        <p class="movieTitleText">${movieTitle}</p>
+                        <p class="movieReleaseYear">${releaseYear}</p>
+                        <div class="starrt-container">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="star">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                <span class="star-rating">${rating}</span>
+                            </svg>
                         </div>
                     </div>
-            `;
-        }
-
-        html+= `
-                    <button type="button" class="slide-btn right" onclick="scrollGrid('td-grid', 300)">❯</button>
                 </div>
-            </div>`
+        `;
+    }
+    html += `
+                <button type="button" class="slide-btn right" onclick="scrollGrid('movie-grid', 300)">❯</button>
+            </div>
+        </div>`;
 
-    } catch (err) {
-        console.log("API ERROR FOR POPULAR MOVIES: ", err);
-    }  
+    // End of Trending Movies Section
 
-     try {
-        const api_key = process.env.TMDB_API_KEY;
-        const page = Number(req.query.page) || 1;
-        const apiUrl = `https://api.themoviedb.org/3/tv/airing_today?api_key=${api_key}`;
-        const apiRes = await fetch(apiUrl, { method: 'GET', headers: { accept: 'application/json' } });
-        
-        if (!apiRes.ok) {
-            return res.status(apiRes.status).send(`<h2>API Error: Status ${apiRes.status}</h2>`);
-        }
+    // Trending Shows Section
+     html+= ` <div id="popular-movie">
+                        <div id="show-section" class="slider-container">
+                            <h2>| Trending Shows</h2>
+                            <button type="button" class="slide-btn left" onclick="scrollGrid('show-grid', -300)">❮</button>
+                        <div id="show-grid" class="popular-movie-grid">`;
 
-        html+= ` <div id="popular-movie">
-                            <div id="show-section" class="slider-container">
-                                <a href="/airing" id="air-td-link"<h2 class="airtdHead">| Airing Today ⬈</h2></a>
-                                <button type="button" class="slide-btn left" onclick="scrollGrid('airtd-grid', -300)">❮</button>
-                            <div id="airtd-grid" class="popular-movie-grid">`;
-        
-        const apiData = await apiRes.json();
-        const airingTd = apiData.results;
-
-        for (const air of airingTd) {
-            const mediaTypeTD = air.media_type;
-            const seriesTitle = air.name;
-            const posterPath = air.poster_path ? `https://image.tmdb.org/t/p/w500${air.poster_path}` : 'images/icon.png';
-            const dateString = air.first_air_date;
-            const releaseYear = dateString ? dateString.substring(0, 4) : "N/A";
-            const rating = air.vote_average ? Number(air.vote_average).toFixed(1) : "N/A";
+    for (const series of seriesData.results || []) {
+        const seriesTitle = series.name;
+        const posterPath = series.poster_path ? `https://image.tmdb.org/t/p/w500${series.poster_path}` : 'images/icon.png';
+        const dateString = series.first_air_date || ""
+        const releaseYear = dateString ? dateString.substring(0, 4) : "N/A";
+        const rating = series.vote_average ? Number(series.vote_average).toFixed(1) : "N/A";
 
 
-            html += `
-                    <div class="popular-movie-card" onclick="window.location.href='/media/tv/${air.id}'">
-                        <div class="popular-poster-container"> 
-                            <img class="popular-movie-img" src="${posterPath}" alt="${seriesTitle} poster">
-                            <div class="play-overlay">
-                                <div class="play-icon">▶</div>
-                            </div>
-                        </div>
-                        <div class="movieInfo">
-                            <p class="movieTitleText">${seriesTitle}</p>
-                            <p class="movieReleaseYear">${releaseYear}</p>
-                            <div class="starrt-container">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="star">
-                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                                    <span class="star-rating">${rating}</span>
-                                </svg>
-                            </div>
+        html += `
+                <div class="popular-movie-card" onclick="window.location.href='/media/tv/${series.id}'">
+                    <div class="popular-poster-container"> 
+                        <img class="popular-movie-img" src="${posterPath}" alt="${seriesTitle} poster">
+                        <div class="play-overlay">
+                            <div class="play-icon">▶</div>
                         </div>
                     </div>
-            `;
-        }
-
-        html+= `
-                    <button type="button" class="slide-btn right" onclick="scrollGrid('airtd-grid', 300)">❯</button>
+                    <div class="movieInfo">
+                        <p class="movieTitleText">${seriesTitle}</p>
+                        <p class="movieReleaseYear">${releaseYear}</p>
+                        <div class="starrt-container">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="star">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                <span class="star-rating">${rating}</span>
+                            </svg>
+                        </div>
+                    </div>
                 </div>
-            </div>`
-
-    } catch (err) {
-        console.log("API ERROR FOR POPULAR MOVIES: ", err);
-    }  
+        `;
+    }
 
 
+    html+= `
+                <button type="button" class="slide-btn right" onclick="scrollGrid('show-grid', 300)">❯</button>
+            </div>
+        </div>`
+    //End of Trending Shows Section
+    
+    // Trending Today Section
+    html+= ` <div id="popular-movie">
+                        <div id="show-section" class="slider-container">
+                            <h2>| Trending Today</h2>
+                            <button type="button" class="slide-btn left" onclick="scrollGrid('td-grid', -300)">❮</button>
+                        <div id="td-grid" class="popular-movie-grid">`;
+
+    for (const trendingM of trendingData.results || []) {
+        const mediaTypeTD = trendingM.media_type;
+        const seriesTitle = mediaTypeTD == "movie" ? trendingM.title : trendingM.name;
+        const posterPath = trendingM.poster_path ? `https://image.tmdb.org/t/p/w500${trendingM.poster_path}` : 'images/icon.png';
+        const dateString = mediaTypeTD == "movie" ? trendingM.release_date : trendingM.first_air_date;
+        const releaseYear = dateString ? dateString.substring(0, 4) : "N/A";
+        const rating = trendingM.vote_average ? Number(trendingM.vote_average).toFixed(1) : "N/A";
+
+
+        html += `
+                <div class="popular-movie-card" onclick="window.location.href='/media/${mediaTypeTD}/${trendingM.id}'">
+                    <div class="popular-poster-container"> 
+                        <img class="popular-movie-img" src="${posterPath}" alt="${seriesTitle} poster">
+                        <div class="play-overlay">
+                            <div class="play-icon">▶</div>
+                        </div>
+                    </div>
+                    <div class="movieInfo">
+                        <p class="movieTitleText">${seriesTitle}</p>
+                        <p class="movieReleaseYear">${releaseYear}</p>
+                        <p class="mediaTypeInfo">${mediaTypeTD == "movie" ? "Movie" : "TV"}</p>
+                        <div class="starrt-container">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="star">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                <span class="star-rating">${rating}</span>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+        `;
+    }
+
+    html+= `
+                <button type="button" class="slide-btn right" onclick="scrollGrid('td-grid', 300)">❯</button>
+            </div>
+        </div>`
+    
+    // End of Trending Today Section
+
+    // Airing Today Section
+    html+= ` <div id="popular-movie">
+                        <div id="show-section" class="slider-container">
+                            <a href="/airing" id="air-td-link"<h2 class="airtdHead">| Airing Today ⬈</h2></a>
+                            <button type="button" class="slide-btn left" onclick="scrollGrid('airtd-grid', -300)">❮</button>
+                        <div id="airtd-grid" class="popular-movie-grid">`;
+    
+
+    for (const air of airingData.results || []) {
+        const mediaTypeTD = air.media_type;
+        const seriesTitle = air.name;
+        const posterPath = air.poster_path ? `https://image.tmdb.org/t/p/w500${air.poster_path}` : 'images/icon.png';
+        const dateString = air.first_air_date;
+        const releaseYear = dateString ? dateString.substring(0, 4) : "N/A";
+        const rating = air.vote_average ? Number(air.vote_average).toFixed(1) : "N/A";
+
+
+        html += `
+                <div class="popular-movie-card" onclick="window.location.href='/media/tv/${air.id}'">
+                    <div class="popular-poster-container"> 
+                        <img class="popular-movie-img" src="${posterPath}" alt="${seriesTitle} poster">
+                        <div class="play-overlay">
+                            <div class="play-icon">▶</div>
+                        </div>
+                    </div>
+                    <div class="movieInfo">
+                        <p class="movieTitleText">${seriesTitle}</p>
+                        <p class="movieReleaseYear">${releaseYear}</p>
+                        <div class="starrt-container">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="star">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                <span class="star-rating">${rating}</span>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+        `;
+    }
+
+    html+= `
+                <button type="button" class="slide-btn right" onclick="scrollGrid('airtd-grid', 300)">❯</button>
+            </div>
+        </div>`
+    // End of Airing Today Section
 
    html+= `
             </div>
@@ -577,11 +529,14 @@ app.get("/results", async (req,res) => {
                 <meta name="twitter:title" content="SearchMovie - Movie & TV Discovery">
                 <meta name="twitter:description" content="Discover, search, and track your favorite movies and TV shows.">
                 <meta name="twitter:image" content="https://searchmovie.win/images/icon.png">
-
+                
                 <link rel="icon" type="image/png" href="https://searchmovie.win/images/icon.png">
                 <link rel="apple-touch-icon" href="https://searchmovie.win/images/icon.png">
                 <link rel = "stylesheet" href= "/css/style.css">
                 <link rel="icon" type="image/x-icon" href="/images/icon.png">
+                <link rel="preconnect" href="https://image.tmdb.org">
+                <link rel="preconnect" href="https://fonts.googleapis.com">
+                <link rel="preconnect" href="https://cdnjs.cloudflare.com">
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
                 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
             </head>
@@ -838,6 +793,9 @@ app.get("/discover", async(req, res) => {
                 <link rel="apple-touch-icon" href="https://searchmovie.win/images/icon.png">
                 <link rel="icon" type="image/x-icon" href="/images/icon.png">
                 <link rel = "stylesheet" href= "/css/style.css">
+                <link rel="preconnect" href="https://image.tmdb.org">
+                <link rel="preconnect" href="https://fonts.googleapis.com">
+                <link rel="preconnect" href="https://cdnjs.cloudflare.com">
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
                 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
@@ -1011,6 +969,9 @@ app.get("/airing", async (req,res)=>{
             <link rel="apple-touch-icon" href="https://searchmovie.win/images/icon.png">
             <link rel="icon" type="image/x-icon" href="/images/icon.png">
             <link rel = "stylesheet" href= "/css/style.css">
+            <link rel="preconnect" href="https://image.tmdb.org">
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://cdnjs.cloudflare.com">
             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         </head>
@@ -1185,6 +1146,9 @@ app.get("/my-watchlist", redirectLogin, async (req, res) => {
             <title>My Watchlist</title>
             <link rel="stylesheet" href="/css/style.css">
             <link rel="icon" type="image/x-icon" href="/images/icon.png">
+            <link rel="preconnect" href="https://image.tmdb.org">
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://cdnjs.cloudflare.com">
             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         </head>
