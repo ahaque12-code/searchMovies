@@ -178,7 +178,7 @@ body{
   padding: 5px;
   width: 280px;
   z-index: 10;
-  border-radius: 5px;
+  border-radius: 15px;
   top: 125%;
   left: auto;
   right: -100%;
@@ -290,7 +290,7 @@ body{
 #movieName:focus{
   outline: none;
   border-color: rgb(60, 205, 12);
-  box-shadow: inset 0 1px 4px #18580e, 0 3px 20px 2px #104e08;
+  box-shadow: 0 1px 4px #18580e inset, 0 3px 20px 2px #104e08 !important;
 }
 
 #srchImg{
