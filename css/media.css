@@ -246,6 +246,37 @@ body{
     max-width: 800px;
 }
 
+#player-content{
+    width:90%; 
+    max-width:950px; 
+    max-height:90vh; 
+    overflow-y:auto; 
+    background:#1a1a1a; 
+    border-radius:12px; 
+    padding:24px; 
+    box-sizing:border-box;
+}
+
+#player-title-box{
+    display:flex; 
+    justify-content:space-between; 
+    align-items:center; 
+    margin-bottom:16px;
+}
+
+#player-title{
+    color:white; 
+    margin:0; 
+    font-size:16px;
+}
+
+#closeBtn{
+    font-size:28px; 
+    cursor:pointer; 
+    color:white; 
+    line-height:1;
+}
+
 .close {
     color: white; font-size: 30px; cursor: pointer; float: right;
 }
@@ -253,6 +284,121 @@ body{
 .close:hover {
     color: #e50914 !important;
     transition: color 0.15s;
+}
+
+#vidlink-player{
+    margin-bottom:20px; 
+    border-radius:8px; 
+    overflow:hidden;
+}
+
+#season-episode-box{
+    display:flex; 
+    align-items:center; 
+    gap:12px; 
+    margin-bottom:16px; 
+    flex-wrap:wrap;
+}
+
+#season-select{
+    background:#2a2a2a; 
+    color:white; 
+    border:1px solid #555; padding:8px 14px; 
+    border-radius:8px; 
+    font-size:14px; 
+    cursor:pointer;
+}
+
+#episode-grid{
+    display:grid; 
+    grid-template-columns:repeat(auto-fill, minmax(155px,1fr)); 
+    gap:12px; 
+    max-height:340px; 
+    overflow-y:auto; 
+    padding-right:4px;
+}
+
+.episode-card{
+    background:#222; 
+    border-radius:10px; 
+    overflow:hidden; 
+    cursor:pointer;
+    border:2px solid transparent; 
+    transition:border 0.15s, transform 0.15s;
+}
+
+.episode-card:hover {
+    border-color: #e50914;
+    transform: scale(1.02);
+}
+
+.episode-thumb{
+    width:100%; 
+    height:88px; 
+    object-fit:cover; 
+    display:block;
+}
+
+.episode-overlay{
+    position:absolute; inset:0; 
+    background:rgba(0,0,0,0.45); 
+    display:flex;
+    align-items:center; 
+    justify-content:center;
+    opacity:0; 
+    transition:opacity 0.15s;
+}
+
+.episode-card:hover .episode-overlay {
+    opacity: 1;
+}
+
+.episode-badge{
+    position: absolute;
+    top: 5px;
+    background: rgba(0, 0, 0, 0.75);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.episode-badge.left {
+    left: 5px;
+    color: white;
+    font-weight: 600;
+}
+
+.episode-badge.right {
+    right: 5px;
+    color: #f5c518;
+}
+
+.episode-info{
+    padding: 8px 10px;
+
+}
+
+.episode-title{
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    margin: 0 0 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.episode-date{
+    color: #666;
+    font-size: 10px;
+    margin: 0 0 4px;
+}
+
+.episode-overview{
+    color: #888;
+    font-size: 10px;
+    margin: 0;
+    line-height: 1.4;
 }
 
 .watch-providers {

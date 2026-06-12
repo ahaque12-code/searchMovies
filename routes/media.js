@@ -416,23 +416,21 @@ router.get("/:type/:id", async (req,res)=>{
 
 
                                 <div id="playerModal" class="modal">
-                                    <div class="modal-content" style="width:90%; max-width:950px; max-height:90vh; overflow-y:auto; background:#1a1a1a; border-radius:12px; padding:24px; box-sizing:border-box;">
-                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                                            <h3 style="color:white; margin:0; font-size:16px;" id="player-title">Now Playing</h3>
-                                            <span class="close" onclick="closePlayer()" style="font-size:28px; cursor:pointer; color:white; line-height:1;">&times;</span>
+                                    <div class="modal-content" id="player-content">
+                                        <div id="player-title-box">
+                                            <h3 id="player-title">Now Playing</h3>
+                                            <span class="close" onclick="closePlayer()" id="closeBtn">&times;</span>
                                         </div>
 
-                                        <div id="vidlink-player" style="margin-bottom:20px; border-radius:8px; overflow:hidden;"></div>
+                                        <div id="vidlink-player"></div>
 
                                         <div id="season-episode-picker" style="display:none;">
-                                            <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
-                                                <select id="season-select" onchange="handleSeasonChange(this.value)"
-                                                    style="background:#2a2a2a; color:white; border:1px solid #555; padding:8px 14px; border-radius:8px; font-size:14px; cursor:pointer;">
+                                            <div id="season-episode-box">
+                                                <select id="season-select" onchange="handleSeasonChange(this.value)">
                                                 </select>
                                                 <span style="color:#aaa; font-size:13px;" id="episode-count"></span>
                                             </div>
-                                            <div id="episode-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(155px,1fr)); gap:12px; max-height:340px; overflow-y:auto; padding-right:4px;">
-                                            </div>
+                                            <div id="episode-grid"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -593,39 +591,25 @@ router.get("/:type/:id", async (req,res)=>{
                             const airDate = ep.air_date ? ep.air_date.substring(0, 7) : '';
 
                             return \`
-                                <div onclick="playEpisode(\${seasonNum}, \${ep.episode_number})"
-                                    style="background:#222; border-radius:10px; overflow:hidden; cursor:pointer;
-                                        border:2px solid transparent; transition:border 0.15s, transform 0.15s;"
-                                    onmouseover="this.style.borderColor='#e50914'; this.style.transform='scale(1.02)'"
-                                    onmouseout="this.style.borderColor='transparent'; this.style.transform='scale(1)'">
+                                <div class="episode-card" onclick="playEpisode(\${seasonNum}, \${ep.episode_number})">
                                     <div style="position:relative;">
-                                        <img src="\${thumb}" alt="\${name}"
-                                            style="width:100%; height:88px; object-fit:cover; display:block;">
-                                        <div style="position:absolute; inset:0; background:rgba(0,0,0,0.45); 
-                                                    display:flex; align-items:center; justify-content:center;
-                                                    opacity:0; transition:opacity 0.15s;"
-                                            onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">
+                                        <img src="\${thumb}" alt="\${name}" class="episode-thumb">
+                                        <div class="episode-overlay">
                                             <span style="font-size:26px;">▶</span>
                                         </div>
-                                        <span style="position:absolute; top:5px; left:5px; background:rgba(0,0,0,0.75);
-                                                    color:white; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:600;">
-                                            E\${ep.episode_number}
-                                        </span>
-                                        <span style="position:absolute; top:5px; right:5px; background:rgba(0,0,0,0.75);
-                                                    color:#f5c518; font-size:10px; padding:2px 6px; border-radius:4px;">
-                                            ⭐ \${rating}
-                                        </span>
+                                        <span class="episode-badge left">E\${ep.episode_number}</span>
+                                        <span class="episode-badge right">⭐ \${rating}</span>
                                     </div>
-                                    <div style="padding:8px 10px;">
-                                        <p style="color:white; font-size:11px; font-weight:600; margin:0 0 3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">\${name}</p>
-                                        \${airDate ? \`<p style="color:#666; font-size:10px; margin:0 0 4px;">\${airDate}</p>\` : ''}
-                                        <p style="color:#888; font-size:10px; margin:0; line-height:1.4;">\${overview}</p>
+                                    <div class="episode-info">
+                                        <p class="episode-title">\${name}</p>
+                                        \${airDate ? \`<p class="episode-date">\${airDate}</p>\` : ''}
+                                        <p class="episode-overview">\${overview}</p>
                                     </div>
                                 </div>\`;
                         }).join('');
                     }
 
-                   function playEpisode(season, episode) {
+                    function playEpisode(season, episode) {
                         document.getElementById('player-title').innerText = \`${escapedTitle} — S\${String(season).padStart(2,'0')}E\${String(episode).padStart(2,'0')}\`;
                         document.getElementById('vidlink-player').innerHTML =
                             \`<iframe width="100%" height="450" src="https://vidlink.pro/tv/\${currentShowId}/\${season}/\${episode}"
