@@ -609,7 +609,7 @@ router.get("/:type/:id", async (req,res)=>{
 
                     function getEpisodeSrc(source, season, episode) {
                         if (isAnime && malId) {
-                            return \`https://player.vidplus.to/embed/anime/\${malId}/\${episode}?dub=\${currentSubDub === "sub" ? 'false' : 'true'}\`
+                            return \`https://megaplay.buzz/stream/mal/\${malId}/\${episode}/\${currentSubDub}\`;
                         }
 
                         if (source === 'vidsrcembed') return \`https://vidsrc-embed.ru/embed/tv/\${currentImdbId}/\${season}-\${episode}\`;

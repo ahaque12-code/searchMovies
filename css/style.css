@@ -592,6 +592,7 @@ body{
   color: rgba(49, 232, 162, 0.94);
   font-size: 26px;
   font-weight: bold;
+  text-decoration: none;
   margin-bottom: 10px;
 }
 
@@ -1511,6 +1512,7 @@ button{
     margin: 0;
     width: 100vw;
     row-gap:46px;
+    margin-left: 25px;
   }
 
   .movie-card {
