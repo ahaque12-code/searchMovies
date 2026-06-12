@@ -170,6 +170,7 @@ router.get("/:type/:id", async (req,res)=>{
         return `https://anizone.to/anime?search=${query}`;
     }
 
+    let malId = null;
 
     try{
         const [detailsRes, providersRes, videoRes] = await Promise.all([
@@ -298,6 +299,33 @@ router.get("/:type/:id", async (req,res)=>{
             })
         }
 
+       if (isAnime) {
+            try {
+                const query = `
+                    query ($search: String) {
+                        Media(search: $search, type: ANIME) {
+                            id
+                            idMal
+                            title {
+                                romaji
+                                english
+                            }
+                        }
+                    }
+                `;
+                const malRes = await fetch('https://graphql.anilist.co', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, variables: { search: title } })
+                });
+                const malData = await malRes.json();
+                malId = malData.data?.Media?.idMal || null;
+                console.log(`MAL ID for ${title}:`, malId);
+            } catch {
+                malId = null;
+            }
+        }
+
        const secretLinksHtml = links.map(link => 
             `<li><a href="${link.url}" target="_blank" rel="noopener noreferrer" class="secret-link">${link.name}</a></li>`
         ).join('');
@@ -328,6 +356,7 @@ router.get("/:type/:id", async (req,res)=>{
                     <link rel="stylesheet" href="/css/media.css">
                     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
                     <link rel="icon" type="image/x-icon" href="/images/icon.png">
+                    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
                     <title>${title} (${year}) - SearchMovie</title>
                     <style>
                         .details-hero {
@@ -538,23 +567,126 @@ router.get("/:type/:id", async (req,res)=>{
 
                     let currentShowId = '${id}';
                     let currentType = '${type}';
+                    let currentSource = 'vidlink';
+                    let currentSubDub = 'sub';
+                    let currentSeason = null;
+                    let currentEpisode = null;
+                    const currentTitle = '${escapedTitle}';
+                    const currentImdbId = '${imdbId || ''}';
+                    const malId = ${malId || 'null'};
+                    const isAnime = ${isAnime ? 'true' : 'false'};
+                    const seasonsData = ${JSON.stringify((data.seasons || []).filter(s => s.season_number > 0))};
+
+
+
 
                     function openPlayer() {
-                        const modal = document.getElementById('playerModal');
-                        modal.style.display = "flex";
-
+                        currentSource = 'vidlink';
+                        currentSubDub = 'sub';
+                        document.getElementById('playerModal').style.display = 'flex';
                         if (currentType === 'movie') {
-                            document.getElementById('player-title').innerText = '${escapedTitle}';
+                            document.getElementById('player-title').innerText = currentTitle;
                             document.getElementById('season-episode-picker').style.display = 'none';
-                            document.getElementById('vidlink-player').innerHTML =
-                                \`<iframe width="100%" height="450" src="https://vidlink.pro/movie/\${currentShowId}" frameborder="0" allowfullscreen referrerpolicy="origin"></iframe>\`;
+                            renderIframe(getMovieSrc(currentSource));
                         } else {
                             document.getElementById('season-episode-picker').style.display = 'block';
                             document.getElementById('vidlink-player').innerHTML =
+                                renderSwitcher() +
                                 \`<div style="height:180px; display:flex; align-items:center; justify-content:center; color:#777; background:#111; border-radius:8px; font-size:14px;">
                                     Select an episode below to start watching
                                 </div>\`;
                             loadSeasons();
+                        }
+                    }
+
+                   function getMovieSrc(source) {
+                        if (source === 'vidsrcembed') return \`https://vidsrc-embed.ru/embed/movie/\${currentImdbId}\`;
+                        if (source === 'videasy') return \`https://player.videasy.net/movie/\${currentShowId}\`;
+                        if (source === 'multiembed') return \`https://multiembed.mov/?video_id=\${currentShowId}&tmdb=1\`;
+
+                        return \`https://vidlink.pro/movie/\${currentShowId}\`;
+                    }
+
+                    function getEpisodeSrc(source, season, episode) {
+                        if (isAnime && malId) {
+                            return \`https://player.vidplus.to/embed/anime/\${malId}/\${episode}?dub=\${currentSubDub === "sub" ? 'false' : 'true'}\`
+                        }
+
+                        if (source === 'vidsrcembed') return \`https://vidsrc-embed.ru/embed/tv/\${currentImdbId}/\${season}-\${episode}\`;
+                        if (source === 'videasy') return \`https://player.videasy.net/tv/\${currentShowId}/\${season}/\${episode}\`;
+                        if (source === 'multiembed') return \`https://multiembed.mov/?video_id=\${currentShowId}&tmdb=1&s=\${season}&e=\${episode}\`;
+
+                        return \`https://vidlink.pro/tv/\${currentShowId}/\${season}/\${episode}\`;
+                    }
+
+                    function renderSwitcher() {
+                    if (isAnime && malId) {
+                        return \`
+                            <div id="server-box">
+                                <p style="color:#aaa; font-size:12px; margin:0 0 8px; text-transform:uppercase; letter-spacing:1px;">
+                                    <i class="fa-solid fa-language" style="margin-right:6px; color:#e50914;"></i>Audio
+                                </p>
+                                \${['sub', 'dub'].map(t => \`
+                                    <button class="serverBtn" onclick="switchSource('\${t}')"
+                                        style="background:\${currentSubDub === t ? '#e50914' : '#2a2a2a'};">
+                                        \${t === 'sub' ? 'Sub' : 'Dub'}
+                                    </button>\`).join('')}
+                            </div>\`;
+                    }
+                        const sources = [
+                            { id: 'vidlink', label: 'Server 1' },
+                            { id: 'videasy', label: 'Server 2' },
+                            ...(currentImdbId ? [{ id: 'vidsrcembed', label: 'Sever 3' }] : []),
+                            { id: 'multiembed', label: 'Server 4' },
+                        ];
+
+                        return \`
+                           <div id="server-box">
+                                \${sources.map(s => \`
+                                    <button class="serverBtn" onclick="switchSource('\${s.id}')" 
+                                    style="background:\${currentSource === s.id ? '#e50914' : '#2a2a2a'};">
+                                    <i class="fa-solid fa-server" style="margin-right:6px;"></i>\${s.label}
+                                    </button>\`).join('')}
+                            </div>\`;
+                    }
+
+                    function renderIframe(src) {
+                        document.getElementById('vidlink-player').innerHTML =
+                            renderSwitcher() +
+                            \`<iframe width="100%" height="450" src="\${src}" frameborder="0" allowfullscreen referrerpolicy="origin"></iframe>\`;
+                    }
+
+                    function switchSource(source) {
+                        if (isAnime && malId) {
+                            currentSubDub = source;
+                            if (currentEpisode) {
+                                renderIframe(getEpisodeSrc(null, null, currentEpisode));
+                            } else {
+                                document.getElementById('vidlink-player').innerHTML =
+                                    renderSwitcher() +
+                                    \`<div style="height:180px; display:flex; align-items:center; justify-content:center; color:#777; background:#111; border-radius:8px; font-size:14px;">
+                                        Select an episode below to start watching
+                                    </div>\`;
+                            }
+                            return;
+                        }
+
+                        currentSource = source;
+
+                        if (currentType === 'movie') {
+                            renderIframe(getMovieSrc(source));
+                        } else if (currentSeason && currentEpisode) {
+                            // re-render with same episode on new source
+                            document.getElementById('player-title').innerText =
+                                \`\${currentTitle} — S\${String(currentSeason).padStart(2,'0')}E\${String(currentEpisode).padStart(2,'0')}\`;
+                            renderIframe(getEpisodeSrc(source, currentSeason, currentEpisode));
+                        } else {
+                            // no episode selected yet, just swap switcher highlight
+                            document.getElementById('vidlink-player').innerHTML =
+                                renderSwitcher() +
+                                \`<div style="height:180px; display:flex; align-items:center; justify-content:center; color:#777; background:#111; border-radius:8px; font-size:14px;">
+                                    Select an episode below to start watching
+                                </div>\`;
                         }
                     }
 
@@ -571,7 +703,6 @@ router.get("/:type/:id", async (req,res)=>{
                         document.getElementById('episode-count').innerText = '';
                         document.getElementById('episode-grid').innerHTML =
                             \`<div style="color:#aaa; grid-column:1/-1; text-align:center; padding:30px;">Loading...</div>\`;
-
                         const res = await fetch(\`/media/api/season?id=\${currentShowId}&season=\${seasonNum}\`);
                         const data = await res.json();
                         renderEpisodes(data.episodes || [], seasonNum);
@@ -610,16 +741,26 @@ router.get("/:type/:id", async (req,res)=>{
                     }
 
                     function playEpisode(season, episode) {
-                        document.getElementById('player-title').innerText = \`${escapedTitle} — S\${String(season).padStart(2,'0')}E\${String(episode).padStart(2,'0')}\`;
-                        document.getElementById('vidlink-player').innerHTML =
-                            \`<iframe width="100%" height="450" src="https://vidlink.pro/tv/\${currentShowId}/\${season}/\${episode}"
-                            frameborder="0" allowfullscreen referrerpolicy="origin"></iframe>\`;
-                        document.getElementById('playerModal').querySelector('.modal-content').scrollTop = 0;
+                        currentSeason = season;
+                        currentEpisode = episode;
+                        let absoluteEpisode = episode;
+                        if (isAnime && malId) {
+                            const prevSeasons = seasonsData.filter(s => s.season_number < season);
+                            const prevEpisodeCount = prevSeasons.reduce((sum, s) => sum + (s.episode_count || 0), 0);
+                            absoluteEpisode = prevEpisodeCount + episode;
+                        }
+
+                        document.getElementById('player-title').innerText =
+                            \`\${currentTitle} — S\${String(season).padStart(2,'0')}E\${String(episode).padStart(2,'0')}\`;
+                        renderIframe(getEpisodeSrc(currentSource, season, absoluteEpisode));
+                        document.getElementById('player-content').scrollTop = 0;
                     }
 
                     function closePlayer() {
-                        document.getElementById('playerModal').style.display = "none";
-                        document.getElementById('vidlink-player').innerHTML = "";
+                        document.getElementById('playerModal').style.display = 'none';
+                        document.getElementById('vidlink-player').innerHTML = '';
+                        currentSeason = null;
+                        currentEpisode = null;
                     }
 
         </script>

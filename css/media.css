@@ -409,6 +409,22 @@ body{
     margin-bottom:30px;
 }
 
+#server-box{
+    display:flex; 
+    gap:8px; 
+    margin-bottom:12px; 
+    flex-wrap:wrap;
+}
+
+.serverBtn{
+    color:white;
+    border:none; 
+    padding:6px 14px; 
+    border-radius:6px; 
+    cursor:pointer; 
+    font-size:13px;
+}
+
 .provider-logo {
     width: 50px;
     height: 50px;
@@ -421,7 +437,6 @@ body{
 }
 
 
-/* From Uiverse.io by zl306 */ 
 .switch {
   position: relative;
   display: flex;
