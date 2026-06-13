@@ -153,6 +153,32 @@ app.get('/', async (req,res) => {
             // fall back to unfiltered-by-anilist (keyword filter already applied if you keep it)
         }
     }
+
+    let airingAnime = [];
+    try {
+        const airingQuery = `
+            query {
+                Page(page: 1, perPage: 20) {
+                    media(type: ANIME, status: RELEASING, sort: POPULARITY_DESC, isAdult: ${req.session.nsfw ? 'true' : 'false'}) {
+                        idMal
+                        title { romaji english }
+                        coverImage { large }
+                        averageScore
+                        nextAiringEpisode { episode timeUntilAiring }
+                    }
+                }
+            }
+        `;
+        const ar = await fetch('https://graphql.anilist.co', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: airingQuery })
+        });
+        const ad = await ar.json();
+        airingAnime = ad.data?.Page?.media || [];
+    } catch (err) {
+        console.log('Airing anime fetch failed:', err.message);
+    }
     const firstBackdrop = moviesData.results?.find(m => m.backdrop_path)?.backdrop_path;
         
     let html = ` 
@@ -499,6 +525,50 @@ app.get('/', async (req,res) => {
         </div>
     </div>`;
 
+    html += `<div id="popular-movie">
+    <div id="show-section" class="slider-container">
+        <a href="/anime?filter=airing" id="air-td-link"><h2 class="airtdHead">| Airing Anime ⬈</h2></a>
+        <button type="button" class="slide-btn left" onclick="scrollGrid('airing-anime-grid', -300)">❮</button>
+        <div id="airing-anime-grid" class="popular-movie-grid">`;
+
+    for (const anime of airingAnime) {
+        const title = anime.title.english || anime.title.romaji || "Unknown";
+        const poster = anime.coverImage?.large || 'images/icon.png';
+        const rating = anime.averageScore ? (anime.averageScore / 10).toFixed(1) : "N/A";
+        const next = anime.nextAiringEpisode;
+        let countdown = "";
+        if (next) {
+            const days = Math.floor(next.timeUntilAiring / 86400);
+            const hours = Math.floor((next.timeUntilAiring % 86400) / 3600);
+            countdown = `Ep ${next.episode} • ${days}d ${hours}h`;
+        }
+        const searchTitle = anime.title.english || anime.title.romaji || "";
+        const cleanTitle = searchTitle.replace(/season\s*\d+/i, '').replace(/[-–—:]/g, ' ').replace(/\s+/g, ' ').trim();
+        const href = `/anime-go?title=${encodeURIComponent(cleanTitle)}`;
+        html += `
+            <div class="popular-movie-card" onclick="window.location.href='${href}'">
+                <div class="popular-poster-container">
+                    <img class="popular-movie-img" src="${poster}" alt="${title} poster">
+                    <div class="play-overlay"><div class="play-icon">▶</div></div>
+                </div>
+                <div class="movieInfo">
+                    <p class="movieTitleText">${title}</p>
+                    ${countdown ? `<p class="movieReleaseYear">${countdown}</p>` : ''}
+                    <div class="starrt-container">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="star">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            <span class="star-rating">${rating}</span>
+                        </svg>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    html += `
+            <button type="button" class="slide-btn right" onclick="scrollGrid('airing-anime-grid', 300)">❯</button>
+        </div>
+    </div>`;
+
    html+= `
             </div>
          </main>
@@ -551,7 +621,8 @@ app.get("/results", async (req,res) => {
     const api_key = process.env.TMDB_API_KEY;
     const page = Number(req.query.page) || 1;
     const searchLang = req.query.language || "";
-    const nsfwFlag = req.query.nsfw === 'true' ? '?nsfw=true' : '';
+    const allowAdult = req.session.nsfw === true;
+    const nsfwFlag = allowAdult ? '?nsfw=true' : '';
     let html;
 
     if (!searchMovie) {
@@ -1340,9 +1411,9 @@ app.get("/anime", async (req, res) => {
         const escapedTitle = title.replace(/'/g, "\\'");
         const escapedGenres = genreText.replace(/'/g, "\\'");
         const nsfwParam = allowAdult ? '&nsfw=true' : '';
-        const href = item.idMal
-            ? `/results?q=${encodeURIComponent(item.title.romaji)}${nsfwParam}`
-            : `/results?q=${encodeURIComponent(title)}${nsfwParam}`;
+        const searchTitle = item.title.english || item.title.romaji || title;
+        const cleanTitle = searchTitle.replace(/season\s*\d+/i, '').replace(/[-–—:]/g, ' ').replace(/\s+/g, ' ').trim();
+        const href = `/anime-go?title=${encodeURIComponent(cleanTitle)}`;
         const isFav = favoriteIds.includes(String(item.idMal)) ? 'active' : '';
         const isWatchlisted = watchlistIds.includes(String(item.idMal)) ? 'active' : '';
         const mediaTypeLabel = isMovie ? 'Movie' : 'TV Series';
@@ -1402,6 +1473,26 @@ app.get("/anime", async (req, res) => {
     </html>`;
 
     res.send(html);
+});
+
+app.get("/anime-go", async (req, res) => {
+    const api_key = process.env.TMDB_API_KEY;
+    const title = (req.query.title || "").trim();
+    if (!title) return res.redirect('/');
+
+    try {
+        const r = await fetch(`https://api.themoviedb.org/3/search/tv?api_key=${api_key}&query=${encodeURIComponent(title)}`);
+        const d = await r.json();
+        const results = d.results || [];
+        const hit = results.find(x => x.original_language === 'ja') || results[0];
+        if (hit) {
+            const nsfwFlag = req.session.nsfw ? '?nsfw=true' : '';
+            return res.redirect(`/media/tv/${hit.id}${nsfwFlag}`);
+        }
+        return res.redirect(`/results?q=${encodeURIComponent(title)}`);
+    } catch (err) {
+        return res.redirect(`/results?q=${encodeURIComponent(title)}`);
+    }
 });
 
 app.get("/toggle-nsfw", (req, res) => {
