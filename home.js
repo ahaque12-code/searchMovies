@@ -1302,6 +1302,7 @@ app.get("/anime", async (req, res) => {
     const perPage = 20;
     const genre = req.query.genre || '';
     const allowAdult = req.session.nsfw === true || req.query.nsfw === 'true';
+    const view = req.query.view === 'schedule' ? 'schedule' : 'grid';
 
     const sortMap = {
         popular: 'POPULARITY_DESC',
@@ -1313,6 +1314,12 @@ app.get("/anime", async (req, res) => {
     const isMovie = filter === 'movies';
     const isAiring = filter === 'airing';
 
+    const genres = ['Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Horror',
+    'Mahou Shoujo', 'Mecha', 'Music', 'Mystery', 'Psychological',
+    'Romance', 'Sci-Fi', 'Slice of Life', 'Sports', 'Supernatural', 'Thriller'];
+
+    const safeGenre = genres.includes(genre) ? genre : '';
+
     const anilistQuery = `
         query ($page: Int, $sort: [MediaSort])  {
             Page(page: $page, perPage: ${perPage}) {
@@ -1322,7 +1329,7 @@ app.get("/anime", async (req, res) => {
                     sort: $sort,
                     ${isAiring ? 'status: RELEASING,' : ''}
                     ${isMovie ? 'format: MOVIE,' : 'format_in: [TV, TV_SHORT, ONA, OVA],'}
-                    ${genre ? `genre_in: ["${genre}"],` : ''}
+                    ${safeGenre ? `genre_in: ["${safeGenre}"],` : ''}
                     isAdult: ${allowAdult ? 'true' : 'false'}
                 ) {
                     id
@@ -1335,6 +1342,7 @@ app.get("/anime", async (req, res) => {
                     status
                     format
                     startDate { year }
+                    ${isAiring ? 'nextAiringEpisode { episode timeUntilAiring airingAt }' : ''}
                     description(asHtml: false)
                 }
             }
@@ -1357,7 +1365,8 @@ app.get("/anime", async (req, res) => {
     const aniData = await aniRes.json();
     if (aniData.errors) console.log('AniList errors:', JSON.stringify(aniData.errors));
 
-    const items = aniData.data?.Page?.media || [];
+    let items = aniData.data?.Page?.media || [];
+    
     const pageInfo = aniData.data?.Page?.pageInfo || {};
     const totalPages = pageInfo.lastPage || 1;
 
@@ -1371,11 +1380,7 @@ app.get("/anime", async (req, res) => {
         { id: 'movies', label: '<i class="fa-solid fa-clapperboard"></i> Movies' },
     ];
 
-    const genres = ['Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Horror',
-    'Mahou Shoujo', 'Mecha', 'Music', 'Mystery', 'Psychological',
-    'Romance', 'Sci-Fi', 'Slice of Life', 'Sports', 'Supernatural', 'Thriller'];
-
-    const safeGenre = genres.includes(genre) ? genre : '';
+    
 
     let html = `
     <!DOCTYPE html>
@@ -1401,7 +1406,7 @@ app.get("/anime", async (req, res) => {
                 </div>
             </nav>
             
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding:77px 20px 0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding:77px 20px 0; margin-bottom: 13px;">
                 <div style="display:flex; gap:10px; flex-wrap:wrap;">
                     ${filters.map(f => `
                         <a href="/anime?filter=${f.id}${safeGenre ? '&genre=' + encodeURIComponent(safeGenre) : ''}${allowAdult ? '&nsfw=true' : ''}"
@@ -1421,53 +1426,117 @@ app.get("/anime", async (req, res) => {
                 </div>
             </div>
 
-            <div class="movie-grid">`;
+            ${isAiring ? `
+                <div style="display:flex; gap:6px; align-items:center; padding: 0 20px;">
+                    <a href="/anime?filter=airing&view=grid&page=${page}${safeGenre ? '&genre=' + encodeURIComponent(safeGenre) : ''}${allowAdult ? '&nsfw=true' : ''}"
+                    style="background:${view === 'grid' ? '#e50914' : '#2a2a2a'}; color:white; padding:8px 14px; border-radius:8px; text-decoration:none; font-size:13px;">
+                    <i class="fa-solid fa-grip"></i> Grid View
+                    </a>
+                    <a href="/anime?filter=airing&view=schedule&page=${page}${safeGenre ? '&genre=' + encodeURIComponent(safeGenre) : ''}${allowAdult ? '&nsfw=true' : ''}"
+                    style="background:${view === 'schedule' ? '#e50914' : '#2a2a2a'}; color:white; padding:8px 14px; border-radius:8px; text-decoration:none; font-size:13px;">
+                    <i class="fa-solid fa-calendar-days"></i> Schedule View
+                    </a>
+                </div>` : ''
+            }
 
-    for (const item of items) {
-        const title = item.title.english || item.title.romaji || "Unknown";
-        const releaseYear = item.startDate?.year || "N/A";
-        const posterPath = item.coverImage?.large || '/images/icon.png';
-        const rating = item.averageScore ? (item.averageScore / 10).toFixed(1) : "N/A";
-        const genreText = (item.genres || []).slice(0, 3).join(", ") || "Anime";
-        const escapedTitle = title.replace(/'/g, "\\'");
-        const escapedGenres = genreText.replace(/'/g, "\\'");
-        const nsfwParam = allowAdult ? '&nsfw=true' : '';
-        const searchTitle = item.title.english || item.title.romaji || title;
-        const cleanTitle = searchTitle.replace(/season\s*\d+/i, '').replace(/[-–—:]/g, ' ').replace(/\s+/g, ' ').trim();
-        const href = `/anime-go?title=${encodeURIComponent(cleanTitle)}`;
-        const isFav = favoriteIds.includes(String(item.idMal)) ? 'active' : '';
-        const isWatchlisted = watchlistIds.includes(String(item.idMal)) ? 'active' : '';
-        const mediaTypeLabel = isMovie ? 'Movie' : 'TV Series';
+        `;
 
-        html += `
-        <div class="movie-card" onclick="window.location.href='${href}'">
-            <div class="poster-container">
-                <span class="cert-badge PG">PG</span>
-                <img src="${posterPath}" alt="${title}">
-            </div>
-            <h3>${title}</h3>
-            <p>Year: ${releaseYear}</p>
-            <p><strong>Genre:</strong> ${genreText}</p>
-            <p><strong>Rating:</strong> ${rating}</p>
-            <div class="movie-card-bottom-bar">
-                <p><strong>Type:</strong> ${mediaTypeLabel}</p>
-                <div id="int-btns">
-                    <button class="watchlist-btn ${isWatchlisted}" onclick="event.stopPropagation(); addWatchlist(this, '${escapedTitle}', '${releaseYear}', '${item.idMal || item.id}', '${escapedGenres}', '${rating}', '${posterPath}', 'PG', 'tv')">
-                        <span class="eye-icon"></span>
-                    </button>
-                    <button class="heart-btn ${isFav}" onclick="event.stopPropagation(); addFavorite(this, '${escapedTitle}', '${releaseYear}', '${item.idMal || item.id}', '${escapedGenres}', '${rating}', '${posterPath}', 'PG')">
-                        <span class="heart-icon"></span>
-                    </button>
+    let bodyHtml;
+    if (isAiring && view === 'schedule') {
+        const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        const buckets = {};
+        for (const item of items) {
+            if (!item.nextAiringEpisode) continue;
+            const d = new Date(item.nextAiringEpisode.airingAt * 1000);
+            const day = days[d.getDay()];
+            (buckets[day] = buckets[day] || []).push({ item, date: d });
+        }
+        const todayIdx = new Date().getDay();
+        const ordered = [...Array(7)].map((_, i) => days[(todayIdx + i) % 7]);
+
+        bodyHtml = ordered.filter(day => buckets[day]).map(day => `
+            <div class="schedule-day">
+                <h2 style="color:#e50914; padding:16px 20px 8px; border-bottom:1px solid #333;">${day}</h2>
+                <div class="movie-grid">
+                    ${buckets[day].map(({ item, date }) => {
+                        const title = item.title.english || item.title.romaji || "Unknown";
+                        const poster = item.coverImage?.large || '/images/icon.png';
+                        const rating = item.averageScore ? (item.averageScore/10).toFixed(1) : "N/A";
+                        const time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                        const ep = item.nextAiringEpisode.episode;
+                        const searchTitle = item.title.english || item.title.romaji || title;
+                        const cleanTitle = searchTitle.replace(/season\s*\d+/i,'').replace(/[-–—:]/g,' ').replace(/\s+/g,' ').trim();
+                        return `
+                        <div class="movie-card" onclick="window.location.href='/anime-go?title=${encodeURIComponent(cleanTitle)}'">
+                            <div class="poster-container">
+                                <span class="cert-badge PG">EP ${ep}</span>
+                                <img src="${poster}" alt="${title}">
+                            </div>
+                            <h3>${title}</h3>
+                            <p style="color:#e50914; font-weight:bold;">${time}</p>
+                            <p><strong>Rating:</strong> ${rating}</p>
+                        </div>`;
+                    }).join('')}
                 </div>
-            </div>
-        </div>`;
+            </div>`).join('');
+    } else {
+        // Grid view — the card loop now lives HERE, building a string instead of appending to html
+        bodyHtml = `<div class="movie-grid">` + items.map(item => {
+            const title = item.title.english || item.title.romaji || "Unknown";
+            const releaseYear = item.startDate?.year || "N/A";
+            const posterPath = item.coverImage?.large || '/images/icon.png';
+            const rating = item.averageScore ? (item.averageScore / 10).toFixed(1) : "N/A";
+            const genreText = (item.genres || []).slice(0, 3).join(", ") || "Anime";
+            const escapedTitle = title.replace(/'/g, "\\'");
+            const escapedGenres = genreText.replace(/'/g, "\\'");
+            const searchTitle = item.title.english || item.title.romaji || title;
+            const cleanTitle = searchTitle.replace(/season\s*\d+/i, '').replace(/[-–—:]/g, ' ').replace(/\s+/g, ' ').trim();
+            const href = `/anime-go?title=${encodeURIComponent(cleanTitle)}`;
+            const isFav = favoriteIds.includes(String(item.idMal)) ? 'active' : '';
+            const isWatchlisted = watchlistIds.includes(String(item.idMal)) ? 'active' : '';
+            const mediaTypeLabel = isMovie ? 'Movie' : 'TV Series';
+
+            let airingInfo = '';
+            if (isAiring && item.nextAiringEpisode) {
+                const secs = item.nextAiringEpisode.timeUntilAiring;
+                const days = Math.floor(secs / 86400);
+                const hours = Math.floor((secs % 86400) / 3600);
+                const ep = item.nextAiringEpisode.episode;
+                airingInfo = `<p style="color:#e50914; font-weight:bold; font-size:13px;">Ep ${ep} • ${days}d ${hours}h</p>`;
+            }
+
+            return `
+            <div class="movie-card" onclick="window.location.href='${href}'">
+                <div class="poster-container">
+                    <span class="cert-badge PG">PG</span>
+                    <img src="${posterPath}" alt="${title}">
+                </div>
+                <h3>${title}</h3>
+                ${isAiring && item.nextAiringEpisode ? airingInfo : `<p>Year: ${releaseYear}</p>`}
+                <p><strong>Genre:</strong> ${genreText}</p>
+                <p><strong>Rating:</strong> ${rating}</p>
+                <div class="movie-card-bottom-bar">
+                    <p><strong>Type:</strong> ${mediaTypeLabel}</p>
+                    <div id="int-btns">
+                        <button class="watchlist-btn ${isWatchlisted}" onclick="event.stopPropagation(); addWatchlist(this, '${escapedTitle}', '${releaseYear}', '${item.idMal || item.id}', '${escapedGenres}', '${rating}', '${posterPath}', 'PG', 'tv')">
+                            <span class="eye-icon"></span>
+                        </button>
+                        <button class="heart-btn ${isFav}" onclick="event.stopPropagation(); addFavorite(this, '${escapedTitle}', '${releaseYear}', '${item.idMal || item.id}', '${escapedGenres}', '${rating}', '${posterPath}', 'PG')">
+                            <span class="heart-icon"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        }).join('') + `</div>`;
     }
 
-    html += `</div>
+    html += bodyHtml;
+
+    html += `
     <div id="cntrl-btn">
-        ${page > 1 ? `<a href="/anime?filter=${filter}&page=${page - 1}${safeGenre ? '&genre=' + encodeURIComponent(safeGenre) : ''}${allowAdult ? '&nsfw=true' : ''}" id="showLess">Previous</a>` : ''}
+        ${page > 1 ? `<a href="/anime?filter=${filter}&page=${page - 1}${safeGenre ? '&genre=' + encodeURIComponent(safeGenre) : ''}${allowAdult ? '&nsfw=true' : ''}${isAiring ? '&view=' + view : ''}" id="showLess">Previous</a>` : ''}
         <span id="txtPage">Page ${page} of ${totalPages}</span>
-        ${pageInfo.hasNextPage ? `<a href="/anime?filter=${filter}&page=${page + 1}${safeGenre ? '&genre=' + encodeURIComponent(safeGenre) : ''}${allowAdult ? '&nsfw=true' : ''}" id="showMore">Next</a>` : ''}
+        ${pageInfo.hasNextPage ? `<a href="/anime?filter=${filter}&page=${page + 1}${safeGenre ? '&genre=' + encodeURIComponent(safeGenre) : ''}${allowAdult ? '&nsfw=true' : ''}${isAiring ? '&view=' + view : ''}" id="showMore">Next</a>` : ''}
     </div>
     <script>
         const isGuest = ${isGuest};
