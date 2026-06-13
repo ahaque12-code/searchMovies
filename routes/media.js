@@ -500,12 +500,6 @@ router.get("/:type/:id", async (req,res)=>{
 
                                         <div style="position:relative;">
                                             <div id="vidlink-player"></div>
-                                            <button id="skip-btn" onclick="skipIntro()"
-                                                style="display:none; position:absolute; bottom:60px; right:16px;
-                                                    background:rgba(0,0,0,0.8); color:white; border:2px solid white;
-                                                    padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; z-index:10;">
-                                                ⏭ Skip Intro
-                                            </button>
                                         </div>
 
                                         <div id="season-episode-picker" style="display:none;">
