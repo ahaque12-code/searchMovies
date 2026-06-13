@@ -225,7 +225,7 @@ app.get('/', async (req,res) => {
                     <main class="main-content">
                         <div id="movieBody">
                             <div id="announcements">
-                                <p>There are some issue with acessing anime movies in the Anime Page, we are working on it</p>
+                                <p>There are some issues when acessing anime movies in the Anime Page, we are working on it</p>
                             </div>
 
                             <div class="content-bg">
