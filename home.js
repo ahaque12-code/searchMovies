@@ -112,7 +112,7 @@ app.get('/', async (req,res) => {
        
     
     const seen = new Set();
-    const adultKeywords = ['hentai', 'ero ', 'ecchi', 'overflow', 'kiss x sis', 'domestic na kanojo', 'yosuga', 'indoor', 'secret journey', 'peter grill', 'interspecies reviewers', 'sweet agony', 'sweet punishment', 'personal pet', 'guard\'s personal'];    
+    const adultKeywords = ['hentai', 'ero ', 'ecchi', 'overflow', 'kiss x sis', 'domestic na kanojo', 'yosuga', 'indoor', 'secret journey', 'peter grill', 'interspecies reviewers', 'sweet agony', 'sweet punishment', 'personal pet', 'guard\'s personal', 'fire in his fingertips', 'secret mission - undercover agents never back down!'];    
     let animeResults = [...(animePopular.results || []), ...(animeClassic.results || [])]  
         .filter(a => {
             if (seen.has(a.id)) return false;
@@ -564,8 +564,8 @@ app.get("/results", async (req,res) => {
         let totalPages = 1;
 
        if (searchLang) {
-            const movieUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${api_key}&with_original_language=${searchLang}&with_text_query=${encodeURIComponent(searchMovie)}&page=${page}&sort_by=popularity.desc`;
-            const tvUrl = `https://api.themoviedb.org/3/discover/tv?api_key=${api_key}&with_original_language=${searchLang}&with_text_query=${encodeURIComponent(searchMovie)}&page=${page}&sort_by=popularity.desc`;
+            const movieUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${api_key}&with_original_language=${searchLang}&with_text_query=${encodeURIComponent(searchMovie)}&page=${page}&sort_by=popularity.desc&include_adult=${allowAdult}`;
+            const tvUrl = `https://api.themoviedb.org/3/discover/tv?api_key=${api_key}&with_original_language=${searchLang}&with_text_query=${encodeURIComponent(searchMovie)}&page=${page}&sort_by=popularity.desc&include_adult=${allowAdult}`;
 
             const [movieRes, tvRes] = await Promise.all([
                 fetch(movieUrl, { method: 'GET', headers: { accept: 'application/json' } }),
@@ -581,7 +581,8 @@ app.get("/results", async (req,res) => {
             ];
         }
         else {
-            const apiUrl = `https://api.themoviedb.org/3/search/multi?api_key=${api_key}&query=${encodeURIComponent(searchMovie)}&include_adult=false&page=${page}`;
+            const allowAdult = req.session.nsfw === true;
+            const apiUrl = `https://api.themoviedb.org/3/search/multi?api_key=${api_key}&query=${encodeURIComponent(searchMovie)}&include_adult=${allowAdult}&page=${page}`;
             const apiRes = await fetch(apiUrl, { method: 'GET', headers: { accept: 'application/json' } });
             if (!apiRes.ok) return res.status(apiRes.status).send(`<h2>API Error: Status ${apiRes.status}</h2>`);
 
@@ -1228,7 +1229,7 @@ app.get("/anime", async (req, res) => {
     const page = Number(req.query.page) || 1;
     const filter = req.query.filter || 'popular';
     const perPage = 20;
-    const allowAdult = req.query.nsfw === 'true';
+    const allowAdult = req.session.nsfw === true || req.query.nsfw === 'true';
 
     const sortMap = {
         popular: 'POPULARITY_DESC',
@@ -1315,8 +1316,9 @@ app.get("/anime", async (req, res) => {
                 <div class="nav-links2">
                     <a href="/" class="nav-item">Home</a>
                     <a href="/favorites" class="nav-item">Favorites</a>
-                    <a href="/anime?filter=popular&nsfw=true" class="nav-item" style="border:1px solid #555; border-radius:6px; padding:4px 10px; font-size:12px;">🔞 NSFW (Anime)</a>
-
+                    <a href="/toggle-nsfw" class="nav-item" style="border:1px solid ${req.session.nsfw ? '#e50914' : '#555'}; border-radius:6px; padding:4px 10px; font-size:12px;">
+                        🔞 NSFW Anime ${req.session.nsfw ? 'ON' : 'OFF'}
+                    </a>
                 </div>
             </nav>
             <div style="display:flex; gap:10px; flex-wrap:wrap; padding:77px 20px 0;">
@@ -1400,6 +1402,11 @@ app.get("/anime", async (req, res) => {
     </html>`;
 
     res.send(html);
+});
+
+app.get("/toggle-nsfw", (req, res) => {
+    req.session.nsfw = !req.session.nsfw;
+    res.redirect(req.get('referer') || '/');
 });
 
 app.get("/my-watchlist", redirectLogin, async (req, res) => {

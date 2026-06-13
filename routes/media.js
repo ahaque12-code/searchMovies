@@ -111,7 +111,7 @@ router.get("/:type/:id", async (req,res)=>{
     const { type, id } = req.params;
     const api_key = process.env.TMDB_API_KEY;
     const isGuest = !(req.session && req.session.userId);
-    const allowAdult = req.query.nsfw === 'true';
+    const allowAdult = req.session.nsfw === true || req.query.nsfw === 'true';
     
     function getBingeBoxUrl(imdbId) {
         if (!imdbId) return [];
