@@ -44,6 +44,16 @@ body{
   width: 100%;
 }
 
+#announcements{
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  background-color: #ff000024; 
+  width: auto;
+  border-radius: 15px;
+  font-size: 14px;
+}
+
 .navbar-main{
   position: absolute;
   top: 0;

@@ -297,28 +297,43 @@ router.get("/:type/:id", async (req,res)=>{
 
        if (isAnime) {
             try {
+                const tmdbYear = (data.first_air_date || "").substring(0, 4);
                 const query = `
-                    query ($search: String) {
-                        Media(search: $search, type: ANIME) {
-                            id
-                            idMal
-                            episodes
-                            genres
-                            isAdult
-                            title {
-                                romaji
-                                english
+                    query ($search: String, $year: Int) {
+                        Page(perPage: 1) {
+                            media(search: $search, type: ANIME, seasonYear: $year) {
+                                id
+                                idMal
+                                episodes
+                                genres
+                                isAdult
+                                title { romaji english }
                             }
                         }
                     }
                 `;
+
                 const malRes = await fetch('https://graphql.anilist.co', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query, variables: { search: title } })
+                    body: JSON.stringify({ query, variables: { search: title, year: tmdbYear ? Number(tmdbYear) : null } })
                 });
                 const malData = await malRes.json();
-                const media = malData.data?.Media;
+                let media = malData.data?.Page?.media?.[0];
+
+                if (!media) {
+                    const fb = await fetch('https://graphql.anilist.co', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            query: `query ($search: String) { Media(search: $search, type: ANIME) { id idMal episodes genres isAdult title { romaji english } } }`,
+                            variables: { search: title }
+                        })
+                    });
+                    const fbData = await fb.json();
+                    media = fbData.data?.Media || null;
+                }
+
                 if (!allowAdult && media && (media.isAdult || media.genres.some(g => g.toLowerCase() === 'hentai'))) {
                     console.log(`Blocking adult content: ${title}`);
                     return res.status(404).send(`

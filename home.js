@@ -224,6 +224,10 @@ app.get('/', async (req,res) => {
             <div class="app-container">
                     <main class="main-content">
                         <div id="movieBody">
+                            <div id="announcements">
+                                <p>There are some issue with acessing anime movies in the Anime Page, we are working on it</p>
+                            </div>
+
                             <div class="content-bg">
                                 <nav class="navbar-main">
                                     <div id="item-left">
@@ -1491,7 +1495,8 @@ app.get("/anime", async (req, res) => {
             const escapedGenres = genreText.replace(/'/g, "\\'");
             const searchTitle = item.title.english || item.title.romaji || title;
             const cleanTitle = searchTitle.replace(/season\s*\d+/i, '').replace(/[-–—:]/g, ' ').replace(/\s+/g, ' ').trim();
-            const href = `/anime-go?title=${encodeURIComponent(cleanTitle)}`;
+            const year = item.startDate?.year || '';
+            const href = `/anime-go?title=${encodeURIComponent(cleanTitle)}${year ? '&year=' + year : ''}`;
             const isFav = favoriteIds.includes(String(item.idMal)) ? 'active' : '';
             const isWatchlisted = watchlistIds.includes(String(item.idMal)) ? 'active' : '';
             const mediaTypeLabel = isMovie ? 'Movie' : 'TV Series';
@@ -1568,21 +1573,32 @@ app.get("/anime", async (req, res) => {
 app.get("/anime-go", async (req, res) => {
     const api_key = process.env.TMDB_API_KEY;
     const title = (req.query.title || "").trim();
+    const year = req.query.year || "";
     if (!title) return res.redirect('/');
 
     try {
-        const r = await fetch(`https://api.themoviedb.org/3/search/tv?api_key=${api_key}&query=${encodeURIComponent(title)}`);
-        const d = await r.json();
-        const results = d.results || [];
-        const hit = results.find(x => x.original_language === 'ja') || results[0];
-        if (hit) {
-            const nsfwFlag = req.session.nsfw ? '?nsfw=true' : '';
-            return res.redirect(`/media/tv/${hit.id}${nsfwFlag}`);
-        }
-        return res.redirect(`/results?q=${encodeURIComponent(title)}`);
-    } catch (err) {
-        return res.redirect(`/results?q=${encodeURIComponent(title)}`);
+    let url = `https://api.themoviedb.org/3/search/tv?api_key=${api_key}&query=${encodeURIComponent(title)}`;
+    if (year) url += `&first_air_date_year=${year}`;
+    let r = await fetch(url);
+    let d = await r.json();
+    let results = d.results || [];
+
+    if (results.length === 0 && year) {
+        const r2 = await fetch(`https://api.themoviedb.org/3/search/tv?api_key=${api_key}&query=${encodeURIComponent(title)}`);
+        const d2 = await r2.json();
+        results = d2.results || [];
     }
+
+    const hit = results.find(x => x.original_language === 'ja') || results[0];
+
+    if (hit) {
+        const nsfwFlag = req.session.nsfw ? '?nsfw=true' : '';
+        return res.redirect(`/media/tv/${hit.id}${nsfwFlag}`);
+    }
+    return res.redirect(`/results?q=${encodeURIComponent(title)}`);
+} catch (err) {
+    return res.redirect(`/results?q=${encodeURIComponent(title)}`);
+}
 });
 
 app.get("/toggle-nsfw", (req, res) => {
