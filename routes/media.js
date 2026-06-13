@@ -320,10 +320,22 @@ router.get("/:type/:id", async (req,res)=>{
                 if (!allowAdult && media && (media.isAdult || media.genres.some(g => g.toLowerCase() === 'hentai'))) {
                     console.log(`Blocking adult content: ${title}`);
                     return res.status(404).send(`
-                        <body style="background-color:black; align-items:center; text-align: center;">
-                            <h2 style="color: white; margin-top: 20px;">Content restricted, to view it turn NSFW button on</h2>
-                            <a href="/"><button style="border-radius: 15px; padding: 10px;">Go Back Home</button></a>
-                        </body>`); 
+                        <!DOCTYPE html>
+                        <html>
+                            <head>
+                                <meta charset="utf-8">
+                                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                <link rel="stylesheet" href="/css/media.css">
+                                <link rel="icon" type="image/x-icon" href="/images/icon.png">
+                            </head>
+                            <body class="restrict-body">
+                                <div class="restrict-container">
+                                    <h2 style="color: white; margin-top: 20px;">Content restricted — turn on the NSFW button on the anime page to view it.</h2>
+                                    <a href="/anime"><button style="border-radius: 15px; padding: 10px;">Go To Anime Page</button></a>
+                                </div>
+                            </body>
+                        </html>
+                        `); 
                 }
                 malId = media?.idMal || null;
                 animeGenres = media?.genres || []

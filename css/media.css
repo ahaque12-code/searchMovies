@@ -607,6 +607,22 @@ body{
     opacity: 1;
 }
 
+.restrict-body{
+    display: flex;
+    background-color:black; 
+    align-items:center; 
+    text-align: center;
+    justify-content: center;
+}
+
+.restrict-container{
+    background-color: grey;
+    padding: 10px;
+    width: 650px;
+    border-radius: 15px;
+    margin-top: 300px;
+}
+
 @media (max-width: 850px) {
     .navbar{
         margin-bottom: -5px;
