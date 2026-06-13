@@ -734,12 +734,14 @@ router.get("/:type/:id", async (req,res)=>{
                     async function loadSeasons() {
                         const seasons = ${JSON.stringify((data.seasons || []).filter(s => s.season_number > 0))};
                         const select = document.getElementById('season-select');
-                        select.innerHTML = seasons.map(s =>
-                            \`<option value="\${s.season_number}">Season \${s.season_number} (\${s.episode_count} eps)</option>\`
-                        ).join('');
+                        select.innerHTML = seasons.map(s => {
+                            const defaultName = 'Season ' + s.season_number;
+                            const label = (s.name && s.name !== defaultName) ? s.name : defaultName;
+                            return \`<option value="\${s.season_number}">\${label} (\${s.episode_count} eps)</option>\`;
+                        }).join('');
                         if (seasons.length > 0) handleSeasonChange(seasons[0].season_number);
                     }
-
+                        
                     async function handleSeasonChange(seasonNum) {
                         document.getElementById('episode-count').innerText = '';
                         document.getElementById('episode-grid').innerHTML =
