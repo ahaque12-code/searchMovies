@@ -628,7 +628,9 @@ router.get("/:type/:id", async (req,res)=>{
                     const malEpisodeCount = ${malEpisodeCount || 'null'};
                     const seasonsData = ${JSON.stringify((data.seasons || []).filter(s => s.season_number > 0))};
                     const tmdbTotalEpisodes = seasonsData.reduce((sum, s) => sum + (s.episode_count || 0), 0);
-                    const isFranchiseSplit = malEpisodeCount && tmdbTotalEpisodes > malEpisodeCount * 1.5;
+                    const isFranchiseSplit = malEpisodeCount
+                        && seasonsData.length >= 5
+                        && tmdbTotalEpisodes > malEpisodeCount * 3;
                     const useMalPlayer = isAnime && malId && !isFranchiseSplit;
 
 
