@@ -254,7 +254,7 @@ app.get('/', async (req,res) => {
                                 </nav>
                                 <div id="backdrop-slider"></div>
                                 <div class="content-overlay">
-                                    <h2 id="main-header">Making searching movies easier</h2> 
+                                    <h2 id="main-header">Everything in one place</h2> 
                                     <form id="movieForm" action="/results" method="get">
                                         <div class="search-container" style="position: relative; display: inline-block;">
                                             <input type="text" name="q" id="movieName" placeholder="Search movies...">
@@ -1300,6 +1300,7 @@ app.get("/anime", async (req, res) => {
     const page = Number(req.query.page) || 1;
     const filter = req.query.filter || 'popular';
     const perPage = 20;
+    const genre = req.query.genre || '';
     const allowAdult = req.session.nsfw === true || req.query.nsfw === 'true';
 
     const sortMap = {
@@ -1316,11 +1317,12 @@ app.get("/anime", async (req, res) => {
         query ($page: Int, $sort: [MediaSort])  {
             Page(page: $page, perPage: ${perPage}) {
                 pageInfo { total currentPage lastPage hasNextPage }
-                media(
+               media(
                     type: ANIME,
                     sort: $sort,
                     ${isAiring ? 'status: RELEASING,' : ''}
                     ${isMovie ? 'format: MOVIE,' : 'format_in: [TV, TV_SHORT, ONA, OVA],'}
+                    ${genre ? `genre_in: ["${genre}"],` : ''}
                     isAdult: ${allowAdult ? 'true' : 'false'}
                 ) {
                     id
@@ -1369,6 +1371,12 @@ app.get("/anime", async (req, res) => {
         { id: 'movies', label: '<i class="fa-solid fa-clapperboard"></i> Movies' },
     ];
 
+    const genres = ['Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Horror',
+    'Mahou Shoujo', 'Mecha', 'Music', 'Mystery', 'Psychological',
+    'Romance', 'Sci-Fi', 'Slice of Life', 'Sports', 'Supernatural', 'Thriller'];
+
+    const safeGenre = genres.includes(genre) ? genre : '';
+
     let html = `
     <!DOCTYPE html>
     <html>
@@ -1392,14 +1400,27 @@ app.get("/anime", async (req, res) => {
                     </a>
                 </div>
             </nav>
-            <div style="display:flex; gap:10px; flex-wrap:wrap; padding:77px 20px 0;">
-                ${filters.map(f => `
-                        <a href="/anime?filter=${f.id}${allowAdult ? '&nsfw=true' : ''}"
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding:77px 20px 0;">
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    ${filters.map(f => `
+                        <a href="/anime?filter=${f.id}${safeGenre ? '&genre=' + encodeURIComponent(safeGenre) : ''}${allowAdult ? '&nsfw=true' : ''}"
                         style="background:${filter === f.id ? '#e50914' : '#2a2a2a'}; color:white;
-                               padding:8px 16px; border-radius:8px; text-decoration:none; font-size:14px;">
+                            padding:8px 16px; border-radius:8px; text-decoration:none; font-size:14px;">
                         ${f.label}
                     </a>`).join('')}
+                </div>
+
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-sliders" style="color:#aaa;"></i>
+                    <select onchange="window.location.href='/anime?filter=${filter}${allowAdult ? '&nsfw=true' : ''}' + (this.value ? '&genre=' + encodeURIComponent(this.value) : '')"
+                        style="background:#2a2a2a; color:white; padding:8px 16px; border-radius:8px; border:1px solid #444; font-size:14px; cursor:pointer;">
+                        <option value="">Filter Genres</option>
+                        ${genres.map(g => `<option value="${g}" ${safeGenre === g ? 'selected' : ''}>${g}</option>`).join('')}
+                    </select>
+                </div>
             </div>
+
             <div class="movie-grid">`;
 
     for (const item of items) {
@@ -1444,9 +1465,9 @@ app.get("/anime", async (req, res) => {
 
     html += `</div>
     <div id="cntrl-btn">
-        ${page > 1 ? `<a href="/anime?filter=${filter}&page=${page - 1}${allowAdult ? '&nsfw=true' : ''}" id="showLess">Previous</a>` : ''}
-    <span id="txtPage">Page ${page} of ${totalPages}</span>
-    ${pageInfo.hasNextPage ? `<a href="/anime?filter=${filter}&page=${page + 1}${allowAdult ? '&nsfw=true' : ''}" id="showMore">Next</a>` : ''}
+        ${page > 1 ? `<a href="/anime?filter=${filter}&page=${page - 1}${safeGenre ? '&genre=' + encodeURIComponent(safeGenre) : ''}${allowAdult ? '&nsfw=true' : ''}" id="showLess">Previous</a>` : ''}
+        <span id="txtPage">Page ${page} of ${totalPages}</span>
+        ${pageInfo.hasNextPage ? `<a href="/anime?filter=${filter}&page=${page + 1}${safeGenre ? '&genre=' + encodeURIComponent(safeGenre) : ''}${allowAdult ? '&nsfw=true' : ''}" id="showMore">Next</a>` : ''}
     </div>
     <script>
         const isGuest = ${isGuest};
