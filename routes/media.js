@@ -331,7 +331,7 @@ router.get("/:type/:id", async (req,res)=>{
                             <body class="restrict-body">
                                 <div class="restrict-container">
                                     <h2 style="color: white; margin-top: 20px;">Content restricted — turn on the NSFW button on the anime page to view it.</h2>
-                                    <a href="/anime"><button style="border-radius: 15px; padding: 10px;">Go To Anime Page</button></a>
+                                    <a href="/anime"><button id="animePageBtn">Go To Anime Page</button></a>
                                 </div>
                             </body>
                         </html>
