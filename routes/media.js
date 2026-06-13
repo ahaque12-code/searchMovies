@@ -111,6 +111,7 @@ router.get("/:type/:id", async (req,res)=>{
     const { type, id } = req.params;
     const api_key = process.env.TMDB_API_KEY;
     const isGuest = !(req.session && req.session.userId);
+    const allowAdult = req.query.nsfw === 'true';
     
     function getBingeBoxUrl(imdbId) {
         if (!imdbId) return [];
@@ -171,6 +172,7 @@ router.get("/:type/:id", async (req,res)=>{
     }
 
     let malId = null;
+    let animeGenres = [];
 
     try{
         const [detailsRes, providersRes, videoRes] = await Promise.all([
@@ -204,13 +206,6 @@ router.get("/:type/:id", async (req,res)=>{
 
         const posterPath = data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : '/images/icon.png';
         const backdropPath = data.backdrop_path ? `https://image.tmdb.org/t/p/original${data.backdrop_path}` : '';
-
-        let genresText = "Unknown";
-        if (data.genres && data.genres.length > 0) {
-            genresText = data.genres.map(g => g.name).join(", ");
-        } else if (data.genre_ids && data.genre_ids.length > 0) {
-            genresText = data.genre_ids.map(id => detailGenreMap[id]).filter(Boolean).join(", ");
-        }
 
         let durationText = "N/A";
         if (type === "movie" && data.runtime) {
@@ -306,6 +301,8 @@ router.get("/:type/:id", async (req,res)=>{
                         Media(search: $search, type: ANIME) {
                             id
                             idMal
+                            genres
+                            isAdult
                             title {
                                 romaji
                                 english
@@ -319,12 +316,44 @@ router.get("/:type/:id", async (req,res)=>{
                     body: JSON.stringify({ query, variables: { search: title } })
                 });
                 const malData = await malRes.json();
-                malId = malData.data?.Media?.idMal || null;
+                const media = malData.data?.Media;
+                if (!allowAdult && media && (media.isAdult || media.genres.some(g => g.toLowerCase() === 'hentai'))) {
+                    console.log(`Blocking adult content: ${title}`);
+                    return res.status(404).send(`
+                        <body style="background-color:black; align-items:center; text-align: center;">
+                            <h2 style="color: white; margin-top: 20px;">Content restricted, to view it turn NSFW button on</h2>
+                            <a href="/"><button style="border-radius: 15px; padding: 10px;">Go Back Home</button></a>
+                        </body>`); 
+                }
+                malId = media?.idMal || null;
+                animeGenres = media?.genres || []
                 console.log(`MAL ID for ${title}:`, malId);
             } catch {
                 malId = null;
             }
         }
+
+        let genresText = "Unknown";
+
+        const rawGenres = data.genres || [];
+        const rawGenreIds = data.genre_ids || [];
+
+        if (rawGenres.length > 0) {
+            let genreNames = rawGenres.map(g => g.name);
+            
+            if (isAnime) {
+                genreNames = genreNames.filter(name => name.toLowerCase() !== "animation");
+            }
+            genresText = genreNames.join(", ");
+        } else if (rawGenreIds.length > 0) {
+            let genreNames = rawGenreIds.map(id => detailGenreMap[id]).filter(Boolean);
+            
+            if (isAnime) {
+                genreNames = genreNames.filter(name => name.toLowerCase() !== "animation");
+            }
+            genresText = genreNames.join(", ");
+        }
+
 
        const secretLinksHtml = links.map(link => 
             `<li><a href="${link.url}" target="_blank" rel="noopener noreferrer" class="secret-link">${link.name}</a></li>`
@@ -346,7 +375,7 @@ router.get("/:type/:id", async (req,res)=>{
         }
 
         const certClass = ageCertificate.replace(/[^a-zA-Z0-9]/g, '-');
-
+        console.log("Final Genres Text:", genresText);
         res.send(`
             <!DOCTYPE hmtl>
             <html>
@@ -412,7 +441,10 @@ router.get("/:type/:id", async (req,res)=>{
                                     <span class="cert-badge ${certClass}">${ageCertificate}</span>
                                     <span class="meta-badge">${type === 'movie' ? 'Movie' : 'TV Show'}</span>
                                     <span>• ${dateString || "N/A"}</span>
-                                    <span>• ${genresText}</span>
+                                    ${isAnime ? "" : `<span>• ${genresText}</span>`}
+                                    ${isAnime ? `<div class="anime-tags">•
+                                        ${animeGenres.map(g => `<span class="badge" style="font-size: 1rem;">${g}</span>`).join(", ")}
+                                    </div>` : ""}
                                     <span>• ${durationText}</span>
                                 </div>
 
@@ -451,7 +483,16 @@ router.get("/:type/:id", async (req,res)=>{
                                             <span class="close" onclick="closePlayer()" id="closeBtn">&times;</span>
                                         </div>
 
-                                        <div id="vidlink-player"></div>
+                                        <div style="position:relative;">
+                                            <div id="vidlink-player">
+                                                <button id="skip-btn" onclick="skipIntro()"
+                                                    style="display:none; position:absolute; bottom:60px; right:16px;
+                                                        background:rgba(0,0,0,0.8); color:white; border:2px solid white;
+                                                        padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; z-index:10;">
+                                                    ⏭ Skip Intro
+                                                </button>
+                                            </div>
+                                        </div>
 
                                         <div id="season-episode-picker" style="display:none;">
                                             <div id="season-episode-box">
@@ -750,10 +791,16 @@ router.get("/:type/:id", async (req,res)=>{
                             absoluteEpisode = prevEpisodeCount + episode;
                         }
 
+                        if (isAnime && malId) {
+                            fetchSkipTimes(absoluteEpisode);
+                        }
+
                         document.getElementById('player-title').innerText =
                             \`\${currentTitle} — S\${String(season).padStart(2,'0')}E\${String(episode).padStart(2,'0')}\`;
                         renderIframe(getEpisodeSrc(currentSource, season, absoluteEpisode));
                         document.getElementById('player-content').scrollTop = 0;
+
+                        
                     }
 
                     function closePlayer() {
@@ -761,6 +808,32 @@ router.get("/:type/:id", async (req,res)=>{
                         document.getElementById('vidlink-player').innerHTML = '';
                         currentSeason = null;
                         currentEpisode = null;
+                    }
+
+                    async function fetchSkipTimes(episodeNum) {
+                        document.getElementById('skip-btn').style.display = 'none';
+                        try {
+                            const res = await fetch(\`https://api.aniskip.com/v2/skip-times/\${malId}/\${episodeNum}?types[]=op&types[]=ed&episodeLength=0\`);
+                            const data = await res.json();
+                            if (data.found) {
+                                const op = data.results?.find(r => r.skipType === 'op');
+                                if (op) {
+                                    const btn = document.getElementById('skip-btn');
+                                    btn.style.display = 'block';
+                                    btn.dataset.start = op.interval.startTime;
+                                    btn.dataset.end = op.interval.endTime;
+                                    btn.innerText = '⏭ Skip Intro';
+                                }
+                            }
+                        } catch {
+                            document.getElementById('skip-btn').style.display = 'none';
+                        }
+                    }
+
+                    function skipIntro() {
+                        const btn = document.getElementById('skip-btn');
+                        btn.innerText = '✓ Seek to ' + Math.floor(btn.dataset.end) + 's';
+                        setTimeout(() => btn.style.display = 'none', 3000);
                     }
 
         </script>

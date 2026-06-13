@@ -176,19 +176,21 @@ router.get("/register", (req, res) => {
             <body class="loginBody">
                 <div class="auth-wrapper">
                     <div id="loginContainer">
-                        <div id="loginHeader">
-                            <img src="/images/icon-removebg.png" alt="Logo" class="logoImg">
-                            <h1>SearchMovies</h1>
+                            <div id="loginContent">
+                            <div id="loginHeader">
+                                <img src="/images/icon-removebg.png" alt="Logo" class="logoImg">
+                                <h1>SearchMovies</h1>
+                            </div>
+                            <h2>Create Account</h2>
+                            <form action="/users/register" method="post" id="loginForm">
+                                <input type="text" id="userName" name="username" placeholder="Email or Username" required><br><br>
+                                <input type="password" id="password" name="password" placeholder="Password" required><br><br>
+                                <input type="submit" id="submitAccnt" value="Create Account">
+                            </form>
+                            <p style="color: white; margin-top: 15px;">
+                                Already have an account? <a href="/users/login" style="color: #dfd327;">Login</a>
+                            </p>
                         </div>
-                        <h2>Create Account</h2>
-                        <form action="/users/register" method="post" id="loginForm">
-                            <input type="text" id="userName" name="username" placeholder="Email or Username" required><br><br>
-                            <input type="password" id="password" name="password" placeholder="Password" required><br><br>
-                            <input type="submit" id="submit" value="Sign Up">
-                        </form>
-                        <p style="color: white; margin-top: 15px;">
-                            Already have an account? <a href="/users/login" style="color: #dfd327;">Login</a>
-                        </p>
                     </div>
                 </div>
             </body>

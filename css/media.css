@@ -92,6 +92,7 @@ body{
 
 .details-meta {
     display: flex;
+    justify-content: start;
     flex-wrap: wrap;
     gap: 12px;
     align-items: center;

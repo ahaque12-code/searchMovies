@@ -80,6 +80,9 @@ const globalGenreMap = {
     10767: "Talk",
     10768: "War & Politics"
 };
+let animeCacheData = null;
+let animeCacheTime = 0;
+const ANIME_CACHE_MS = 1000 * 60 * 30;
 
 app.get('/', async (req,res) => {
     const isGuest = !(req.session && req.session.userId);
@@ -107,14 +110,49 @@ app.get('/', async (req,res) => {
     ]);
 
        
-
+    
     const seen = new Set();
-    const animeResults = [...(animePopular.results || []), ...(animeClassic.results || [])]
+    const adultKeywords = ['hentai', 'ero ', 'ecchi', 'overflow', 'kiss x sis', 'domestic na kanojo', 'yosuga', 'indoor', 'secret journey', 'peter grill', 'interspecies reviewers', 'sweet agony', 'sweet punishment', 'personal pet', 'guard\'s personal'];    
+    let animeResults = [...(animePopular.results || []), ...(animeClassic.results || [])]  
         .filter(a => {
             if (seen.has(a.id)) return false;
             seen.add(a.id);
+            const titleLower = (a.name || a.original_name || '').toLowerCase();
+            if (adultKeywords.some(w => titleLower.includes(w))) return false;
+            if (a.adult) return false;
             return true;
         });
+
+   
+    if (animeCacheData && (Date.now() - animeCacheTime < ANIME_CACHE_MS)) {
+        animeResults = animeCacheData;
+    } else {
+        const batchQuery = `{
+            ${animeResults.map((a, i) => {
+                const safe = (a.name || a.original_name || '').replace(/[^a-zA-Z0-9 ]/g, '').trim().substring(0, 50);
+                return `a${i}: Media(search: "${safe}", type: ANIME) { isAdult genres }`;
+            }).join('\n')}
+        }`;
+        try {
+            const r = await fetch('https://graphql.anilist.co', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: batchQuery })
+            });
+            const d = await r.json();
+            animeResults = animeResults.filter((a, i) => {
+                const ani = d.data?.[`a${i}`];
+                if (ani?.isAdult) return false;
+                if (ani?.genres?.some(g => g.toLowerCase() === 'hentai')) return false;
+                return true;
+            });
+            animeCacheData = animeResults;
+            animeCacheTime = Date.now();
+        } catch (err) {
+            console.log('Home AniList batch failed:', err.message);
+            // fall back to unfiltered-by-anilist (keyword filter already applied if you keep it)
+        }
+    }
     const firstBackdrop = moviesData.results?.find(m => m.backdrop_path)?.backdrop_path;
         
     let html = ` 
@@ -513,6 +551,7 @@ app.get("/results", async (req,res) => {
     const api_key = process.env.TMDB_API_KEY;
     const page = Number(req.query.page) || 1;
     const searchLang = req.query.language || "";
+    const nsfwFlag = req.query.nsfw === 'true' ? '?nsfw=true' : '';
     let html;
 
     if (!searchMovie) {
@@ -651,8 +690,8 @@ app.get("/results", async (req,res) => {
                 const isWatchlisted = watchlistIds.includes(String(movie.id).trim()) ? 'active' : '';
 
                 html += `
-                <div class="movie-card" onclick="window.location.href='/media/${movie.media_type || normalizedType}/${movie.id}'">
-                    <div class="poster-container"> 
+                    <div class="movie-card" onclick="window.location.href='/media/${movie.media_type || normalizedType}/${movie.id}${nsfwFlag}'">
+                        <div class="poster-container"> 
                         <span class="cert-badge ${certClass}">${ageCertificate}</span>
                         <img src="${posterPath}" alt="movie poster">
                     </div>
@@ -1186,29 +1225,70 @@ app.get("/airing", async (req,res)=>{
 
 app.get("/anime", async (req, res) => {
     const isGuest = !(req.session && req.session.userId);
-    const api_key = process.env.TMDB_API_KEY;
     const page = Number(req.query.page) || 1;
-    const filter = req.query.filter || 'popular'; // popular, top_rated, airing
+    const filter = req.query.filter || 'popular';
+    const perPage = 20;
+    const allowAdult = req.query.nsfw === 'true';
 
-    const filterUrls = {
-        popular: `https://api.themoviedb.org/3/discover/tv?api_key=${api_key}&with_genres=16&with_original_language=ja&sort_by=popularity.desc&page=${page}`,
-        top_rated: `https://api.themoviedb.org/3/discover/tv?api_key=${api_key}&with_genres=16&with_original_language=ja&sort_by=vote_average.desc&vote_count.gte=100&page=${page}`,
-        airing: `https://api.themoviedb.org/3/discover/tv?api_key=${api_key}&with_genres=16&with_original_language=ja&air_date.gte=${new Date().toISOString().split('T')[0]}&sort_by=popularity.desc&page=${page}`,
-        movies: `https://api.themoviedb.org/3/discover/movie?api_key=${api_key}&with_genres=16&with_original_language=ja&sort_by=popularity.desc&page=${page}`,
+    const sortMap = {
+        popular: 'POPULARITY_DESC',
+        top_rated: 'SCORE_DESC',
+        airing: 'POPULARITY_DESC',
+        movies: 'POPULARITY_DESC',
     };
 
-    const [apiRes, favorites, watchlist] = await Promise.all([
-        fetch(filterUrls[filter] || filterUrls.popular),
+    const isMovie = filter === 'movies';
+    const isAiring = filter === 'airing';
+
+    const anilistQuery = `
+        query ($page: Int, $sort: [MediaSort])  {
+            Page(page: $page, perPage: ${perPage}) {
+                pageInfo { total currentPage lastPage hasNextPage }
+                media(
+                    type: ANIME,
+                    sort: $sort,
+                    ${isAiring ? 'status: RELEASING,' : ''}
+                    ${isMovie ? 'format: MOVIE,' : 'format_in: [TV, TV_SHORT, ONA, OVA],'}
+                    isAdult: ${allowAdult ? 'true' : 'false'}
+                ) {
+                    id
+                    idMal
+                    title { romaji english }
+                    coverImage { large }
+                    averageScore
+                    genres
+                    episodes
+                    status
+                    format
+                    startDate { year }
+                    description(asHtml: false)
+                }
+            }
+        }
+    `;
+
+    const [aniRes, favorites, watchlist] = await Promise.all([
+        fetch('https://graphql.anilist.co', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                query: anilistQuery,
+                variables: { page, sort: [sortMap[filter] || 'POPULARITY_DESC'] }
+            })
+        }),
         fetchFavoritesFromDB(req.session.userId),
         fetchWatchlistFromDB(req.session.userId)
     ]);
 
-    const apiData = await apiRes.json();
-    const items = apiData.results || [];
-    const totalPages = Math.min(apiData.total_pages || 1, 500);
+    const aniData = await aniRes.json();
+    if (aniData.errors) console.log('AniList errors:', JSON.stringify(aniData.errors));
+
+    const items = aniData.data?.Page?.media || [];
+    const pageInfo = aniData.data?.Page?.pageInfo || {};
+    const totalPages = pageInfo.lastPage || 1;
+
     const favoriteIds = favorites.map(f => String(f.imdbId).trim());
     const watchlistIds = watchlist.map(w => String(w.imdbId).trim());
-    const mediaType = filter === 'movies' ? 'movie' : 'tv';
 
     const filters = [
         { id: 'popular', label: '🔥 Popular' },
@@ -1235,33 +1315,38 @@ app.get("/anime", async (req, res) => {
                 <div class="nav-links2">
                     <a href="/" class="nav-item">Home</a>
                     <a href="/favorites" class="nav-item">Favorites</a>
+                    <a href="/anime?filter=popular&nsfw=true" class="nav-item" style="border:1px solid #555; border-radius:6px; padding:4px 10px; font-size:12px;">🔞 NSFW (Anime)</a>
+
                 </div>
             </nav>
-
             <div style="display:flex; gap:10px; flex-wrap:wrap; padding:77px 20px 0;">
                 ${filters.map(f => `
-                    <a href="/anime?filter=${f.id}"
-                        style="background:${filter === f.id ? '#e50914' : '#2a2a2a'}; color:white; 
+                        <a href="/anime?filter=${f.id}${allowAdult ? '&nsfw=true' : ''}"
+                        style="background:${filter === f.id ? '#e50914' : '#2a2a2a'}; color:white;
                                padding:8px 16px; border-radius:8px; text-decoration:none; font-size:14px;">
                         ${f.label}
                     </a>`).join('')}
             </div>
-
             <div class="movie-grid">`;
 
     for (const item of items) {
-        const title = item.title || item.name || "Unknown";
-        const releaseYear = (item.release_date || item.first_air_date || "").substring(0, 4) || "N/A";
-        const posterPath = item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : '/images/icon.png';
-        const rating = item.vote_average ? Number(item.vote_average).toFixed(1) : "N/A";
-        const genreText = (item.genre_ids || []).map(id => globalGenreMap[id]).filter(Boolean).join(", ") || "Anime";
+        const title = item.title.english || item.title.romaji || "Unknown";
+        const releaseYear = item.startDate?.year || "N/A";
+        const posterPath = item.coverImage?.large || '/images/icon.png';
+        const rating = item.averageScore ? (item.averageScore / 10).toFixed(1) : "N/A";
+        const genreText = (item.genres || []).slice(0, 3).join(", ") || "Anime";
         const escapedTitle = title.replace(/'/g, "\\'");
         const escapedGenres = genreText.replace(/'/g, "\\'");
-        const isFav = favoriteIds.includes(String(item.id)) ? 'active' : '';
-        const isWatchlisted = watchlistIds.includes(String(item.id)) ? 'active' : '';
+        const nsfwParam = allowAdult ? '&nsfw=true' : '';
+        const href = item.idMal
+            ? `/results?q=${encodeURIComponent(item.title.romaji)}${nsfwParam}`
+            : `/results?q=${encodeURIComponent(title)}${nsfwParam}`;
+        const isFav = favoriteIds.includes(String(item.idMal)) ? 'active' : '';
+        const isWatchlisted = watchlistIds.includes(String(item.idMal)) ? 'active' : '';
+        const mediaTypeLabel = isMovie ? 'Movie' : 'TV Series';
 
         html += `
-        <div class="movie-card" onclick="window.location.href='/media/${mediaType}/${item.id}'">
+        <div class="movie-card" onclick="window.location.href='${href}'">
             <div class="poster-container">
                 <span class="cert-badge PG">PG</span>
                 <img src="${posterPath}" alt="${title}">
@@ -1271,12 +1356,12 @@ app.get("/anime", async (req, res) => {
             <p><strong>Genre:</strong> ${genreText}</p>
             <p><strong>Rating:</strong> ${rating}</p>
             <div class="movie-card-bottom-bar">
-                <p><strong>Type:</strong> ${mediaType === 'movie' ? 'Movie' : 'TV Series'}</p>
+                <p><strong>Type:</strong> ${mediaTypeLabel}</p>
                 <div id="int-btns">
-                    <button class="watchlist-btn ${isWatchlisted}" onclick="event.stopPropagation(); addWatchlist(this, '${escapedTitle}', '${releaseYear}', '${item.id}', '${escapedGenres}', '${rating}', '${posterPath}', 'PG', '${mediaType}')">
+                    <button class="watchlist-btn ${isWatchlisted}" onclick="event.stopPropagation(); addWatchlist(this, '${escapedTitle}', '${releaseYear}', '${item.idMal || item.id}', '${escapedGenres}', '${rating}', '${posterPath}', 'PG', 'tv')">
                         <span class="eye-icon"></span>
                     </button>
-                    <button class="heart-btn ${isFav}" onclick="event.stopPropagation(); addFavorite(this, '${escapedTitle}', '${releaseYear}', '${item.id}', '${escapedGenres}', '${rating}', '${posterPath}', 'PG')">
+                    <button class="heart-btn ${isFav}" onclick="event.stopPropagation(); addFavorite(this, '${escapedTitle}', '${releaseYear}', '${item.idMal || item.id}', '${escapedGenres}', '${rating}', '${posterPath}', 'PG')">
                         <span class="heart-icon"></span>
                     </button>
                 </div>
@@ -1286,13 +1371,12 @@ app.get("/anime", async (req, res) => {
 
     html += `</div>
     <div id="cntrl-btn">
-        ${page > 1 ? `<a href="/anime?filter=${filter}&page=${page - 1}" id="showLess">Previous</a>` : ''}
-        <span id="txtPage">Page ${page} of ${totalPages}</span>
-        ${page < totalPages ? `<a href="/anime?filter=${filter}&page=${page + 1}" id="showMore">Next</a>` : ''}
+        ${page > 1 ? `<a href="/anime?filter=${filter}&page=${page - 1}${allowAdult ? '&nsfw=true' : ''}" id="showLess">Previous</a>` : ''}
+    <span id="txtPage">Page ${page} of ${totalPages}</span>
+    ${pageInfo.hasNextPage ? `<a href="/anime?filter=${filter}&page=${page + 1}${allowAdult ? '&nsfw=true' : ''}" id="showMore">Next</a>` : ''}
     </div>
     <script>
         const isGuest = ${isGuest};
-
         async function addFavorite(btn, title, year, imdbId, genres, rating, image, certification) {
             if (isGuest) { alert("Please log in!"); window.location.href = "/users/login"; return; }
             btn.classList.toggle('active');
@@ -1302,7 +1386,6 @@ app.get("/anime", async (req, res) => {
                 body: JSON.stringify({ title, year, imdbId, genres, rating, image, certification })
             });
         }
-
         async function addWatchlist(btn, title, year, imdbId, genres, rating, image, certification, mediaType) {
             if (isGuest) { alert("Please log in!"); window.location.href = "/users/login"; return; }
             btn.classList.toggle('active');

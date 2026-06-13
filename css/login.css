@@ -66,6 +66,8 @@ html {
 
 .auth-wrapper {
   display: flex;
+  align-items: center;
+  justify-content: center;
   min-height: calc(100vh - 80px); 
   width: 100%;
 }
@@ -74,12 +76,13 @@ html {
   margin: auto; 
   display: flex;
   flex-direction: column;
-  background-color:rgba(15, 93, 63, 0.94);
-  border-radius: 10px;
+  background-color: transparent;
+  background: rgba(255, 243, 243, 0.632);  
+  border-radius: 15px;
   padding: 30px;
   align-items: center; 
-  width: 400px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  width: 800px;
+  box-shadow: 0 4px 15px rgb(0 0 0 / 72%);;
 }
 
 #loginHeader {
@@ -90,12 +93,14 @@ html {
     width: 100%;
 }
 
+h2 {
+    font-size: 37px;
+}
 
 .logoImg {
     width: 50px;
     height: auto;
 }
-
 
 #loginContainer h1 {
     margin: 0;
@@ -110,7 +115,7 @@ html {
 }
 
 #userName{
-    background-color:rgb(39 144 223 / 94%);
+    background-color: black;
     color:white;
     font-size: medium;
     border-radius: 8px;
@@ -121,12 +126,24 @@ html {
     color:rgb(125, 113, 113);
 }
 
+#userName:focus{
+    outline: none;
+    border-color: rgb(60, 205, 12);
+    box-shadow: 0 1px 4px #18580e inset, 0 3px 20px 2px #104e08 !important;
+}
+
 #password{
-    background-color:rgb(39 144 223 / 94%);
+    background-color: black;
     color:white;
     font-size: medium;
     border-radius: 8px;
     padding: 5px;
+}
+
+#password:focus{
+    outline: none;
+    border-color: rgb(60, 205, 12);
+    box-shadow: 0 1px 4px #18580e inset, 0 3px 20px 2px #104e08 !important;
 }
 
 #password::placeholder{
@@ -142,7 +159,7 @@ html {
 }
 
 #submit{
-    background-color:rgb(39 144 223 / 94%);
+    background-color: black;
     color:white;
     font-size: medium;
     border-radius: 8px;
@@ -151,6 +168,19 @@ html {
 }
 
 #submit:hover{
+    filter:brightness(0.5);
+}
+
+#submitAccnt{
+    background-color: black;
+    color:white;
+    font-size: medium;
+    border-radius: 8px;
+    padding: 10px;
+    width: 150px;
+}
+
+#submitAccnt:hover{
     filter:brightness(0.5);
 }
 
