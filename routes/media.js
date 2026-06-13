@@ -173,6 +173,7 @@ router.get("/:type/:id", async (req,res)=>{
 
     let malId = null;
     let animeGenres = [];
+    let malEpisodeCount = null;
 
     try{
         const [detailsRes, providersRes, videoRes] = await Promise.all([
@@ -301,6 +302,7 @@ router.get("/:type/:id", async (req,res)=>{
                         Media(search: $search, type: ANIME) {
                             id
                             idMal
+                            episodes
                             genres
                             isAdult
                             title {
@@ -338,7 +340,8 @@ router.get("/:type/:id", async (req,res)=>{
                         `); 
                 }
                 malId = media?.idMal || null;
-                animeGenres = media?.genres || []
+                animeGenres = media?.genres || [];
+                malEpisodeCount = media?.episodes || null;
                 console.log(`MAL ID for ${title}:`, malId);
             } catch {
                 malId = null;
@@ -496,14 +499,13 @@ router.get("/:type/:id", async (req,res)=>{
                                         </div>
 
                                         <div style="position:relative;">
-                                            <div id="vidlink-player">
-                                                <button id="skip-btn" onclick="skipIntro()"
-                                                    style="display:none; position:absolute; bottom:60px; right:16px;
-                                                        background:rgba(0,0,0,0.8); color:white; border:2px solid white;
-                                                        padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; z-index:10;">
-                                                    ⏭ Skip Intro
-                                                </button>
-                                            </div>
+                                            <div id="vidlink-player"></div>
+                                            <button id="skip-btn" onclick="skipIntro()"
+                                                style="display:none; position:absolute; bottom:60px; right:16px;
+                                                    background:rgba(0,0,0,0.8); color:white; border:2px solid white;
+                                                    padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; z-index:10;">
+                                                ⏭ Skip Intro
+                                            </button>
                                         </div>
 
                                         <div id="season-episode-picker" style="display:none;">
@@ -623,12 +625,17 @@ router.get("/:type/:id", async (req,res)=>{
                     let currentSource = 'vidlink';
                     let currentSubDub = 'sub';
                     let currentSeason = null;
+                    let usingTmdbFallback = false;
                     let currentEpisode = null;
                     const currentTitle = '${escapedTitle}';
                     const currentImdbId = '${imdbId || ''}';
                     const malId = ${malId || 'null'};
                     const isAnime = ${isAnime ? 'true' : 'false'};
+                    const malEpisodeCount = ${malEpisodeCount || 'null'};
                     const seasonsData = ${JSON.stringify((data.seasons || []).filter(s => s.season_number > 0))};
+                    const tmdbTotalEpisodes = seasonsData.reduce((sum, s) => sum + (s.episode_count || 0), 0);
+                    const isFranchiseSplit = malEpisodeCount && tmdbTotalEpisodes > malEpisodeCount * 1.5;
+                    const useMalPlayer = isAnime && malId && !isFranchiseSplit;
 
 
 
@@ -660,41 +667,39 @@ router.get("/:type/:id", async (req,res)=>{
                         return \`https://vidlink.pro/movie/\${currentShowId}\`;
                     }
 
-                    function getEpisodeSrc(source, season, episode) {
-                        if (isAnime && malId) {
+                   function getEpisodeSrc(source, season, episode) {
+                        if (useMalPlayer) {
                             return \`https://megaplay.buzz/stream/mal/\${malId}/\${episode}/\${currentSubDub}\`;
                         }
 
                         if (source === 'vidsrcembed') return \`https://vidsrc-embed.ru/embed/tv/\${currentImdbId}/\${season}-\${episode}\`;
                         if (source === 'videasy') return \`https://player.videasy.net/tv/\${currentShowId}/\${season}/\${episode}\`;
                         if (source === 'multiembed') return \`https://multiembed.mov/?video_id=\${currentShowId}&tmdb=1&s=\${season}&e=\${episode}\`;
-
                         return \`https://vidlink.pro/tv/\${currentShowId}/\${season}/\${episode}\`;
                     }
 
                     function renderSwitcher() {
-                    if (isAnime && malId) {
-                        return \`
-                            <div id="server-box">
-                                <p style="color:#aaa; font-size:12px; margin:0 0 8px; text-transform:uppercase; letter-spacing:1px;">
-                                    <i class="fa-solid fa-language" style="margin-right:6px; color:#e50914;"></i>Audio
-                                </p>
-                                \${['sub', 'dub'].map(t => \`
-                                    <button class="serverBtn" onclick="switchSource('\${t}')"
-                                        style="background:\${currentSubDub === t ? '#e50914' : '#2a2a2a'};">
-                                        \${t === 'sub' ? 'Sub' : 'Dub'}
-                                    </button>\`).join('')}
-                            </div>\`;
-                    }
+                        if (useMalPlayer) {
+                            return \`
+                                <div id="server-box">
+                                    <p style="color:#aaa; font-size:12px; margin:0 0 8px; text-transform:uppercase; letter-spacing:1px;">
+                                        <i class="fa-solid fa-language" style="margin-right:6px; color:#e50914;"></i>Audio
+                                    </p>
+                                    \${['sub', 'dub'].map(t => \`
+                                        <button class="serverBtn" onclick="switchSource('\${t}')"
+                                            style="background:\${currentSubDub === t ? '#e50914' : '#2a2a2a'};">
+                                            \${t === 'sub' ? 'Sub' : 'Dub'}
+                                        </button>\`).join('')}
+                                </div>\`;
+                        }
                         const sources = [
                             { id: 'vidlink', label: 'Server 1' },
                             { id: 'videasy', label: 'Server 2' },
                             ...(currentImdbId ? [{ id: 'vidsrcembed', label: 'Sever 3' }] : []),
                             { id: 'multiembed', label: 'Server 4' },
                         ];
-
                         return \`
-                           <div id="server-box">
+                        <div id="server-box">
                                 \${sources.map(s => \`
                                     <button class="serverBtn" onclick="switchSource('\${s.id}')" 
                                     style="background:\${currentSource === s.id ? '#e50914' : '#2a2a2a'};">
@@ -709,8 +714,8 @@ router.get("/:type/:id", async (req,res)=>{
                             \`<iframe width="100%" height="450" src="\${src}" frameborder="0" allowfullscreen referrerpolicy="origin"></iframe>\`;
                     }
 
-                    function switchSource(source) {
-                        if (isAnime && malId) {
+                   function switchSource(source) {
+                        if (useMalPlayer) {
                             currentSubDub = source;
                             if (currentEpisode) {
                                 renderIframe(getEpisodeSrc(null, null, currentEpisode));
@@ -729,12 +734,10 @@ router.get("/:type/:id", async (req,res)=>{
                         if (currentType === 'movie') {
                             renderIframe(getMovieSrc(source));
                         } else if (currentSeason && currentEpisode) {
-                            // re-render with same episode on new source
                             document.getElementById('player-title').innerText =
                                 \`\${currentTitle} — S\${String(currentSeason).padStart(2,'0')}E\${String(currentEpisode).padStart(2,'0')}\`;
-                            renderIframe(getEpisodeSrc(source, currentSeason, currentEpisode));
+                            renderIframe(getTmdbEpisodeSrc(source, currentSeason, currentEpisode));
                         } else {
-                            // no episode selected yet, just swap switcher highlight
                             document.getElementById('vidlink-player').innerHTML =
                                 renderSwitcher() +
                                 \`<div style="height:180px; display:flex; align-items:center; justify-content:center; color:#777; background:#111; border-radius:8px; font-size:14px;">
@@ -798,23 +801,25 @@ router.get("/:type/:id", async (req,res)=>{
                     function playEpisode(season, episode) {
                         currentSeason = season;
                         currentEpisode = episode;
-                        let absoluteEpisode = episode;
-                        if (isAnime && malId) {
+
+                        if (useMalPlayer) {
                             const prevSeasons = seasonsData.filter(s => s.season_number < season);
                             const prevEpisodeCount = prevSeasons.reduce((sum, s) => sum + (s.episode_count || 0), 0);
-                            absoluteEpisode = prevEpisodeCount + episode;
-                        }
+                            const absoluteEpisode = prevEpisodeCount + episode;
 
-                        if (isAnime && malId) {
                             fetchSkipTimes(absoluteEpisode);
+                            document.getElementById('player-title').innerText =
+                                currentTitle + ' — S' + String(season).padStart(2,'0') + 'E' + String(episode).padStart(2,'0');
+                            renderIframe(getEpisodeSrc(currentSource, season, absoluteEpisode));
+                        } else {
+                            const skipBtn = document.getElementById('skip-btn');
+                            if (skipBtn) skipBtn.style.display = 'none';
+                            document.getElementById('player-title').innerText =
+                                currentTitle + ' — S' + String(season).padStart(2,'0') + 'E' + String(episode).padStart(2,'0');
+                            renderIframe(getTmdbEpisodeSrc(currentSource, season, episode));
                         }
 
-                        document.getElementById('player-title').innerText =
-                            \`\${currentTitle} — S\${String(season).padStart(2,'0')}E\${String(episode).padStart(2,'0')}\`;
-                        renderIframe(getEpisodeSrc(currentSource, season, absoluteEpisode));
                         document.getElementById('player-content').scrollTop = 0;
-
-                        
                     }
 
                     function closePlayer() {
@@ -824,8 +829,16 @@ router.get("/:type/:id", async (req,res)=>{
                         currentEpisode = null;
                     }
 
+                    function getTmdbEpisodeSrc(source, season, episode) {
+                        if (source === 'vidsrcembed') return \`https://vidsrc-embed.ru/embed/tv/\${currentImdbId}/\${season}-\${episode}\`;
+                        if (source === 'videasy') return \`https://player.videasy.net/tv/\${currentShowId}/\${season}/\${episode}\`;
+                        if (source === 'multiembed') return \`https://multiembed.mov/?video_id=\${currentShowId}&tmdb=1&s=\${season}&e=\${episode}\`;
+                        return \`https://vidlink.pro/tv/\${currentShowId}/\${season}/\${episode}\`;
+                    }
+
                     async function fetchSkipTimes(episodeNum) {
-                        document.getElementById('skip-btn').style.display = 'none';
+                        const skipBtn = document.getElementById('skip-btn');
+                        if (skipBtn) skipBtn.style.display = 'none';
                         try {
                             const res = await fetch(\`https://api.aniskip.com/v2/skip-times/\${malId}/\${episodeNum}?types[]=op&types[]=ed&episodeLength=0\`);
                             const data = await res.json();
@@ -833,14 +846,17 @@ router.get("/:type/:id", async (req,res)=>{
                                 const op = data.results?.find(r => r.skipType === 'op');
                                 if (op) {
                                     const btn = document.getElementById('skip-btn');
-                                    btn.style.display = 'block';
-                                    btn.dataset.start = op.interval.startTime;
-                                    btn.dataset.end = op.interval.endTime;
-                                    btn.innerText = '⏭ Skip Intro';
+                                    if (btn) {
+                                        btn.style.display = 'block';
+                                        btn.dataset.start = op.interval.startTime;
+                                        btn.dataset.end = op.interval.endTime;
+                                        btn.innerText = '⏭ Skip Intro';
+                                    }
                                 }
                             }
                         } catch {
-                            document.getElementById('skip-btn').style.display = 'none';
+                            const b = document.getElementById('skip-btn');
+                            if (b) b.style.display = 'none';
                         }
                     }
 
