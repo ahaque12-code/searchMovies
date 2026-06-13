@@ -1363,10 +1363,10 @@ app.get("/anime", async (req, res) => {
     const watchlistIds = watchlist.map(w => String(w.imdbId).trim());
 
     const filters = [
-        { id: 'popular', label: '🔥 Popular' },
-        { id: 'top_rated', label: '⭐ Top Rated' },
-        { id: 'airing', label: '📡 Airing' },
-        { id: 'movies', label: '🎬 Movies' },
+        { id: 'popular', label: '<i class="fa-solid fa-fire"></i> Popular' },
+        { id: 'top_rated', label: '<i class="fa-solid fa-star"></i> Top Rated' },
+        { id: 'airing', label: '<i class="fa-solid fa-satellite-dish"></i> Airing' },
+        { id: 'movies', label: '<i class="fa-solid fa-clapperboard"></i> Movies' },
     ];
 
     let html = `
@@ -1383,7 +1383,7 @@ app.get("/anime", async (req, res) => {
         </head>
         <body>
             <nav class="navbar2">
-                <span class="nav-title2">🐉 Anime</span>
+                <span class="nav-title2"><img src="/images/dragon-face-svgrepo-com.svg" alt="Anime dino icon" width="48" height="48"> Anime</span>
                 <div class="nav-links2">
                     <a href="/" class="nav-item">Home</a>
                     <a href="/favorites" class="nav-item">Favorites</a>
