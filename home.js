@@ -160,6 +160,7 @@ app.get('/', async (req,res) => {
             query {
                 Page(page: 1, perPage: 20) {
                     media(type: ANIME, status: RELEASING, sort: POPULARITY_DESC, isAdult: ${req.session.nsfw ? 'true' : 'false'}) {
+                        id
                         idMal
                         title { romaji english }
                         coverImage { large }
@@ -548,8 +549,7 @@ app.get('/', async (req,res) => {
         }
         const searchTitle = anime.title.english || anime.title.romaji || "";
         const cleanTitle = searchTitle.replace(/season\s*\d+/i, '').replace(/[-–—:]/g, ' ').replace(/\s+/g, ' ').trim();
-        const href = `/anime-go?title=${encodeURIComponent(cleanTitle)}`;
-        html += `
+        const href = `/anime-go?title=${encodeURIComponent(cleanTitle)}&aniId=${anime.id}`;        html += `
             <div class="popular-movie-card" onclick="window.location.href='${href}'">
                 <div class="popular-poster-container">
                     <img class="popular-movie-img" src="${poster}" alt="${title} poster">
@@ -1471,7 +1471,7 @@ app.get("/anime", async (req, res) => {
                         const searchTitle = item.title.english || item.title.romaji || title;
                         const cleanTitle = searchTitle.replace(/season\s*\d+/i,'').replace(/[-–—:]/g,' ').replace(/\s+/g,' ').trim();
                         return `
-                        <div class="movie-card" onclick="window.location.href='/anime-go?title=${encodeURIComponent(cleanTitle)}'">
+                        <div class="movie-card" onclick="window.location.href='/anime-go?title=${encodeURIComponent(cleanTitle)}&aniId=${item.id}'">
                             <div class="poster-container">
                                 <span class="cert-badge PG">EP ${ep}</span>
                                 <img src="${poster}" alt="${title}">
@@ -1496,7 +1496,7 @@ app.get("/anime", async (req, res) => {
             const searchTitle = item.title.english || item.title.romaji || title;
             const cleanTitle = searchTitle.replace(/season\s*\d+/i, '').replace(/[-–—:]/g, ' ').replace(/\s+/g, ' ').trim();
             const year = item.startDate?.year || '';
-            const href = `/anime-go?title=${encodeURIComponent(cleanTitle)}${year ? '&year=' + year : ''}`;
+            const href = `/anime-go?title=${encodeURIComponent(cleanTitle)}${year ? '&year=' + year : ''}&aniId=${item.id}`;
             const isFav = favoriteIds.includes(String(item.idMal)) ? 'active' : '';
             const isWatchlisted = watchlistIds.includes(String(item.idMal)) ? 'active' : '';
             const mediaTypeLabel = isMovie ? 'Movie' : 'TV Series';
@@ -1574,31 +1574,31 @@ app.get("/anime-go", async (req, res) => {
     const api_key = process.env.TMDB_API_KEY;
     const title = (req.query.title || "").trim();
     const year = req.query.year || "";
+    const aniId = req.query.aniId || "";   // <-- the specific season's AniList id
     if (!title) return res.redirect('/');
 
     try {
-    let url = `https://api.themoviedb.org/3/search/tv?api_key=${api_key}&query=${encodeURIComponent(title)}`;
-    if (year) url += `&first_air_date_year=${year}`;
-    let r = await fetch(url);
-    let d = await r.json();
-    let results = d.results || [];
-
-    if (results.length === 0 && year) {
-        const r2 = await fetch(`https://api.themoviedb.org/3/search/tv?api_key=${api_key}&query=${encodeURIComponent(title)}`);
-        const d2 = await r2.json();
-        results = d2.results || [];
+        let url = `https://api.themoviedb.org/3/search/tv?api_key=${api_key}&query=${encodeURIComponent(title)}`;
+        if (year) url += `&first_air_date_year=${year}`;
+        let r = await fetch(url);
+        let d = await r.json();
+        let results = d.results || [];
+        if (results.length === 0 && year) {
+            const r2 = await fetch(`https://api.themoviedb.org/3/search/tv?api_key=${api_key}&query=${encodeURIComponent(title)}`);
+            const d2 = await r2.json();
+            results = d2.results || [];
+        }
+        const hit = results.find(x => x.original_language === 'ja') || results[0];
+        if (hit) {
+            const nsfwFlag = req.session.nsfw ? 'nsfw=true' : '';
+            // thread aniId so the media page uses the exact AniList entry the user clicked
+            const params = [aniId ? 'aniId=' + aniId : '', nsfwFlag].filter(Boolean).join('&');
+            return res.redirect(`/media/tv/${hit.id}${params ? '?' + params : ''}`);
+        }
+        return res.redirect(`/results?q=${encodeURIComponent(title)}`);
+    } catch (err) {
+        return res.redirect(`/results?q=${encodeURIComponent(title)}`);
     }
-
-    const hit = results.find(x => x.original_language === 'ja') || results[0];
-
-    if (hit) {
-        const nsfwFlag = req.session.nsfw ? '?nsfw=true' : '';
-        return res.redirect(`/media/tv/${hit.id}${nsfwFlag}`);
-    }
-    return res.redirect(`/results?q=${encodeURIComponent(title)}`);
-} catch (err) {
-    return res.redirect(`/results?q=${encodeURIComponent(title)}`);
-}
 });
 
 app.get("/toggle-nsfw", (req, res) => {

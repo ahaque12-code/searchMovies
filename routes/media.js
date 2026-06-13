@@ -22,12 +22,12 @@ async function tryScrape(title, type) {
 
     let browser;
     try {
-        browser = await puppeteer.launch({ 
+        browser = await puppeteer.launch({
             headless: "new",
             args: ['--no-sandbox', '--disable-setuid-sandbox']
         });
         const page = await browser.newPage();
-        
+
         const prefix = (type === 'tv') ? 'tv' : 'm';
         const url = `https://www.rottentomatoes.com/${prefix}/${finalSlug}`;
         console.log("Navigating to: ", url);
@@ -45,7 +45,6 @@ async function tryScrape(title, type) {
             }
 
             return "N/A";
-
         });
 
         await browser.close();
@@ -57,12 +56,12 @@ async function tryScrape(title, type) {
     }
 }
 
-async function tryOMDB(title){
+async function tryOMDB(title) {
     try {
         const apiKey = process.env.OMDB_API_KEY;
         const url = `https://www.omdbapi.com/?t=${encodeURIComponent(title)}&apikey=${apiKey}`;
         const response = await axios.get(url);
-        
+
         const rtRating = response.data.Ratings?.find(r => r.Source === "Rotten Tomatoes");
         console.log(rtRating ? rtRating.Value : "N/A");
         return rtRating ? rtRating.Value : "N/A";
@@ -74,7 +73,7 @@ async function tryOMDB(title){
 
 async function getRottenTomatoesScore(title, type) {
     const scraperResult = await tryScrape(title, type);
-    
+
     if (scraperResult !== "N/A") {
         console.log("Scraper Result: ", scraperResult);
         return scraperResult;
@@ -83,6 +82,51 @@ async function getRottenTomatoesScore(title, type) {
     console.log(`Scraper returned N/A or failed for ${title}, trying OMDb API...`);
     return await tryOMDB(title);
 }
+
+router.get("/api/anime-episodes-tmdb", async (req, res) => {
+    // Flatten all TMDB seasons into one continuous ordered episode array.
+    // Used ONLY for anime episode thumbnails/titles — the player still uses the
+    // plain episode index, so a mis-ordered still can never break playback.
+    const { id, seasons, match } = req.query; // seasons = comma list, e.g. "1,2,3"
+    const api_key = process.env.TMDB_API_KEY;
+    const seasonNums = (seasons || "").split(",").filter(Boolean);
+    const matchCount = match ? Number(match) : 0;
+    try {
+        // Fetch each requested season's episodes separately.
+        const perSeason = [];
+        for (const s of seasonNums) {
+            const r = await fetch(`https://api.themoviedb.org/3/tv/${id}/season/${s}?api_key=${api_key}`,
+                { headers: { 'Authorization': `Bearer ${process.env.TMDB_BEARER_TOKEN}` } });
+            const d = await r.json();
+            const eps = (d.episodes || []).map(ep => ({
+                still: ep.still_path ? `https://image.tmdb.org/t/p/w300${ep.still_path}` : null,
+                name: ep.name || null,
+                overview: ep.overview || ''
+            }));
+            perSeason.push({ season: Number(s), count: eps.length, eps });
+        }
+
+        let all;
+        if (perSeason.length === 1) {
+            // Caller already picked the exact season (parsed from the AniList title) — use it.
+            all = perSeason[0].eps;
+        } else if (matchCount > 0) {
+            // Multiple seasons + a known AniList episode count: pick the closest-matching season.
+            let best = perSeason[0], bestDiff = Infinity;
+            for (const ps of perSeason) {
+                const diff = Math.abs(ps.count - matchCount);
+                if (diff < bestDiff) { bestDiff = diff; best = ps; }
+            }
+            all = (best && bestDiff <= 3) ? best.eps : perSeason.flatMap(ps => ps.eps);
+        } else {
+            all = perSeason.flatMap(ps => ps.eps);
+        }
+
+        res.json({ episodes: all }); // index 0 = episode 1
+    } catch {
+        res.json({ episodes: [] });
+    }
+});
 
 router.get("/api/season", async (req, res) => {
     const { id, season } = req.query;
@@ -106,18 +150,18 @@ router.get("/api/score", async (req, res) => {
         res.json({ score: "N/A" });
     }
 });
-                    
-router.get("/:type/:id", async (req,res)=>{
+
+router.get("/:type/:id", async (req, res) => {
     const { type, id } = req.params;
     const api_key = process.env.TMDB_API_KEY;
     const isGuest = !(req.session && req.session.userId);
     const allowAdult = req.session.nsfw === true || req.query.nsfw === 'true';
-    
+
     function getBingeBoxUrl(imdbId) {
         if (!imdbId) return [];
-        
+
         let urlType = type;
-        if(urlType === "tv"){
+        if (urlType === "tv") {
             urlType = "show";
         }
         const patternStandard = `https://bingebox.to//${urlType}/${id}`;
@@ -132,7 +176,7 @@ router.get("/:type/:id", async (req,res)=>{
             .replace(/[^a-z0-9\s]/g, '')
             .trim()
             .replace(/\s+/g, '-');
-        
+
         return `https://yomovies.courses/${slug}-${year}-Watch-online-full-movie/`;
     }
 
@@ -147,16 +191,16 @@ router.get("/:type/:id", async (req,res)=>{
     }
 
     function getKissKhSearchLink(title) {
-       const query = encodeURIComponent(`site:kisskh.co ${title}`);
+        const query = encodeURIComponent(`site:kisskh.co ${title}`);
         return `https://www.google.com/search?q=${query}`;
     }
 
-    function getMovieLinkBd(title){
+    function getMovieLinkBd(title) {
         const slug = title
-        .toLowerCase()
-        .replace(/[^a-z0-9\s]/g, '')
-        .trim()
-        .replace(/\s+/g, '+');
+            .toLowerCase()
+            .replace(/[^a-z0-9\s]/g, '')
+            .trim()
+            .replace(/\s+/g, '+');
 
         return `https://yr7prg.movielinkbd.li/search?q=${slug}`;
     }
@@ -166,20 +210,30 @@ router.get("/:type/:id", async (req,res)=>{
         return `https://anisuge.tv/filter?keyword=${query}`;
     }
 
-    function getAnimeLink2(title){
+    function getAnimeLink2(title) {
         const query = encodeURIComponent(title);
         return `https://anizone.to/anime?search=${query}`;
     }
 
-    let malId = null;
+    let anilistId = null;
     let animeGenres = [];
-    let malEpisodeCount = null;
+    let anilistEpisodeCount = null;
+    let streamingEpisodes = [];
+    let animeSeasonNum = null; // TMDB season number parsed from the AniList title (for thumbnails)
+    let bestTmdbSeason = null; // TMDB season matched by air date (more reliable than the number)
+    // AniList display overrides — used only when arriving via ?aniId (a specific season),
+    // so the page shows that season's title/cover/overview instead of the lumped TMDB show's.
+    let aniDisplayTitle = null;
+    let aniDisplayCover = null;
+    let aniDisplayOverview = null;
+    let aniDisplayYear = null;
+    let relatedSeasons = []; // prequel/sequel TV entries from AniList relations (for season navigation)
 
-    try{
+    try {
         const [detailsRes, providersRes, videoRes] = await Promise.all([
-        fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${api_key}&language=en-US&append_to_response=external_ids`, { headers: { 'Authorization': `Bearer ${process.env.TMDB_BEARER_TOKEN}` } }),
-        fetch(`https://api.themoviedb.org/3/${type}/${id}/watch/providers?api_key=${api_key}&append_to_response=external_ids`, { headers: { 'Authorization': `Bearer ${process.env.TMDB_BEARER_TOKEN}` } }),
-        fetch(`https://api.themoviedb.org/3/${type}/${id}/videos?api_key=${api_key}`, { headers: { 'Authorization': `Bearer ${process.env.TMDB_BEARER_TOKEN}` } })
+            fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${api_key}&language=en-US&append_to_response=external_ids`, { headers: { 'Authorization': `Bearer ${process.env.TMDB_BEARER_TOKEN}` } }),
+            fetch(`https://api.themoviedb.org/3/${type}/${id}/watch/providers?api_key=${api_key}&append_to_response=external_ids`, { headers: { 'Authorization': `Bearer ${process.env.TMDB_BEARER_TOKEN}` } }),
+            fetch(`https://api.themoviedb.org/3/${type}/${id}/videos?api_key=${api_key}`, { headers: { 'Authorization': `Bearer ${process.env.TMDB_BEARER_TOKEN}` } })
         ]);
 
         const data = await detailsRes.json();
@@ -198,12 +252,13 @@ router.get("/:type/:id", async (req,res)=>{
         const title = data.title || data.name || "Unknown";
         const escapedTitle = title.replace(/'/g, "\\'");
         const dateString = data.release_date || data.first_air_date || "";
-        const year = (data.release_date || data.first_air_date || "").substring(0, 4) || "0000";        
+        const year = (data.release_date || data.first_air_date || "").substring(0, 4) || "0000";
         const rating = data.vote_average ? Number(data.vote_average).toFixed(1) : "N/A";
-        const rtScore = "Loading...";        
+        const rtScore = "Loading...";
         const overview = data.overview || "No overview available.";
         const tagline = data.tagline ? `"${data.tagline}"` : "";
         const lang = data.original_language;
+        const aniIdParam = req.query.aniId ? Number(req.query.aniId) : null;
 
         const posterPath = data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : '/images/icon.png';
         const backdropPath = data.backdrop_path ? `https://image.tmdb.org/t/p/original${data.backdrop_path}` : '';
@@ -218,10 +273,9 @@ router.get("/:type/:id", async (req,res)=>{
         }
 
         const providers = providerData.results?.US?.flatrate || [];
-        let watchHtml = providers.length > 0 
+        let watchHtml = providers.length > 0
             ? providers.map(p => `<img src="https://image.tmdb.org/t/p/w92${p.logo_path}" alt="${p.provider_name}" title="${p.provider_name}" class="provider-logo">`).join('')
             : "<p>Not available to stream in your region.</p>";
-       
 
         if (!detailsRes.ok) {
             return res.status(detailsRes.status).send("<h2>Failed to fetch details from TMDB.</h2>");
@@ -234,99 +288,92 @@ router.get("/:type/:id", async (req,res)=>{
         const bingeboxLink = getBingeBoxUrl(imdbId);
         let links = [
             { name: "123 Chill", url: `https://123chill.in/${mediaType}/${searchSlug}/` },
-            {name: "CoreFlix", url: `https://www.coreflix.tv/${type}/${id}`},
-            {name: "Lunara", url: `https://lunara.watch/${type}/${id}`},
-            {name: "CineBy", url: `https://www.cineby.at/${type}/${id}?`},
+            { name: "CoreFlix", url: `https://www.coreflix.tv/${type}/${id}` },
+            { name: "Lunara", url: `https://lunara.watch/${type}/${id}` },
+            { name: "CineBy", url: `https://www.cineby.at/${type}/${id}?` },
             ...bingeboxLink
         ];
 
         const isHindi = data.spoken_languages?.some(lang => lang.iso_639_1 === "hi");
         if (isHindi) {
-            links.splice(0,1);
-            links.splice(1,1);
+            links.splice(0, 1);
+            links.splice(1, 1);
             links.push({ name: "YoMovies", url: getHindiLink(title, year) });
         }
 
-        const isKorean = ((data.origin_country?.includes("KR") || data.original_language === "ko") || (data.origin_country?.includes("CN") || data.original_language === "zh-Hant") ||  
-        (data.origin_country?.includes("CN") || data.original_language === "zh"));
+        const isKorean = ((data.origin_country?.includes("KR") || data.original_language === "ko") || (data.origin_country?.includes("CN") || data.original_language === "zh-Hant") ||
+            (data.origin_country?.includes("CN") || data.original_language === "zh"));
 
         if (isKorean) {
-            links.push({ 
-                name: "AsiaFlix", 
-                url: getAsiaFlixLink(title, year) 
-            });
-            links.push({ 
-                name: "⭐️ KissKH (Search)", 
-                url: getKissKhSearchLink(title) 
-            });
+            links.push({ name: "AsiaFlix", url: getAsiaFlixLink(title, year) });
+            links.push({ name: "⭐️ KissKH (Search)", url: getKissKhSearchLink(title) });
         }
 
         const isBengali = data.spoken_languages?.some(lang => lang.iso_639_1 === "bn");
         if (isBengali) {
-            links.push({ 
-                name: "⭐️ MovieLink BD", 
-                url: getMovieLinkBd(title) 
-            });
+            links.push({ name: "⭐️ MovieLink BD", url: getMovieLinkBd(title) });
         }
 
         const isAnime = data.genres?.some(g => g.name === "Animation") && data.original_language === "ja";
 
         if (isAnime) {
             links = [];
-
-             links.push({
-                name: "⭐️ AniZone",
-                url: getAnimeLink2(title)
-            })
-
-             links.push({ 
-                name: "🥈 AniSuge", 
-                url: getAnimeLink(title) 
-            });
-
-            links.push({
-                name: "Cineby",
-                url: `https://www.cineby.sc/${type}/${id}`
-            });
-
-            links.push({
-                name: "Anime Websites list",
-                url: `https://yarrlist.net/anime-list`
-            })
+            links.push({ name: "⭐️ AniZone", url: getAnimeLink2(title) });
+            links.push({ name: "🥈 AniSuge", url: getAnimeLink(title) });
+            links.push({ name: "Cineby", url: `https://www.cineby.sc/${type}/${id}` });
+            links.push({ name: "Anime Websites list", url: `https://yarrlist.net/anime-list` });
         }
 
-       if (isAnime) {
+        // Resolve the AniList entry for this anime.
+        // Priority: (1) exact AniList id passed from the /anime card (?aniId=) — needed for
+        // shows TMDB lumps into one entry (e.g. Re:ZERO seasons); (2) title + season-year
+        // search to disambiguate remakes; (3) unfiltered title search as a last resort.
+        // We need: anilistId (drives the player), genres/isAdult (NSFW gate), episode count.
+        if (isAnime) {
             try {
-                const tmdbYear = (data.first_air_date || "").substring(0, 4);
-                const query = `
-                    query ($search: String, $year: Int) {
-                        Page(perPage: 1) {
-                            media(search: $search, type: ANIME, seasonYear: $year) {
-                                id
-                                idMal
-                                episodes
-                                genres
-                                isAdult
-                                title { romaji english }
+                const EP_FIELDS = `id episodes genres isAdult nextAiringEpisode { episode } streamingEpisodes { title thumbnail } title { romaji english } coverImage { large } bannerImage description(asHtml: false) startDate { year month day } relations { edges { relationType node { id type format title { romaji english } coverImage { medium } startDate { year } } } }`;
+                let media = null;
+
+                // (1) Exact entry the user clicked on /anime
+                if (aniIdParam) {
+                    const r = await fetch('https://graphql.anilist.co', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            query: `query ($id: Int) { Media(id: $id, type: ANIME) { ${EP_FIELDS} } }`,
+                            variables: { id: aniIdParam }
+                        })
+                    });
+                    const j = await r.json();
+                    media = j.data?.Media || null;
+                }
+
+                // (2) Title + season-year search (disambiguates remakes by year)
+                if (!media) {
+                    const tmdbYear = (data.first_air_date || "").substring(0, 4);
+                    const query = `
+                        query ($search: String, $year: Int) {
+                            Page(perPage: 1) {
+                                media(search: $search, type: ANIME, seasonYear: $year) { ${EP_FIELDS} }
                             }
                         }
-                    }
-                `;
+                    `;
+                    const malRes = await fetch('https://graphql.anilist.co', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query, variables: { search: title, year: tmdbYear ? Number(tmdbYear) : null } })
+                    });
+                    const malData = await malRes.json();
+                    media = malData.data?.Page?.media?.[0] || null;
+                }
 
-                const malRes = await fetch('https://graphql.anilist.co', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query, variables: { search: title, year: tmdbYear ? Number(tmdbYear) : null } })
-                });
-                const malData = await malRes.json();
-                let media = malData.data?.Page?.media?.[0];
-
+                // (3) Unfiltered title search (seasonYear is strict and can miss by a year)
                 if (!media) {
                     const fb = await fetch('https://graphql.anilist.co', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            query: `query ($search: String) { Media(search: $search, type: ANIME) { id idMal episodes genres isAdult title { romaji english } } }`,
+                            query: `query ($search: String) { Media(search: $search, type: ANIME) { ${EP_FIELDS} } }`,
                             variables: { search: title }
                         })
                     });
@@ -352,14 +399,72 @@ router.get("/:type/:id", async (req,res)=>{
                                 </div>
                             </body>
                         </html>
-                        `); 
+                        `);
                 }
-                malId = media?.idMal || null;
+
+                anilistId = media?.id || null;
                 animeGenres = media?.genres || [];
-                malEpisodeCount = media?.episodes || null;
-                console.log(`MAL ID for ${title}:`, malId);
+                // For finished series use `episodes`; for airing series fall back to the
+                // last aired episode (nextAiringEpisode.episode - 1) so the list isn't empty.
+                anilistEpisodeCount = media?.episodes
+                    || (media?.nextAiringEpisode ? media.nextAiringEpisode.episode - 1 : null);
+                // Per-episode thumbnails/titles (user-curated on AniList — may be partial/empty).
+                streamingEpisodes = media?.streamingEpisodes || [];
+                // Parse a TMDB season number out of the AniList title ("... Season 4", "2nd Season")
+                // so the thumbnails can be pulled from that exact TMDB season instead of all of them.
+                const aniTitle = media?.title?.english || media?.title?.romaji || '';
+                let sm = aniTitle.match(/season\s*(\d+)/i) || aniTitle.match(/(\d+)(?:st|nd|rd|th)\s*season/i);
+                animeSeasonNum = sm ? Number(sm[1]) : null;
+
+                // Match the TMDB season by AIR DATE rather than season number — air dates
+                // align across TMDB/AniList even when their season NUMBERS don't (Re:ZERO etc).
+                // Start from the parsed number, then override if a close-dated season exists.
+                bestTmdbSeason = animeSeasonNum;
+                if (media?.startDate?.year) {
+                    const aniDate = new Date(
+                        media.startDate.year,
+                        (media.startDate.month || 1) - 1,
+                        media.startDate.day || 1
+                    ).getTime();
+                    let best = null, bestDiff = Infinity;
+                    for (const s of (data.seasons || [])) {
+                        if (s.season_number < 1 || !s.air_date) continue;
+                        const diff = Math.abs(new Date(s.air_date).getTime() - aniDate);
+                        if (diff < bestDiff) { bestDiff = diff; best = s.season_number; }
+                    }
+                    // Trust the date match only if within ~120 days (one cour) of the AniList start.
+                    if (best !== null && bestDiff <= 120 * 86400 * 1000) bestTmdbSeason = best;
+                }
+
+                // Only override page display when the user arrived via a specific season (?aniId).
+                // Other arrivals (search, direct link) keep the TMDB show's display as before.
+                if (aniIdParam && media) {
+                    aniDisplayTitle = media.title?.english || media.title?.romaji || null;
+                    aniDisplayCover = media.coverImage?.large || null;
+                    aniDisplayYear = media.startDate?.year || null;
+                    aniDisplayOverview = media.description
+                        ? media.description.replace(/<[^>]*>/g, '').replace(/\n+/g, ' ').trim()
+                        : null;
+                }
+
+                // Build the "other seasons" list from AniList relations — prequels and sequels
+                // that are TV series. This is the navigation that lets you reach JJK S2 from S1.
+                const RELATED_TYPES = ['PREQUEL', 'SEQUEL', 'PARENT', 'SIDE_STORY'];
+                relatedSeasons = (media?.relations?.edges || [])
+                    .filter(e => RELATED_TYPES.includes(e.relationType)
+                        && e.node?.type === 'ANIME'
+                        && ['TV', 'TV_SHORT'].includes(e.node?.format)
+                        && e.node?.id)
+                    .map(e => ({
+                        id: e.node.id,
+                        rel: e.relationType,
+                        title: e.node.title?.english || e.node.title?.romaji || 'Unknown',
+                        cover: e.node.coverImage?.medium || '/images/icon.png',
+                        year: e.node.startDate?.year || ''
+                    }));
+                console.log(`AniList ID for ${title}:`, anilistId, '| episodes:', anilistEpisodeCount, '| thumbs:', streamingEpisodes.length, '| parsedSeason:', animeSeasonNum, '| dateSeason:', bestTmdbSeason);
             } catch {
-                malId = null;
+                anilistId = null;
             }
         }
 
@@ -370,27 +475,20 @@ router.get("/:type/:id", async (req,res)=>{
 
         if (rawGenres.length > 0) {
             let genreNames = rawGenres.map(g => g.name);
-            
-            if (isAnime) {
-                genreNames = genreNames.filter(name => name.toLowerCase() !== "animation");
-            }
+            if (isAnime) genreNames = genreNames.filter(name => name.toLowerCase() !== "animation");
             genresText = genreNames.join(", ");
         } else if (rawGenreIds.length > 0) {
             let genreNames = rawGenreIds.map(id => detailGenreMap[id]).filter(Boolean);
-            
-            if (isAnime) {
-                genreNames = genreNames.filter(name => name.toLowerCase() !== "animation");
-            }
+            if (isAnime) genreNames = genreNames.filter(name => name.toLowerCase() !== "animation");
             genresText = genreNames.join(", ");
         }
 
-
-       const secretLinksHtml = links.map(link => 
+        const secretLinksHtml = links.map(link =>
             `<li><a href="${link.url}" target="_blank" rel="noopener noreferrer" class="secret-link">${link.name}</a></li>`
         ).join('');
 
         let ageCertificate = "PG-13"; // Default
-        const rRatedGenres = [27, 80, 53]; 
+        const rRatedGenres = [27, 80, 53];
         const familyGenres = [16, 10751];
 
         const isMatureGenre = data.genres && data.genres.some(g => rRatedGenres.includes(g.id));
@@ -405,9 +503,35 @@ router.get("/:type/:id", async (req,res)=>{
         }
 
         const certClass = ageCertificate.replace(/[^a-zA-Z0-9]/g, '-');
+
+        // Final display values: prefer AniList season data when present, else TMDB.
+        const displayTitle = aniDisplayTitle || title;
+        const displayEscapedTitle = displayTitle.replace(/'/g, "\\'");
+        const displayYear = aniDisplayYear || year;
+        const displayPoster = aniDisplayCover || posterPath;
+        const displayOverview = aniDisplayOverview || overview;
+
+        // "Other Seasons" navigation strip from AniList relations. Each related entry shares
+        // this same TMDB show id, so we link back to /media/tv/{id} with the related aniId —
+        // no TMDB re-search needed. Ordered prequels-first by year for a natural timeline.
+        const relLabel = { PREQUEL: 'Prequel', SEQUEL: 'Sequel', PARENT: 'Parent', SIDE_STORY: 'Side Story' };
+        const nsfwQS = (req.query.nsfw === 'true' || req.session.nsfw) ? '&nsfw=true' : '';
+        const sortedRelated = relatedSeasons.slice().sort((a, b) => (a.year || 0) - (b.year || 0));
+        const relatedSeasonsHtml = (isAnime && sortedRelated.length) ? `
+            <h3 class="overview-heading">Other Seasons & Related</h3>
+            <div class="related-seasons" style="display:flex; gap:14px; overflow-x:auto; padding:6px 2px 14px;">
+                ${sortedRelated.map(rs => `
+                    <a href="/media/tv/${id}?aniId=${rs.id}${nsfwQS}" style="flex:0 0 auto; width:120px; text-decoration:none; color:white;">
+                        <img src="${rs.cover}" alt="${rs.title}" style="width:120px; height:170px; object-fit:cover; border-radius:8px; display:block;">
+                        <p style="font-size:11px; color:#e50914; margin:6px 0 2px; text-transform:uppercase; letter-spacing:0.5px;">${relLabel[rs.rel] || rs.rel}</p>
+                        <p style="font-size:13px; margin:0; line-height:1.3;">${rs.title}</p>
+                        ${rs.year ? `<p style="font-size:11px; color:#aaa; margin:2px 0 0;">${rs.year}</p>` : ''}
+                    </a>`).join('')}
+            </div>` : '';
         console.log("Final Genres Text:", genresText);
+
         res.send(`
-            <!DOCTYPE hmtl>
+            <!DOCTYPE html>
             <html>
                 <head>
                     <meta charset="utf-8">
@@ -416,7 +540,7 @@ router.get("/:type/:id", async (req,res)=>{
                     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
                     <link rel="icon" type="image/x-icon" href="/images/icon.png">
                     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-                    <title>${title} (${year}) - SearchMovie</title>
+                    <title>${displayTitle} (${displayYear}) - SearchMovie</title>
                     <style>
                         .details-hero {
                             position: relative;
@@ -451,22 +575,22 @@ router.get("/:type/:id", async (req,res)=>{
                     <div class="details-hero">
                         <div class="details-container">
                             <div class="details-left">
-                                <img src="${posterPath}" alt="${title} Poster" class="details-poster">
+                                <img src="${displayPoster}" alt="${displayTitle} Poster" class="details-poster">
                             </div>
-                            
+
                             <div class="details-right">
-                               <div style="display: flex; align-items: center; gap: 15px;">
-                                    <h1 class="details-title">${title} <span class="details-year">(${year})</span></h1>
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <h1 class="details-title">${displayTitle} <span class="details-year">(${displayYear})</span></h1>
                                     <div id="int-btns">
-                                        <button class="watchlist-btn ${isWatchlisted}" onclick="addWatchlist(this, '${escapedTitle}', '${year}', '${id}', '${genresText.replace(/'/g, "\\'")}', '${rating}', '${posterPath}', 'PG')">
+                                        <button class="watchlist-btn ${isWatchlisted}" onclick="addWatchlist(this, '${displayEscapedTitle}', '${displayYear}', '${id}', '${genresText.replace(/'/g, "\\'")}', '${rating}', '${displayPoster}', 'PG')">
                                             <span class="eye-icon"></span>
                                         </button>
-                                        <button class="heart-btn ${isFav}" onclick="addFavorite(this, '${escapedTitle}', '${year}', '${id}', '${genresText.replace(/'/g, "\\'")}', '${rating}', '${posterPath}', 'PG')">
+                                        <button class="heart-btn ${isFav}" onclick="addFavorite(this, '${displayEscapedTitle}', '${displayYear}', '${id}', '${genresText.replace(/'/g, "\\'")}', '${rating}', '${displayPoster}', 'PG')">
                                             <span class="heart-icon"></span>
                                         </button>
                                     </div>
                                 </div>
-                                
+
                                 <div class="details-meta">
                                     <span class="cert-badge ${certClass}">${ageCertificate}</span>
                                     <span class="meta-badge">${type === 'movie' ? 'Movie' : 'TV Show'}</span>
@@ -487,24 +611,25 @@ router.get("/:type/:id", async (req,res)=>{
                                 </div>
 
                                 <p class="details-tagline"><em>${tagline}</em></p>
-                                
-                                <h3 class="overview-heading">Overview</h3>
-                                <p class="details-overview">${overview}</p>
 
-                                ${trailer 
-                                    ? `<button class="trailer-btn" onclick="openTrailer('${trailer.key}')">▶ Watch Trailer</button>` 
-                                    : `<p>No trailer available.</p>`
-                                }
+                                <h3 class="overview-heading">Overview</h3>
+                                <p class="details-overview">${displayOverview}</p>
+
+                                ${relatedSeasonsHtml}
+
+                                ${trailer
+                ? `<button class="trailer-btn" onclick="openTrailer('${trailer.key}')">▶ Watch Trailer</button>`
+                : `<p>No trailer available.</p>`
+            }
 
                                 <button class="trailer-btn" onclick="openPlayer()">▶ Watch</button>
-                                
+
                                 <div id="trailerModal" class="modal">
                                     <div class="modal-content">
                                         <span class="close" onclick="closeTrailer()">&times;</span>
                                         <div id="player"></div>
                                     </div>
                                 </div>
-
 
                                 <div id="playerModal" class="modal">
                                     <div class="modal-content" id="player-content">
@@ -528,7 +653,6 @@ router.get("/:type/:id", async (req,res)=>{
                                     </div>
                                 </div>
 
-                                
                                 <h3 class="overview-heading">Where to Watch</h3>
                                 <div class="watch-providers">
                                     ${watchHtml}
@@ -546,39 +670,35 @@ router.get("/:type/:id", async (req,res)=>{
                                     <p>(Ad Blocker is recommended or use a browser that has one like: Brave)
                                     <div id="links-container">
                                         <ul class="secret-link-list">
-                                            ${secretLinksHtml}</li>
+                                            ${secretLinksHtml}
                                         </ul>
                                     </div>
-                                </div>                            
+                                </div>
                             </div>
                         </div>
                     </div>
                 </body>
                 <script>
-                   const toggle = document.getElementById('secretToggle');
-                   const secretDiv = document.getElementById('secretDiv');
+                    const toggle = document.getElementById('secretToggle');
+                    const secretDiv = document.getElementById('secretDiv');
 
-                    toggle.addEventListener('change', function() {
+                    toggle.addEventListener('change', function () {
                         secretDiv.style.display = this.checked ? 'block' : 'none';
                     });
 
                     async function addFavorite(btn, title, year, imdbId, genres, rating, image, certification) {
                         const isGuest = ${isGuest};
-        
                         if (isGuest) {
                             alert("Please log in to add favorites!");
                             window.location.href = "/users/login";
                             return;
                         }
                         const isActive = btn.classList.toggle('active');
-
                         await fetch("/favorites/add", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ title, year, imdbId, genres, rating, image, certification })
                         });
-
-                        
                         console.log("Favorite status updated: " + isActive);
                     }
 
@@ -600,19 +720,18 @@ router.get("/:type/:id", async (req,res)=>{
                     function openTrailer(key) {
                         const modal = document.getElementById('trailerModal');
                         const player = document.getElementById('player');
-                        player.innerHTML = '<iframe width="100%" height="400" src="https://www.youtube.com/embed/' + key + '" frameborder="0" allowfullscreen></iframe>';                        
+                        player.innerHTML = '<iframe width="100%" height="400" src="https://www.youtube.com/embed/' + key + '" frameborder="0" allowfullscreen></iframe>';
                         modal.style.display = "flex";
                     }
 
                     function closeTrailer() {
                         document.getElementById('trailerModal').style.display = "none";
-                        document.getElementById('player').innerHTML = ""; // Stops the video
+                        document.getElementById('player').innerHTML = "";
                     }
 
                     window.addEventListener('DOMContentLoaded', () => {
                         const title = '${escapedTitle}';
                         const type = '${type}';
-                        
                         fetch('/media/api/score?title=' + encodeURIComponent(title) + '&type=' + type)
                             .then(response => response.json())
                             .then(data => {
@@ -623,100 +742,96 @@ router.get("/:type/:id", async (req,res)=>{
                             });
                     });
 
-                    window.addEventListener('pageshow', function(event) {
+                    window.addEventListener('pageshow', function (event) {
                         if (event.persisted || performance.getEntriesByType('navigation')[0]?.type === 'back_forward') {
                             window.location.reload();
                         }
                     });
 
+                    /* ---------------- shared player state ---------------- */
                     let currentShowId = '${id}';
                     let currentType = '${type}';
                     let currentSource = 'vidlink';
-                    let currentSubDub = 'sub';
                     let currentSeason = null;
-                    let usingTmdbFallback = false;
                     let currentEpisode = null;
-                    const currentTitle = '${escapedTitle}';
+                    const currentTitle = '${displayEscapedTitle}';
                     const currentImdbId = '${imdbId || ''}';
-                    const malId = ${malId || 'null'};
+
+                    /* ---------------- anime (VidPlus) state ---------------- */
                     const isAnime = ${isAnime ? 'true' : 'false'};
-                    const malEpisodeCount = ${malEpisodeCount || 'null'};
-                    const seasonsData = ${JSON.stringify((data.seasons || []).filter(s => s.season_number > 0))};
-                    const tmdbTotalEpisodes = seasonsData.reduce((sum, s) => sum + (s.episode_count || 0), 0);
-                    const isFranchiseSplit = malEpisodeCount
-                        && seasonsData.length >= 5
-                        && tmdbTotalEpisodes > malEpisodeCount * 3;
-                    const useMalPlayer = isAnime && malId && !isFranchiseSplit;
+                    const anilistId = ${anilistId || 'null'};
+                    const anilistEpisodeCount = ${anilistEpisodeCount || 'null'};
+                    const animeEpisodes = ${JSON.stringify(streamingEpisodes)};
+                    const useAnimePlayer = isAnime && anilistId;
+                    let currentAnimeEp = 1;
+                    let animeDub = false;
+                    let animeServer = 'tryembed';   // 'tryembed' | 'megaplay' | 'vidplus' — all use the AniList id
+                    let tmdbAnimeEpisodes = null;   // lazily-loaded TMDB stills (thumbnails only)
+                    const animeTmdbSeasons = ${JSON.stringify((data.seasons || []).filter(s => s.season_number > 0).map(s => s.season_number))};
+                    const animeSeasonNum = ${bestTmdbSeason || 'null'}; // TMDB season matched by air date (falls back to title parse)
 
+                    async function ensureTmdbAnimeThumbs() {
+                        if (tmdbAnimeEpisodes !== null) return; // already loaded (or empty)
+                        if (!animeTmdbSeasons.length) { tmdbAnimeEpisodes = []; return; }
+                        try {
+                            // If we parsed a specific season from the AniList title (e.g. "Season 4")
+                            // AND TMDB has that season, fetch ONLY that season's stills so thumbnails
+                            // line up with this AniList entry. Otherwise fall back to count-matching,
+                            // then to flattening all seasons (handled server-side via &match).
+                            const useSeason = (animeSeasonNum && animeTmdbSeasons.includes(animeSeasonNum))
+                                ? String(animeSeasonNum)
+                                : animeTmdbSeasons.join(',');
+                            const r = await fetch('/media/api/anime-episodes-tmdb?id=' + currentShowId
+                                + '&seasons=' + useSeason
+                                + '&match=' + (anilistEpisodeCount || 0));
+                            const d = await r.json();
+                            tmdbAnimeEpisodes = d.episodes || [];
+                        } catch {
+                            tmdbAnimeEpisodes = [];
+                        }
+                    }
 
-
-
+                    /* ============================================================
+                       ENTRY POINT
+                       movie  -> single embed
+                       anime  -> VidPlus, flat episode list, in-player Sub/Dub
+                       tv     -> TMDB seasons + multi-server switcher
+                    ============================================================ */
                     function openPlayer() {
-                        currentSource = 'vidlink';
-                        currentSubDub = 'sub';
                         document.getElementById('playerModal').style.display = 'flex';
+
                         if (currentType === 'movie') {
+                            currentSource = 'vidlink';
                             document.getElementById('player-title').innerText = currentTitle;
                             document.getElementById('season-episode-picker').style.display = 'none';
                             renderIframe(getMovieSrc(currentSource));
-                        } else {
+                            return;
+                        }
+
+                        if (useAnimePlayer) {
                             document.getElementById('season-episode-picker').style.display = 'block';
+                            document.getElementById('season-select').style.display = 'none'; // anime has no TMDB seasons
                             document.getElementById('vidlink-player').innerHTML =
-                                renderSwitcher() +
-                                \`<div style="height:180px; display:flex; align-items:center; justify-content:center; color:#777; background:#111; border-radius:8px; font-size:14px;">
-                                    Select an episode below to start watching
-                                </div>\`;
-                            loadSeasons();
-                        }
-                    }
-
-                   function getMovieSrc(source) {
-                        if (source === 'vidsrcembed') return \`https://vidsrc-embed.ru/embed/movie/\${currentImdbId}\`;
-                        if (source === 'videasy') return \`https://player.videasy.net/movie/\${currentShowId}\`;
-                        if (source === 'multiembed') return \`https://multiembed.mov/?video_id=\${currentShowId}&tmdb=1\`;
-
-                        return \`https://vidlink.pro/movie/\${currentShowId}\`;
-                    }
-
-                   function getEpisodeSrc(source, season, episode) {
-                        if (useMalPlayer) {
-                            return \`https://megaplay.buzz/stream/mal/\${malId}/\${episode}/\${currentSubDub}\`;
+                                renderAnimeControls() +
+                                placeholder();
+                            // AniList thumbnails are already injected in-page; render immediately.
+                            renderAnimeEpisodeList();
+                            return;
                         }
 
-                        if (source === 'vidsrcembed') return \`https://vidsrc-embed.ru/embed/tv/\${currentImdbId}/\${season}-\${episode}\`;
-                        if (source === 'videasy') return \`https://player.videasy.net/tv/\${currentShowId}/\${season}/\${episode}\`;
-                        if (source === 'multiembed') return \`https://multiembed.mov/?video_id=\${currentShowId}&tmdb=1&s=\${season}&e=\${episode}\`;
-                        return \`https://vidlink.pro/tv/\${currentShowId}/\${season}/\${episode}\`;
+                        // live-action TV
+                        currentSource = 'vidlink';
+                        document.getElementById('season-select').style.display = '';
+                        document.getElementById('season-episode-picker').style.display = 'block';
+                        document.getElementById('vidlink-player').innerHTML =
+                            renderSwitcher() + placeholder();
+                        loadSeasons();
                     }
 
-                    function renderSwitcher() {
-                        if (useMalPlayer) {
-                            return \`
-                                <div id="server-box">
-                                    <p style="color:#aaa; font-size:12px; margin:0 0 8px; text-transform:uppercase; letter-spacing:1px;">
-                                        <i class="fa-solid fa-language" style="margin-right:6px; color:#e50914;"></i>Audio
-                                    </p>
-                                    \${['sub', 'dub'].map(t => \`
-                                        <button class="serverBtn" onclick="switchSource('\${t}')"
-                                            style="background:\${currentSubDub === t ? '#e50914' : '#2a2a2a'};">
-                                            \${t === 'sub' ? 'Sub' : 'Dub'}
-                                        </button>\`).join('')}
-                                </div>\`;
-                        }
-                        const sources = [
-                            { id: 'vidlink', label: 'Server 1' },
-                            { id: 'videasy', label: 'Server 2' },
-                            ...(currentImdbId ? [{ id: 'vidsrcembed', label: 'Sever 3' }] : []),
-                            { id: 'multiembed', label: 'Server 4' },
-                        ];
-                        return \`
-                        <div id="server-box">
-                                \${sources.map(s => \`
-                                    <button class="serverBtn" onclick="switchSource('\${s.id}')" 
-                                    style="background:\${currentSource === s.id ? '#e50914' : '#2a2a2a'};">
-                                    <i class="fa-solid fa-server" style="margin-right:6px;"></i>\${s.label}
-                                    </button>\`).join('')}
-                            </div>\`;
+                    function placeholder() {
+                        return \`<div style="height:180px; display:flex; align-items:center; justify-content:center; color:#777; background:#111; border-radius:8px; font-size:14px;">
+                            Select an episode below to start watching
+                        </div>\`;
                     }
 
                     function renderIframe(src) {
@@ -725,35 +840,49 @@ router.get("/:type/:id", async (req,res)=>{
                             \`<iframe width="100%" height="450" src="\${src}" frameborder="0" allowfullscreen referrerpolicy="origin"></iframe>\`;
                     }
 
-                   function switchSource(source) {
-                        if (useMalPlayer) {
-                            currentSubDub = source;
-                            if (currentEpisode) {
-                                renderIframe(getEpisodeSrc(null, null, currentEpisode));
-                            } else {
-                                document.getElementById('vidlink-player').innerHTML =
-                                    renderSwitcher() +
-                                    \`<div style="height:180px; display:flex; align-items:center; justify-content:center; color:#777; background:#111; border-radius:8px; font-size:14px;">
-                                        Select an episode below to start watching
-                                    </div>\`;
-                            }
-                            return;
-                        }
+                    /* ======================= MOVIES ======================= */
+                    function getMovieSrc(source) {
+                        if (source === 'vidsrcembed') return \`https://vidsrc-embed.ru/embed/movie/\${currentImdbId}\`;
+                        if (source === 'videasy') return \`https://player.videasy.net/movie/\${currentShowId}\`;
+                        if (source === 'multiembed') return \`https://multiembed.mov/?video_id=\${currentShowId}&tmdb=1\`;
+                        return \`https://vidlink.pro/movie/\${currentShowId}\`;
+                    }
 
+                    /* ===================== LIVE-ACTION TV ===================== */
+                    function getEpisodeSrc(source, season, episode) {
+                        if (source === 'vidsrcembed') return \`https://vidsrc-embed.ru/embed/tv/\${currentImdbId}/\${season}-\${episode}\`;
+                        if (source === 'videasy') return \`https://player.videasy.net/tv/\${currentShowId}/\${season}/\${episode}\`;
+                        if (source === 'multiembed') return \`https://multiembed.mov/?video_id=\${currentShowId}&tmdb=1&s=\${season}&e=\${episode}\`;
+                        return \`https://vidlink.pro/tv/\${currentShowId}/\${season}/\${episode}\`;
+                    }
+
+                    function renderSwitcher() {
+                        const sources = [
+                            { id: 'vidlink', label: 'Server 1' },
+                            { id: 'videasy', label: 'Server 2' },
+                            ...(currentImdbId ? [{ id: 'vidsrcembed', label: 'Server 3' }] : []),
+                            { id: 'multiembed', label: 'Server 4' },
+                        ];
+                        return \`
+                            <div id="server-box">
+                                \${sources.map(s => \`
+                                    <button class="serverBtn" onclick="switchSource('\${s.id}')"
+                                        style="background:\${currentSource === s.id ? '#e50914' : '#2a2a2a'};">
+                                        <i class="fa-solid fa-server" style="margin-right:6px;"></i>\${s.label}
+                                    </button>\`).join('')}
+                            </div>\`;
+                    }
+
+                    function switchSource(source) {
                         currentSource = source;
-
                         if (currentType === 'movie') {
                             renderIframe(getMovieSrc(source));
                         } else if (currentSeason && currentEpisode) {
                             document.getElementById('player-title').innerText =
-                                \`\${currentTitle} — S\${String(currentSeason).padStart(2,'0')}E\${String(currentEpisode).padStart(2,'0')}\`;
-                            renderIframe(getTmdbEpisodeSrc(source, currentSeason, currentEpisode));
+                                \`\${currentTitle} — S\${String(currentSeason).padStart(2, '0')}E\${String(currentEpisode).padStart(2, '0')}\`;
+                            renderIframe(getEpisodeSrc(source, currentSeason, currentEpisode));
                         } else {
-                            document.getElementById('vidlink-player').innerHTML =
-                                renderSwitcher() +
-                                \`<div style="height:180px; display:flex; align-items:center; justify-content:center; color:#777; background:#111; border-radius:8px; font-size:14px;">
-                                    Select an episode below to start watching
-                                </div>\`;
+                            document.getElementById('vidlink-player').innerHTML = renderSwitcher() + placeholder();
                         }
                     }
 
@@ -767,7 +896,7 @@ router.get("/:type/:id", async (req,res)=>{
                         }).join('');
                         if (seasons.length > 0) handleSeasonChange(seasons[0].season_number);
                     }
-                        
+
                     async function handleSeasonChange(seasonNum) {
                         document.getElementById('episode-count').innerText = '';
                         document.getElementById('episode-grid').innerHTML =
@@ -789,14 +918,11 @@ router.get("/:type/:id", async (req,res)=>{
                                 : 'No description.';
                             const rating = ep.vote_average ? Number(ep.vote_average).toFixed(1) : 'N/A';
                             const airDate = ep.air_date ? ep.air_date.substring(0, 7) : '';
-
                             return \`
                                 <div class="episode-card" onclick="playEpisode(\${seasonNum}, \${ep.episode_number})">
                                     <div style="position:relative;">
                                         <img src="\${thumb}" alt="\${name}" class="episode-thumb">
-                                        <div class="episode-overlay">
-                                            <span style="font-size:26px;">▶</span>
-                                        </div>
+                                        <div class="episode-overlay"><span style="font-size:26px;">▶</span></div>
                                         <span class="episode-badge left">E\${ep.episode_number}</span>
                                         <span class="episode-badge right">⭐ \${rating}</span>
                                     </div>
@@ -812,25 +938,133 @@ router.get("/:type/:id", async (req,res)=>{
                     function playEpisode(season, episode) {
                         currentSeason = season;
                         currentEpisode = episode;
+                        document.getElementById('player-title').innerText =
+                            currentTitle + ' — S' + String(season).padStart(2, '0') + 'E' + String(episode).padStart(2, '0');
+                        renderIframe(getEpisodeSrc(currentSource, season, episode));
+                        document.getElementById('player-content').scrollTop = 0;
+                    }
 
-                        if (useMalPlayer) {
-                            const prevSeasons = seasonsData.filter(s => s.season_number < season);
-                            const prevEpisodeCount = prevSeasons.reduce((sum, s) => sum + (s.episode_count || 0), 0);
-                            const absoluteEpisode = prevEpisodeCount + episode;
+                    /* ======================= ANIME (multi-provider) ======================= */
+                    function getAnimeSrc(ep) {
+                        const lang = animeDub ? 'dub' : 'sub';
+                        if (animeServer === 'vidplus')
+                            return \`https://player.vidplus.to/embed/anime/\${anilistId}/\${ep}?dub=\${animeDub}&autonext=true&nextbutton=true\`;
+                        if (animeServer === 'megaplay')
+                            return \`https://megaplay.buzz/stream/ani/\${anilistId}/\${ep}/\${lang}\`;
+                        // default: TryEmbed
+                        return \`https://tryembed.us.cc/embed/anime/\${anilistId}/\${ep}/\${lang}\`;
+                    }
 
-                            fetchSkipTimes(absoluteEpisode);
-                            document.getElementById('player-title').innerText =
-                                currentTitle + ' — S' + String(season).padStart(2,'0') + 'E' + String(episode).padStart(2,'0');
-                            renderIframe(getEpisodeSrc(currentSource, season, absoluteEpisode));
-                        } else {
-                            const skipBtn = document.getElementById('skip-btn');
-                            if (skipBtn) skipBtn.style.display = 'none';
-                            document.getElementById('player-title').innerText =
-                                currentTitle + ' — S' + String(season).padStart(2,'0') + 'E' + String(episode).padStart(2,'0');
-                            renderIframe(getTmdbEpisodeSrc(currentSource, season, episode));
+                    function setAnimeServer(srv) {
+                        animeServer = srv;
+                        renderAnimeIframe(currentAnimeEp);
+                    }
+
+                    function renderAnimeControls() {
+                        const servers = [
+                            { id: 'tryembed', label: 'Server 1' },
+                            { id: 'megaplay', label: 'Server 2' },
+                            { id: 'vidplus', label: 'Server 3' },
+                        ];
+                        return \`
+                            <div id="server-box">
+                                <p style="color:#aaa; font-size:12px; margin:0 0 8px; text-transform:uppercase; letter-spacing:1px;">
+                                    <i class="fa-solid fa-server" style="margin-right:6px; color:#e50914;"></i>Server
+                                </p>
+                                \${servers.map(s => \`
+                                    <button class="serverBtn" onclick="setAnimeServer('\${s.id}')"
+                                        style="background:\${animeServer === s.id ? '#e50914' : '#2a2a2a'};">
+                                        \${s.label}
+                                    </button>\`).join('')}
+                            </div>
+                            <div id="server-box" style="margin-top:8px;">
+                                <p style="color:#aaa; font-size:12px; margin:0 0 8px; text-transform:uppercase; letter-spacing:1px;">
+                                    <i class="fa-solid fa-language" style="margin-right:6px; color:#e50914;"></i>Audio
+                                </p>
+                                \${['sub', 'dub'].map(t => {
+                                    const isDub = t === 'dub';
+                                    return \`<button class="serverBtn" onclick="setAnimeAudio(\${isDub})"
+                                        style="background:\${animeDub === isDub ? '#e50914' : '#2a2a2a'};">
+                                        \${isDub ? 'Dub' : 'Sub'}
+                                    </button>\`;
+                                }).join('')}
+                            </div>\`;
+                    }
+
+                    function setAnimeAudio(dub) {
+                        animeDub = dub;
+                        renderAnimeIframe(currentAnimeEp);
+                    }
+
+                    function renderAnimeIframe(ep) {
+                        currentAnimeEp = ep;
+                        document.getElementById('vidlink-player').innerHTML =
+                            renderAnimeControls() +
+                            \`<iframe width="100%" height="450" src="\${getAnimeSrc(ep)}" frameborder="0" allowfullscreen referrerpolicy="origin"></iframe>\`;
+                        document.getElementById('player-title').innerText = currentTitle + ' — Episode ' + ep;
+                        document.getElementById('player-content').scrollTop = 0;
+                    }
+
+                    function renderAnimeEpisodeList() {
+                        const count = anilistEpisodeCount
+                            || (tmdbAnimeEpisodes ? tmdbAnimeEpisodes.length : 0)
+                            || animeEpisodes.length || 24;
+
+                        // Do we have AniList thumbnails? They're the only source guaranteed to align
+                        // with this exact entry. If present -> rich grid. If not -> clean numbered list
+                        // (clearer than showing mismatched/placeholder images that confuse people).
+                        const hasAniThumbs = animeEpisodes.some(e => e && e.thumbnail);
+
+                        document.getElementById('episode-count').innerText = count + ' episodes';
+
+                        if (!hasAniThumbs) {
+                            // ---- LIST MODE ----
+                            let rows = '';
+                            for (let i = 1; i <= count; i++) {
+                                const se = animeEpisodes[i - 1];
+                                let label = 'Episode ' + i;
+                                if (se && se.title) {
+                                    const cleaned = se.title.replace(/^episode\\s*\\d+\\s*[-–—:]*\\s*/i, '').trim();
+                                    if (cleaned) label = cleaned;
+                                }
+                                rows += \`
+                                    <div class="anime-ep-row" onclick="renderAnimeIframe(\${i})"
+                                        style="display:flex; align-items:center; gap:12px; padding:11px 14px; cursor:pointer;
+                                               border-bottom:1px solid #222; transition:background 0.15s;"
+                                        onmouseover="this.style.background='#1c1c1c'" onmouseout="this.style.background='transparent'">
+                                        <span style="flex:0 0 42px; color:#e50914; font-weight:bold; font-size:14px;">E\${i}</span>
+                                        <span style="flex:1; font-size:14px; color:#eee;">\${label}</span>
+                                        <span style="flex:0 0 auto; color:#777; font-size:16px;">▶</span>
+                                    </div>\`;
+                            }
+                            document.getElementById('episode-grid').innerHTML =
+                                \`<div style="background:#141414; border-radius:8px; overflow:hidden;">\${rows}</div>\`;
+                            return;
                         }
 
-                        document.getElementById('player-content').scrollTop = 0;
+                        // ---- GRID MODE (AniList thumbnails present) ----
+                        let cards = '';
+                        for (let i = 1; i <= count; i++) {
+                            const se = animeEpisodes[i - 1];
+                            const thumb = (se && se.thumbnail) ? se.thumbnail : '/images/icon.png';
+                            let label = 'Episode ' + i;
+                            if (se && se.title) {
+                                const cleaned = se.title.replace(/^episode\\s*\\d+\\s*[-–—:]*\\s*/i, '').trim();
+                                if (cleaned) label = 'E' + i + ' • ' + cleaned;
+                            }
+                            cards += \`
+                                <div class="episode-card" onclick="renderAnimeIframe(\${i})" style="cursor:pointer;">
+                                    <div style="position:relative;">
+                                        <img src="\${thumb}" alt="Episode \${i}" class="episode-thumb">
+                                        <div class="episode-overlay"><span style="font-size:26px;">▶</span></div>
+                                        <span class="episode-badge left">E\${i}</span>
+                                    </div>
+                                    <div class="episode-info">
+                                        <p class="episode-title">\${label}</p>
+                                    </div>
+                                </div>\`;
+                        }
+                        document.getElementById('episode-grid').innerHTML = cards;
                     }
 
                     function closePlayer() {
@@ -839,52 +1073,12 @@ router.get("/:type/:id", async (req,res)=>{
                         currentSeason = null;
                         currentEpisode = null;
                     }
+                </script>
+            </html>`);
 
-                    function getTmdbEpisodeSrc(source, season, episode) {
-                        if (source === 'vidsrcembed') return \`https://vidsrc-embed.ru/embed/tv/\${currentImdbId}/\${season}-\${episode}\`;
-                        if (source === 'videasy') return \`https://player.videasy.net/tv/\${currentShowId}/\${season}/\${episode}\`;
-                        if (source === 'multiembed') return \`https://multiembed.mov/?video_id=\${currentShowId}&tmdb=1&s=\${season}&e=\${episode}\`;
-                        return \`https://vidlink.pro/tv/\${currentShowId}/\${season}/\${episode}\`;
-                    }
-
-                    async function fetchSkipTimes(episodeNum) {
-                        const skipBtn = document.getElementById('skip-btn');
-                        if (skipBtn) skipBtn.style.display = 'none';
-                        try {
-                            const res = await fetch(\`https://api.aniskip.com/v2/skip-times/\${malId}/\${episodeNum}?types[]=op&types[]=ed&episodeLength=0\`);
-                            const data = await res.json();
-                            if (data.found) {
-                                const op = data.results?.find(r => r.skipType === 'op');
-                                if (op) {
-                                    const btn = document.getElementById('skip-btn');
-                                    if (btn) {
-                                        btn.style.display = 'block';
-                                        btn.dataset.start = op.interval.startTime;
-                                        btn.dataset.end = op.interval.endTime;
-                                        btn.innerText = '⏭ Skip Intro';
-                                    }
-                                }
-                            }
-                        } catch {
-                            const b = document.getElementById('skip-btn');
-                            if (b) b.style.display = 'none';
-                        }
-                    }
-
-                    function skipIntro() {
-                        const btn = document.getElementById('skip-btn');
-                        btn.innerText = '✓ Seek to ' + Math.floor(btn.dataset.end) + 's';
-                        setTimeout(() => btn.style.display = 'none', 3000);
-                    }
-
-        </script>
-         </html>`);
-
-
-    } catch(err){
+    } catch (err) {
         console.log("API ERROR: ", err);
     }
-})
-
+});
 
 module.exports = router;
