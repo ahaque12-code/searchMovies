@@ -83,7 +83,9 @@ async function getRottenTomatoesScore(title, type) {
     return await tryOMDB(title);
 }
 
-
+// Walk AniList relations into the COMPLETE ordered TV season chain for an anime.
+// Used ONLY for season-navigation buttons — never for episode math — so it cannot
+// reintroduce the old numbering bugs. Single-entry shows (One Piece) return just themselves.
 async function buildSeasonChain(startId) {
     const Q = `query ($id: Int) {
         Media(id: $id, type: ANIME) {
@@ -113,6 +115,7 @@ async function buildSeasonChain(startId) {
     const start = await fetchNode(startId);
     if (!start) return [];
 
+    // Walk backward along PREQUEL to the first season, collecting ids.
     const back = [];
     let seen = new Set([startId]);
     let cur = start;
@@ -125,6 +128,7 @@ async function buildSeasonChain(startId) {
         back.unshift(node);
         cur = node;
     }
+    // Walk forward along SEQUEL to the last season.
     const fwd = [];
     cur = start;
     for (let i = 0; i < 12; i++) {
@@ -148,6 +152,9 @@ async function buildSeasonChain(startId) {
 }
 
 router.get("/api/anime-episodes-tmdb", async (req, res) => {
+    // Flatten all TMDB seasons into one continuous ordered episode array.
+    // Used ONLY for anime episode thumbnails/titles — the player still uses the
+    // plain episode index, so a mis-ordered still can never break playback.
     const { id, seasons, match } = req.query; // seasons = comma list, e.g. "1,2,3"
     const api_key = process.env.TMDB_API_KEY;
     const seasonNums = (seasons || "").split(",").filter(Boolean);
@@ -169,8 +176,10 @@ router.get("/api/anime-episodes-tmdb", async (req, res) => {
 
         let all;
         if (perSeason.length === 1) {
+            // Caller already picked the exact season (parsed from the AniList title) — use it.
             all = perSeason[0].eps;
         } else if (matchCount > 0) {
+            // Multiple seasons + a known AniList episode count: pick the closest-matching season.
             let best = perSeason[0], bestDiff = Infinity;
             for (const ps of perSeason) {
                 const diff = Math.abs(ps.count - matchCount);
@@ -275,6 +284,7 @@ router.get("/:type/:id", async (req, res) => {
     }
 
     let anilistId = null;
+    let animeIsNsfw = false; // AniList isAdult / hentai flag — drives NSFW-specific stream providers
     let animeGenres = [];
     let anilistEpisodeCount = null;
     let streamingEpisodes = [];
@@ -383,12 +393,17 @@ router.get("/:type/:id", async (req, res) => {
             links.push({ name: "Anime Websites list", url: `https://yarrlist.net/anime-list` });
         }
 
-        
+        // Resolve the AniList entry for this anime.
+        // Priority: (1) exact AniList id passed from the /anime card (?aniId=) — needed for
+        // shows TMDB lumps into one entry (e.g. Re:ZERO seasons); (2) title + season-year
+        // search to disambiguate remakes; (3) unfiltered title search as a last resort.
+        // We need: anilistId (drives the player), genres/isAdult (NSFW gate), episode count.
         if (isAnime) {
             try {
                 const EP_FIELDS = `id episodes genres isAdult nextAiringEpisode { episode } streamingEpisodes { title thumbnail } title { romaji english } coverImage { large } bannerImage description(asHtml: false) startDate { year month day } relations { edges { relationType node { id type format title { romaji english } coverImage { medium } startDate { year } } } }`;
                 let media = null;
 
+                // (1) Exact entry the user clicked on /anime
                 if (aniIdParam) {
                     const r = await fetch('https://graphql.anilist.co', {
                         method: 'POST',
@@ -402,6 +417,7 @@ router.get("/:type/:id", async (req, res) => {
                     media = j.data?.Media || null;
                 }
 
+                // (2) Title + season-year search (disambiguates remakes by year)
                 if (!media) {
                     const tmdbYear = (data.first_air_date || "").substring(0, 4);
                     const query = `
@@ -420,6 +436,7 @@ router.get("/:type/:id", async (req, res) => {
                     media = malData.data?.Page?.media?.[0] || null;
                 }
 
+                // (3) Unfiltered title search (seasonYear is strict and can miss by a year)
                 if (!media) {
                     const fb = await fetch('https://graphql.anilist.co', {
                         method: 'POST',
@@ -455,17 +472,29 @@ router.get("/:type/:id", async (req, res) => {
                 }
 
                 anilistId = media?.id || null;
+                animeIsNsfw = !!(media && (media.isAdult || (media.genres || []).some(g => g.toLowerCase() === 'hentai')));
+                // Reliable fallback for when the in-player slug-guess embed misses: a direct
+                // Hentai Ocean search link in the secret-links section.
+                if (animeIsNsfw) {
+                    const hoQuery = encodeURIComponent(media?.title?.english || media?.title?.romaji || title);
+                    links.push({ name: "🔞 Hentai Ocean (Search)", url: `https://hentaiocean.com/?s=${hoQuery}` });
+                }
                 animeGenres = media?.genres || [];
-               
+                // For finished series use `episodes`; for airing series fall back to the
+                // last aired episode (nextAiringEpisode.episode - 1) so the list isn't empty.
                 anilistEpisodeCount = media?.episodes
                     || (media?.nextAiringEpisode ? media.nextAiringEpisode.episode - 1 : null);
+                // Per-episode thumbnails/titles (user-curated on AniList — may be partial/empty).
                 streamingEpisodes = media?.streamingEpisodes || [];
-                
+                // Parse a TMDB season number out of the AniList title ("... Season 4", "2nd Season")
+                // so the thumbnails can be pulled from that exact TMDB season instead of all of them.
                 const aniTitle = media?.title?.english || media?.title?.romaji || '';
                 let sm = aniTitle.match(/season\s*(\d+)/i) || aniTitle.match(/(\d+)(?:st|nd|rd|th)\s*season/i);
                 animeSeasonNum = sm ? Number(sm[1]) : null;
 
-                
+                // Match the TMDB season by AIR DATE rather than season number — air dates
+                // align across TMDB/AniList even when their season NUMBERS don't (Re:ZERO etc).
+                // Start from the parsed number, then override if a close-dated season exists.
                 bestTmdbSeason = animeSeasonNum;
                 if (media?.startDate?.year) {
                     const aniDate = new Date(
@@ -479,10 +508,12 @@ router.get("/:type/:id", async (req, res) => {
                         const diff = Math.abs(new Date(s.air_date).getTime() - aniDate);
                         if (diff < bestDiff) { bestDiff = diff; best = s.season_number; }
                     }
+                    // Trust the date match only if within ~120 days (one cour) of the AniList start.
                     if (best !== null && bestDiff <= 120 * 86400 * 1000) bestTmdbSeason = best;
                 }
 
-                
+                // Only override page display when the user arrived via a specific season (?aniId).
+                // Other arrivals (search, direct link) keep the TMDB show's display as before.
                 if (aniIdParam && media) {
                     aniDisplayTitle = media.title?.english || media.title?.romaji || null;
                     aniDisplayCover = media.coverImage?.large || null;
@@ -492,7 +523,10 @@ router.get("/:type/:id", async (req, res) => {
                         : null;
                 }
 
-               
+                // Build the COMPLETE season chain (all seasons, ordered) for navigation buttons.
+                // Only when we resolved a definite AniList entry via aniId — avoids extra API
+                // calls on non-anime-card arrivals. Single-entry shows return just themselves
+                // (so One Piece shows no extra seasons and nothing can break).
                 if (aniIdParam && media?.id) {
                     relatedSeasons = await buildSeasonChain(media.id);
                 }
@@ -538,17 +572,20 @@ router.get("/:type/:id", async (req, res) => {
 
         const certClass = ageCertificate.replace(/[^a-zA-Z0-9]/g, '-');
 
+        // Final display values: prefer AniList season data when present, else TMDB.
         const displayTitle = aniDisplayTitle || title;
         const displayEscapedTitle = displayTitle.replace(/'/g, "\\'");
         const displayYear = aniDisplayYear || year;
         const displayPoster = aniDisplayCover || posterPath;
         const displayOverview = aniDisplayOverview || overview;
 
-       
+        // "Other Seasons" navigation strip from AniList relations. Each related entry shares
+        // "Seasons" navigation from the full AniList chain. Each entry shares this TMDB show id,
+        // so we link back to /media/tv/{id} with that season's aniId. Hidden when only one season.
         const nsfwQS = (req.query.nsfw === 'true' || req.session.nsfw) ? '&nsfw=true' : '';
         const relatedSeasonsHtml = (isAnime && relatedSeasons.length > 1) ? `
             <h3 class="overview-heading">Seasons</h3>
-            <div class="related-seasons" style="display:flex; gap:14px; overflow-x:auto; padding:6px 12px 14px;">
+            <div class="related-seasons" style="display:flex; gap:14px; overflow-x:auto; padding:6px 2px 14px;">
                 ${relatedSeasons.map(rs => `
                     <a href="/media/tv/${id}?aniId=${rs.id}${nsfwQS}"
                        style="flex:0 0 auto; width:120px; text-decoration:none; color:white;
@@ -792,13 +829,14 @@ router.get("/:type/:id", async (req, res) => {
 
                     /* ---------------- anime (VidPlus) state ---------------- */
                     const isAnime = ${isAnime ? 'true' : 'false'};
+                    const animeIsNsfw = ${animeIsNsfw ? 'true' : 'false'};
                     const anilistId = ${anilistId || 'null'};
                     const anilistEpisodeCount = ${anilistEpisodeCount || 'null'};
                     const animeEpisodes = ${JSON.stringify(streamingEpisodes)};
                     const useAnimePlayer = isAnime && anilistId;
                     let currentAnimeEp = 1;
                     let animeDub = false;
-                    let animeServer = 'tryembed';   // 'tryembed' | 'megaplay' | 'vidplus' — all use the AniList id
+                    let animeServer = animeIsNsfw ? 'nsfw1' : 'tryembed';   // NSFW titles default to NSFW providers
                     let tmdbAnimeEpisodes = null;   // lazily-loaded TMDB stills (thumbnails only)
                     const animeTmdbSeasons = ${JSON.stringify((data.seasons || []).filter(s => s.season_number > 0).map(s => s.season_number))};
                     const animeSeasonNum = ${bestTmdbSeason || 'null'}; // TMDB season matched by air date (falls back to title parse)
@@ -983,6 +1021,24 @@ router.get("/:type/:id", async (req, res) => {
                     /* ======================= ANIME (multi-provider) ======================= */
                     function getAnimeSrc(ep) {
                         const lang = animeDub ? 'dub' : 'sub';
+
+                        // ============================================================
+                        // NSFW PROVIDER — Hentai Ocean (slug-based embed).
+                        // HO is keyed by a per-video SLUG (e.g. "my-mother-1"), NOT by
+                        // AniList id, and has no title->slug search API. So we GUESS the
+                        // slug from the title: slugify + "-<ep>", matching their -1/-2
+                        // episode pattern. This HITS when their slug matches the title and
+                        // MISSES otherwise (shows their 404 in the iframe) — that's why the
+                        // secret-links section also has a Hentai Ocean search link as a
+                        // reliable fallback. Both nsfw servers below are slug variants.
+                        // ============================================================
+                        if (animeServer === 'nsfw1')
+                            return \`https://hentaiocean.com/embed/\${hentaiSlug(ep)}?la=1\`;
+                        if (animeServer === 'nsfw2')
+                            // variant: some HO slugs have no episode suffix for single releases
+                            return \`https://hentaiocean.com/embed/\${hentaiSlug(null)}?la=1\`;
+
+                        // ---- general-anime providers (SFW) ----
                         if (animeServer === 'vidplus')
                             return \`https://player.vidplus.to/embed/anime/\${anilistId}/\${ep}?dub=\${animeDub}&autonext=true&nextbutton=true\`;
                         if (animeServer === 'megaplay')
@@ -991,13 +1047,31 @@ router.get("/:type/:id", async (req, res) => {
                         return \`https://tryembed.us.cc/embed/anime/\${anilistId}/\${ep}/\${lang}\`;
                     }
 
+                    // Build a Hentai Ocean-style slug from the title. Lowercase, strip
+                    // punctuation, hyphenate, and append the episode number (their pattern
+                    // is "<slug>-<ep>"). Pass null to omit the episode suffix.
+                    function hentaiSlug(ep) {
+                        const base = (currentTitle || '')
+                            .toLowerCase()
+                            .normalize('NFD').replace(/[\\u0300-\\u036f]/g, '') // strip accents
+                            .replace(/[^a-z0-9\\s-]/g, '')                       // drop punctuation
+                            .trim()
+                            .replace(/\\s+/g, '-')                              // spaces -> hyphens
+                            .replace(/-+/g, '-');
+                        return ep ? base + '-' + ep : base;
+                    }
+
                     function setAnimeServer(srv) {
                         animeServer = srv;
                         renderAnimeIframe(currentAnimeEp);
                     }
 
                     function renderAnimeControls() {
-                        const servers = [
+                        // NSFW titles get the NSFW provider list; everything else the general list.
+                        const servers = animeIsNsfw ? [
+                            { id: 'nsfw1', label: 'Server 1' },
+                            { id: 'nsfw2', label: 'Server 2' },
+                        ] : [
                             { id: 'tryembed', label: 'Server 1' },
                             { id: 'megaplay', label: 'Server 2' },
                             { id: 'vidplus', label: 'Server 3' },
