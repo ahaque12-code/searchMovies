@@ -109,6 +109,33 @@ app.get('/', async (req,res) => {
         fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${api_key}&with_genres=16&with_original_language=ja&sort_by=vote_count.desc&page=1`).then(r => r.json()),
     ]);
 
+  
+    let trendingAnime = [];
+    try {
+        const trendingQuery = `
+            query {
+                Page(page: 1, perPage: 20) {
+                    media(type: ANIME, sort: TRENDING_DESC, format_in: [TV, TV_SHORT], isAdult: ${req.session.nsfw ? 'true' : 'false'}) {
+                        id
+                        title { romaji english }
+                        coverImage { large }
+                        averageScore
+                        startDate { year }
+                    }
+                }
+            }
+        `;
+        const tr = await fetch('https://graphql.anilist.co', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: trendingQuery })
+        });
+        const td = await tr.json();
+        trendingAnime = td.data?.Page?.media || [];
+    } catch (err) {
+        console.log('Trending anime fetch failed:', err.message);
+    }
+
        
     
     const seen = new Set();
@@ -500,14 +527,17 @@ app.get('/', async (req,res) => {
         <button type="button" class="slide-btn left" onclick="scrollGrid('anime-grid', -300)">❮</button>
         <div id="anime-grid" class="popular-movie-grid">`;
 
-    for (const anime of animeResults || []) {
-        const title = anime.name || "Unknown";
-        const posterPath = anime.poster_path ? `https://image.tmdb.org/t/p/w500${anime.poster_path}` : 'images/icon.png';
-        const releaseYear = (anime.first_air_date || "").substring(0, 4) || "N/A";
-        const rating = anime.vote_average ? Number(anime.vote_average).toFixed(1) : "N/A";
-
+     for (const anime of trendingAnime) {
+        const title = anime.title.english || anime.title.romaji || "Unknown";
+        const posterPath = anime.coverImage?.large || 'images/icon.png';
+        const releaseYear = anime.startDate?.year || "N/A";
+        const rating = anime.averageScore ? (anime.averageScore / 10).toFixed(1) : "N/A";
+        const searchTitle = anime.title.english || anime.title.romaji || "";
+        const cleanTitle = searchTitle.replace(/season\s*\d+/i, '').replace(/[-–—:]/g, ' ').replace(/\s+/g, ' ').trim();
+        const href = `/anime-go?title=${encodeURIComponent(cleanTitle)}&aniId=${anime.id}`;
+ 
         html += `
-            <div class="popular-movie-card" onclick="window.location.href='/media/tv/${anime.id}'">
+            <div class="popular-movie-card" onclick="window.location.href='${href}'">
                 <div class="popular-poster-container">
                     <img class="popular-movie-img" src="${posterPath}" alt="${title} poster">
                     <div class="play-overlay"><div class="play-icon">▶</div></div>
@@ -549,7 +579,8 @@ app.get('/', async (req,res) => {
         }
         const searchTitle = anime.title.english || anime.title.romaji || "";
         const cleanTitle = searchTitle.replace(/season\s*\d+/i, '').replace(/[-–—:]/g, ' ').replace(/\s+/g, ' ').trim();
-        const href = `/anime-go?title=${encodeURIComponent(cleanTitle)}&aniId=${anime.id}`;        html += `
+        const href = `/anime-go?title=${encodeURIComponent(cleanTitle)}&aniId=${anime.id}`;        
+        html += `
             <div class="popular-movie-card" onclick="window.location.href='${href}'">
                 <div class="popular-poster-container">
                     <img class="popular-movie-img" src="${poster}" alt="${title} poster">

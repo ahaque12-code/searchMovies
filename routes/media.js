@@ -83,10 +83,71 @@ async function getRottenTomatoesScore(title, type) {
     return await tryOMDB(title);
 }
 
+
+async function buildSeasonChain(startId) {
+    const Q = `query ($id: Int) {
+        Media(id: $id, type: ANIME) {
+            id format type
+            title { romaji english }
+            coverImage { medium }
+            startDate { year }
+            relations { edges { relationType node { id type format } } }
+        }
+    }`;
+    async function fetchNode(id) {
+        try {
+            const r = await fetch('https://graphql.anilist.co', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: Q, variables: { id } })
+            });
+            const d = await r.json();
+            return d.data?.Media || null;
+        } catch { return null; }
+    }
+    const isTv = n => n && n.type === 'ANIME' && ['TV', 'TV_SHORT'].includes(n.format);
+    const edgeId = (node, rel) =>
+        (node?.relations?.edges || []).find(e =>
+            e.relationType === rel && isTv(e.node) && e.node?.id)?.node?.id || null;
+
+    const start = await fetchNode(startId);
+    if (!start) return [];
+
+    const back = [];
+    let seen = new Set([startId]);
+    let cur = start;
+    for (let i = 0; i < 12; i++) {
+        const prevId = edgeId(cur, 'PREQUEL');
+        if (!prevId || seen.has(prevId)) break;
+        seen.add(prevId);
+        const node = await fetchNode(prevId);
+        if (!node) break;
+        back.unshift(node);
+        cur = node;
+    }
+    const fwd = [];
+    cur = start;
+    for (let i = 0; i < 12; i++) {
+        const nextId = edgeId(cur, 'SEQUEL');
+        if (!nextId || seen.has(nextId)) break;
+        seen.add(nextId);
+        const node = await fetchNode(nextId);
+        if (!node) break;
+        fwd.push(node);
+        cur = node;
+    }
+    const ordered = [...back, start, ...fwd];
+    return ordered.map((n, idx) => ({
+        id: n.id,
+        seasonLabel: 'Season ' + (idx + 1),
+        title: n.title?.english || n.title?.romaji || ('Season ' + (idx + 1)),
+        cover: n.coverImage?.medium || '/images/icon.png',
+        year: n.startDate?.year || '',
+        current: n.id === startId
+    }));
+}
+
 router.get("/api/anime-episodes-tmdb", async (req, res) => {
-    // Flatten all TMDB seasons into one continuous ordered episode array.
-    // Used ONLY for anime episode thumbnails/titles — the player still uses the
-    // plain episode index, so a mis-ordered still can never break playback.
     const { id, seasons, match } = req.query; // seasons = comma list, e.g. "1,2,3"
     const api_key = process.env.TMDB_API_KEY;
     const seasonNums = (seasons || "").split(",").filter(Boolean);
@@ -108,10 +169,8 @@ router.get("/api/anime-episodes-tmdb", async (req, res) => {
 
         let all;
         if (perSeason.length === 1) {
-            // Caller already picked the exact season (parsed from the AniList title) — use it.
             all = perSeason[0].eps;
         } else if (matchCount > 0) {
-            // Multiple seasons + a known AniList episode count: pick the closest-matching season.
             let best = perSeason[0], bestDiff = Infinity;
             for (const ps of perSeason) {
                 const diff = Math.abs(ps.count - matchCount);
@@ -324,17 +383,12 @@ router.get("/:type/:id", async (req, res) => {
             links.push({ name: "Anime Websites list", url: `https://yarrlist.net/anime-list` });
         }
 
-        // Resolve the AniList entry for this anime.
-        // Priority: (1) exact AniList id passed from the /anime card (?aniId=) — needed for
-        // shows TMDB lumps into one entry (e.g. Re:ZERO seasons); (2) title + season-year
-        // search to disambiguate remakes; (3) unfiltered title search as a last resort.
-        // We need: anilistId (drives the player), genres/isAdult (NSFW gate), episode count.
+        
         if (isAnime) {
             try {
                 const EP_FIELDS = `id episodes genres isAdult nextAiringEpisode { episode } streamingEpisodes { title thumbnail } title { romaji english } coverImage { large } bannerImage description(asHtml: false) startDate { year month day } relations { edges { relationType node { id type format title { romaji english } coverImage { medium } startDate { year } } } }`;
                 let media = null;
 
-                // (1) Exact entry the user clicked on /anime
                 if (aniIdParam) {
                     const r = await fetch('https://graphql.anilist.co', {
                         method: 'POST',
@@ -348,7 +402,6 @@ router.get("/:type/:id", async (req, res) => {
                     media = j.data?.Media || null;
                 }
 
-                // (2) Title + season-year search (disambiguates remakes by year)
                 if (!media) {
                     const tmdbYear = (data.first_air_date || "").substring(0, 4);
                     const query = `
@@ -367,7 +420,6 @@ router.get("/:type/:id", async (req, res) => {
                     media = malData.data?.Page?.media?.[0] || null;
                 }
 
-                // (3) Unfiltered title search (seasonYear is strict and can miss by a year)
                 if (!media) {
                     const fb = await fetch('https://graphql.anilist.co', {
                         method: 'POST',
@@ -404,21 +456,16 @@ router.get("/:type/:id", async (req, res) => {
 
                 anilistId = media?.id || null;
                 animeGenres = media?.genres || [];
-                // For finished series use `episodes`; for airing series fall back to the
-                // last aired episode (nextAiringEpisode.episode - 1) so the list isn't empty.
+               
                 anilistEpisodeCount = media?.episodes
                     || (media?.nextAiringEpisode ? media.nextAiringEpisode.episode - 1 : null);
-                // Per-episode thumbnails/titles (user-curated on AniList — may be partial/empty).
                 streamingEpisodes = media?.streamingEpisodes || [];
-                // Parse a TMDB season number out of the AniList title ("... Season 4", "2nd Season")
-                // so the thumbnails can be pulled from that exact TMDB season instead of all of them.
+                
                 const aniTitle = media?.title?.english || media?.title?.romaji || '';
                 let sm = aniTitle.match(/season\s*(\d+)/i) || aniTitle.match(/(\d+)(?:st|nd|rd|th)\s*season/i);
                 animeSeasonNum = sm ? Number(sm[1]) : null;
 
-                // Match the TMDB season by AIR DATE rather than season number — air dates
-                // align across TMDB/AniList even when their season NUMBERS don't (Re:ZERO etc).
-                // Start from the parsed number, then override if a close-dated season exists.
+                
                 bestTmdbSeason = animeSeasonNum;
                 if (media?.startDate?.year) {
                     const aniDate = new Date(
@@ -432,12 +479,10 @@ router.get("/:type/:id", async (req, res) => {
                         const diff = Math.abs(new Date(s.air_date).getTime() - aniDate);
                         if (diff < bestDiff) { bestDiff = diff; best = s.season_number; }
                     }
-                    // Trust the date match only if within ~120 days (one cour) of the AniList start.
                     if (best !== null && bestDiff <= 120 * 86400 * 1000) bestTmdbSeason = best;
                 }
 
-                // Only override page display when the user arrived via a specific season (?aniId).
-                // Other arrivals (search, direct link) keep the TMDB show's display as before.
+                
                 if (aniIdParam && media) {
                     aniDisplayTitle = media.title?.english || media.title?.romaji || null;
                     aniDisplayCover = media.coverImage?.large || null;
@@ -447,22 +492,11 @@ router.get("/:type/:id", async (req, res) => {
                         : null;
                 }
 
-                // Build the "other seasons" list from AniList relations — prequels and sequels
-                // that are TV series. This is the navigation that lets you reach JJK S2 from S1.
-                const RELATED_TYPES = ['PREQUEL', 'SEQUEL', 'PARENT', 'SIDE_STORY'];
-                relatedSeasons = (media?.relations?.edges || [])
-                    .filter(e => RELATED_TYPES.includes(e.relationType)
-                        && e.node?.type === 'ANIME'
-                        && ['TV', 'TV_SHORT'].includes(e.node?.format)
-                        && e.node?.id)
-                    .map(e => ({
-                        id: e.node.id,
-                        rel: e.relationType,
-                        title: e.node.title?.english || e.node.title?.romaji || 'Unknown',
-                        cover: e.node.coverImage?.medium || '/images/icon.png',
-                        year: e.node.startDate?.year || ''
-                    }));
-                console.log(`AniList ID for ${title}:`, anilistId, '| episodes:', anilistEpisodeCount, '| thumbs:', streamingEpisodes.length, '| parsedSeason:', animeSeasonNum, '| dateSeason:', bestTmdbSeason);
+               
+                if (aniIdParam && media?.id) {
+                    relatedSeasons = await buildSeasonChain(media.id);
+                }
+                console.log(`AniList ID for ${title}:`, anilistId, '| episodes:', anilistEpisodeCount, '| thumbs:', streamingEpisodes.length, '| seasonsInChain:', relatedSeasons.length);
             } catch {
                 anilistId = null;
             }
@@ -504,26 +538,25 @@ router.get("/:type/:id", async (req, res) => {
 
         const certClass = ageCertificate.replace(/[^a-zA-Z0-9]/g, '-');
 
-        // Final display values: prefer AniList season data when present, else TMDB.
         const displayTitle = aniDisplayTitle || title;
         const displayEscapedTitle = displayTitle.replace(/'/g, "\\'");
         const displayYear = aniDisplayYear || year;
         const displayPoster = aniDisplayCover || posterPath;
         const displayOverview = aniDisplayOverview || overview;
 
-        // "Other Seasons" navigation strip from AniList relations. Each related entry shares
-        // this same TMDB show id, so we link back to /media/tv/{id} with the related aniId —
-        // no TMDB re-search needed. Ordered prequels-first by year for a natural timeline.
-        const relLabel = { PREQUEL: 'Prequel', SEQUEL: 'Sequel', PARENT: 'Parent', SIDE_STORY: 'Side Story' };
+       
         const nsfwQS = (req.query.nsfw === 'true' || req.session.nsfw) ? '&nsfw=true' : '';
-        const sortedRelated = relatedSeasons.slice().sort((a, b) => (a.year || 0) - (b.year || 0));
-        const relatedSeasonsHtml = (isAnime && sortedRelated.length) ? `
-            <h3 class="overview-heading">Other Seasons & Related</h3>
-            <div class="related-seasons" style="display:flex; gap:14px; overflow-x:auto; padding:6px 2px 14px;">
-                ${sortedRelated.map(rs => `
-                    <a href="/media/tv/${id}?aniId=${rs.id}${nsfwQS}" style="flex:0 0 auto; width:120px; text-decoration:none; color:white;">
+        const relatedSeasonsHtml = (isAnime && relatedSeasons.length > 1) ? `
+            <h3 class="overview-heading">Seasons</h3>
+            <div class="related-seasons" style="display:flex; gap:14px; overflow-x:auto; padding:6px 12px 14px;">
+                ${relatedSeasons.map(rs => `
+                    <a href="/media/tv/${id}?aniId=${rs.id}${nsfwQS}"
+                       style="flex:0 0 auto; width:120px; text-decoration:none; color:white;
+                              ${rs.current ? 'outline:2px solid #e50914; outline-offset:2px; border-radius:8px;' : ''}">
                         <img src="${rs.cover}" alt="${rs.title}" style="width:120px; height:170px; object-fit:cover; border-radius:8px; display:block;">
-                        <p style="font-size:11px; color:#e50914; margin:6px 0 2px; text-transform:uppercase; letter-spacing:0.5px;">${relLabel[rs.rel] || rs.rel}</p>
+                        <p style="font-size:11px; color:#e50914; margin:6px 0 2px; text-transform:uppercase; letter-spacing:0.5px;">
+                            ${rs.seasonLabel}${rs.current ? ' • Now' : ''}
+                        </p>
                         <p style="font-size:13px; margin:0; line-height:1.3;">${rs.title}</p>
                         ${rs.year ? `<p style="font-size:11px; color:#aaa; margin:2px 0 0;">${rs.year}</p>` : ''}
                     </a>`).join('')}
@@ -769,6 +802,9 @@ router.get("/:type/:id", async (req, res) => {
                     let tmdbAnimeEpisodes = null;   // lazily-loaded TMDB stills (thumbnails only)
                     const animeTmdbSeasons = ${JSON.stringify((data.seasons || []).filter(s => s.season_number > 0).map(s => s.season_number))};
                     const animeSeasonNum = ${bestTmdbSeason || 'null'}; // TMDB season matched by air date (falls back to title parse)
+                    // TMDB season metadata (number, name, episode_count) used to build an optional
+                    // "jump to season/range" selector for very long single-entry shows (One Piece).
+                    const animeSeasonMeta = ${JSON.stringify((data.seasons || []).filter(s => s.season_number > 0).map(s => ({ n: s.season_number, name: s.name, count: s.episode_count })))};
 
                     async function ensureTmdbAnimeThumbs() {
                         if (tmdbAnimeEpisodes !== null) return; // already loaded (or empty)
@@ -1013,32 +1049,91 @@ router.get("/:type/:id", async (req, res) => {
                         // Do we have AniList thumbnails? They're the only source guaranteed to align
                         // with this exact entry. If present -> rich grid. If not -> clean numbered list
                         // (clearer than showing mismatched/placeholder images that confuse people).
-                        const hasAniThumbs = animeEpisodes.some(e => e && e.thumbnail);
+                        // Use the grid only when AniList covers MOST episodes with thumbnails.
+                        // Partial coverage (e.g. One Piece: a few hundred of 1000+) would make a
+                        // patchy grid full of placeholder icons — a uniform list is cleaner there.
+                        const thumbCount = animeEpisodes.filter(e => e && e.thumbnail).length;
+                        const hasAniThumbs = count > 0 && (thumbCount / count) >= 0.6;
+                        console.log('ANIME EP RENDER:', { count, thumbCount, ratio: (thumbCount/count).toFixed(2), mode: hasAniThumbs ? 'GRID' : 'CHIP', animeEpisodesLen: animeEpisodes.length, anilistEpisodeCount });
 
                         document.getElementById('episode-count').innerText = count + ' episodes';
 
                         if (!hasAniThumbs) {
-                            // ---- LIST MODE ----
-                            let rows = '';
-                            for (let i = 1; i <= count; i++) {
-                                const se = animeEpisodes[i - 1];
-                                let label = 'Episode ' + i;
-                                if (se && se.title) {
-                                    const cleaned = se.title.replace(/^episode\\s*\\d+\\s*[-–—:]*\\s*/i, '').trim();
-                                    if (cleaned) label = cleaned;
+                            // ---- CHIP MODE (no usable thumbnails) ----
+                            // Build episode RANGES so long shows (One Piece) get a "jump to season"
+                            // selector instead of one giant wall of chips. Ranges come from TMDB
+                            // season episode-counts when available (roughly track the sagas), else
+                            // fall back to fixed 100-episode chunks. The selector ONLY filters which
+                            // chips show — it never changes episode numbers or playback.
+                            const ranges = [];
+                            if (animeSeasonMeta.length > 1) {
+                                let start = 1;
+                                for (const s of animeSeasonMeta) {
+                                    const c = s.count || 0;
+                                    if (c <= 0) continue;
+                                    const end = Math.min(start + c - 1, count);
+                                    const nm = (s.name && !/^season\\s*\\d+$/i.test(s.name)) ? s.name : ('Season ' + s.n);
+                                    ranges.push({ label: nm + ' (E' + start + '–' + end + ')', from: start, to: end });
+                                    start = end + 1;
+                                    if (start > count) break;
                                 }
-                                rows += \`
-                                    <div class="anime-ep-row" onclick="renderAnimeIframe(\${i})"
-                                        style="display:flex; align-items:center; gap:12px; padding:11px 14px; cursor:pointer;
-                                               border-bottom:1px solid #222; transition:background 0.15s;"
-                                        onmouseover="this.style.background='#1c1c1c'" onmouseout="this.style.background='transparent'">
-                                        <span style="flex:0 0 42px; color:#e50914; font-weight:bold; font-size:14px;">E\${i}</span>
-                                        <span style="flex:1; font-size:14px; color:#eee;">\${label}</span>
-                                        <span style="flex:0 0 auto; color:#777; font-size:16px;">▶</span>
-                                    </div>\`;
+                                // If TMDB seasons undercount vs AniList, sweep up the remainder.
+                                if (start <= count) ranges.push({ label: 'More (E' + start + '–' + count + ')', from: start, to: count });
                             }
-                            document.getElementById('episode-grid').innerHTML =
-                                \`<div style="background:#141414; border-radius:8px; overflow:hidden;">\${rows}</div>\`;
+                            if (ranges.length < 2) {
+                                // Fallback: fixed 100-episode chunks (only if it's long enough to bother).
+                                ranges.length = 0;
+                                if (count > 100) {
+                                    for (let s = 1; s <= count; s += 100) {
+                                        const end = Math.min(s + 99, count);
+                                        ranges.push({ label: 'Episodes ' + s + '–' + end, from: s, to: end });
+                                    }
+                                } else {
+                                    ranges.push({ label: 'All episodes', from: 1, to: count });
+                                }
+                            }
+
+                            const grid = document.getElementById('episode-grid');
+                            grid.setAttribute('style',
+                                'display:grid !important;' +
+                                'grid-template-columns:repeat(auto-fill, minmax(64px, 1fr)) !important;' +
+                                'gap:8px; padding:6px 2px;');
+
+                            // Render the chips for a given range into the grid.
+                            window.renderAnimeChipRange = function (idx) {
+                                const r = ranges[idx] || ranges[0];
+                                let chips = '';
+                                for (let i = r.from; i <= r.to; i++) {
+                                    const se = animeEpisodes[i - 1];
+                                    let title = '';
+                                    if (se && se.title) {
+                                        const cleaned = se.title.replace(/^episode\\s*\\d+\\s*[-–—:]*\\s*/i, '').trim();
+                                        if (cleaned) title = cleaned;
+                                    }
+                                    chips += \`
+                                        <div class="anime-ep-chip" onclick="renderAnimeIframe(\${i})"
+                                            title="\${title ? 'Episode ' + i + ': ' + title.replace(/"/g, '') : 'Episode ' + i}"
+                                            style="padding:12px 6px; cursor:pointer; background:#1c1c1c; border-radius:8px;
+                                                   text-align:center; font-size:14px; font-weight:bold; color:#eee; transition:background 0.15s;"
+                                            onmouseover="this.style.background='#e50914'" onmouseout="this.style.background='#1c1c1c'">
+                                            \${i}
+                                        </div>\`;
+                                }
+                                grid.innerHTML = chips;
+                            };
+
+                            // Put a range selector into the season-select dropdown (reusing it).
+                            const sel = document.getElementById('season-select');
+                            if (ranges.length > 1) {
+                                sel.innerHTML = ranges.map((r, idx) =>
+                                    \`<option value="\${idx}">\${r.label}</option>\`).join('');
+                                sel.style.display = '';
+                                sel.onchange = function () { window.renderAnimeChipRange(Number(this.value)); };
+                            } else {
+                                sel.style.display = 'none';
+                            }
+
+                            window.renderAnimeChipRange(0);
                             return;
                         }
 
@@ -1046,16 +1141,21 @@ router.get("/:type/:id", async (req, res) => {
                         let cards = '';
                         for (let i = 1; i <= count; i++) {
                             const se = animeEpisodes[i - 1];
-                            const thumb = (se && se.thumbnail) ? se.thumbnail : '/images/icon.png';
+                            const hasThumb = !!(se && se.thumbnail);
                             let label = 'Episode ' + i;
                             if (se && se.title) {
                                 const cleaned = se.title.replace(/^episode\\s*\\d+\\s*[-–—:]*\\s*/i, '').trim();
                                 if (cleaned) label = 'E' + i + ' • ' + cleaned;
                             }
+                            // Real thumbnail when AniList has it; otherwise a neutral block that
+                            // matches the card shape (no stretched icon, no broken-image look).
+                            const media = hasThumb
+                                ? \`<img src="\${se.thumbnail}" alt="Episode \${i}" class="episode-thumb">\`
+                                : \`<div class="episode-thumb" style="display:flex; align-items:center; justify-content:center; background:#1c1c1c; color:#555; font-size:20px; font-weight:bold;">E\${i}</div>\`;
                             cards += \`
                                 <div class="episode-card" onclick="renderAnimeIframe(\${i})" style="cursor:pointer;">
                                     <div style="position:relative;">
-                                        <img src="\${thumb}" alt="Episode \${i}" class="episode-thumb">
+                                        \${media}
                                         <div class="episode-overlay"><span style="font-size:26px;">▶</span></div>
                                         <span class="episode-badge left">E\${i}</span>
                                     </div>
